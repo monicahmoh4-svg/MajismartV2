@@ -43,3 +43,4 @@ Then add the printed contract addresses + `CELO_RPC_URL` + `DEPLOYER_PRIVATE_KEY
 - On-chain water quality oracle
 "# MajismartV2" 
 "# MajismartV2" 
+"# MajismartV2" 
