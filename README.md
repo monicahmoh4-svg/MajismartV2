@@ -42,3 +42,4 @@ Then add the printed contract addresses + `CELO_RPC_URL` + `DEPLOYER_PRIVATE_KEY
 - MAJI token water payments (Web3)
 - On-chain water quality oracle
 "# MajismartV2" 
+"# MajismartV2" 
