@@ -1,0 +1,20 @@
+{
+  "name": "majismart-contracts",
+  "version": "1.0.0",
+  "description": "MajiSmart smart contracts on Celo blockchain",
+  "scripts": {
+    "compile":          "hardhat compile",
+    "test":             "hardhat test",
+    "deploy:testnet":   "hardhat run scripts/deploy.js --network alfajores",
+    "deploy:mainnet":   "hardhat run scripts/deploy.js --network celo",
+    "deploy:local":     "hardhat run scripts/deploy.js --network localhost",
+    "node":             "hardhat node",
+    "verify:testnet":   "hardhat verify --network alfajores",
+    "clean":            "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.5"
+  }
+}
