@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Droplets, MapPin, Smartphone, Shield, TrendingUp, Users, Wifi, CheckCircle, ArrowRight, Activity, Globe, Zap, Menu, X } from 'lucide-react';
+import { Droplets, MapPin, Smartphone, Shield, TrendingUp, Users, Wifi, CheckCircle, ArrowRight, Activity, Globe, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -14,7 +14,6 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Animation Variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 40 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
@@ -23,11 +22,6 @@ export default function Home() {
   const staggerContainer = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-  };
-
-  const cardHover = {
-    rest: { scale: 1, boxShadow: "0px 4px 20px rgba(0,0,0,0.05)" },
-    hover: { scale: 1.03, boxShadow: "0px 15px 40px rgba(8, 145, 178, 0.15)", transition: { duration: 0.3 } }
   };
 
   return (
@@ -86,7 +80,6 @@ export default function Home() {
         background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%)',
         paddingTop: '80px'
       }}>
-        {/* Animated Background Blobs */}
         <motion.div 
           animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
@@ -167,10 +160,8 @@ export default function Home() {
               <motion.div 
                 key={i} 
                 variants={fadeInUp}
-                whileHover="hover"
-                initial="rest"
-                animate="rest"
-                style={{ textAlign: 'center', padding: '40px 24px', background: '#f8fafc', borderRadius: '20px', border: '1px solid #f1f5f9' }}
+                whileHover={{ scale: 1.03, boxShadow: "0px 15px 40px rgba(8, 145, 178, 0.15)" }}
+                style={{ textAlign: 'center', padding: '40px 24px', background: '#f8fafc', borderRadius: '20px', border: '1px solid #f1f5f9', transition: 'all 0.3s' }}
               >
                 <div style={{ width: '60px', height: '60px', background: `${stat.color}15`, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                   <stat.icon style={{ width: '28px', height: '28px', color: stat.color }} />
@@ -195,7 +186,8 @@ export default function Home() {
           >
             <span style={{ display: 'inline-block', padding: '6px 16px', background: '#eff6ff', color: '#0891b2', borderRadius: '50px', fontSize: '13px', fontWeight: '700', marginBottom: '16px' }}>POWERFUL FEATURES</span>
             <h2 style={{ margin: '0 0 16px 0', fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '800', color: '#0f172a' }}>The Complete Water Ecosystem</h2>
-            <p style={{ margin: 0, fontSize: '18px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>Everything you need to monitor, manage, and conserve water.</p>
+            {/* FIXED: Removed duplicate 'margin' key */}
+            <p style={{ margin: '0 auto', fontSize: '18px', color: '#64748b', maxWidth: '600px' }}>Everything you need to monitor, manage, and conserve water.</p>
           </motion.div>
           
           <motion.div 
@@ -216,10 +208,8 @@ export default function Home() {
               <motion.div 
                 key={i} 
                 variants={fadeInUp}
-                whileHover="hover"
-                initial="rest"
-                animate="rest"
-                style={{ background: 'white', borderRadius: '20px', padding: '32px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
+                whileHover={{ scale: 1.03, boxShadow: "0px 15px 40px rgba(8, 145, 178, 0.15)" }}
+                style={{ background: 'white', borderRadius: '20px', padding: '32px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', transition: 'all 0.3s' }}
               >
                 <div style={{ width: '56px', height: '56px', background: `${feature.color}15`, borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                   <feature.icon style={{ width: '28px', height: '28px', color: feature.color }} />
@@ -261,4 +251,4 @@ export default function Home() {
       </footer>
     </div>
   );
-} 
+}
