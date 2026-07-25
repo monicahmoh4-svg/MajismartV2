@@ -14,8 +14,6 @@ import {
 export default function CitizenDashboard() {
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
-  
-  // FIX: Default to true for desktop, handle mobile via resize effect
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -39,7 +37,7 @@ export default function CitizenDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // FIX: Handle responsive sidebar visibility
+  // Responsive sidebar handling
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 768) {
@@ -48,10 +46,7 @@ export default function CitizenDashboard() {
         setSidebarOpen(true);
       }
     };
-    
-    // Run on mount
     handleResize();
-    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -316,8 +311,8 @@ export default function CitizenDashboard() {
 // ==================== OVERVIEW SECTION ====================
 function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, currentTime, getGreeting, formatTime, setActiveSection, setShowReportModal }) {
   const stats = [
-    { label: 'Active Nodes', value: areaStatus?.active_nodes || 0, icon: Droplets, color: '#0891b2', bg: '#eff6ff' },
-    { label: 'Area Status', value: areaStatus?.status === 'alert' ? 'Alert' : 'Normal', icon: areaStatus?.status === 'alert' ? AlertTriangle : CheckCircle, color: areaStatus?.status === 'alert' ? '#f59e0b' : '#10b981', bg: areaStatus?.status === 'alert' ? '#fef3c7' : '#d1fae5' },
+    { label: 'Active Nodes', value: areaStatus?.nodes?.active || 0, icon: Droplets, color: '#0891b2', bg: '#eff6ff' },
+    { label: 'Area Status', value: areaStatus?.status || 'Normal', icon: areaStatus?.status === 'alert' ? AlertTriangle : CheckCircle, color: areaStatus?.status === 'alert' ? '#f59e0b' : '#10b981', bg: areaStatus?.status === 'alert' ? '#fef3c7' : '#d1fae5' },
     { label: 'This Month', value: `KES ${mySpending?.this_month?.total_ksh || 0}`, icon: Wallet, color: '#8b5cf6', bg: '#ede9fe' },
     { label: 'Active Alerts', value: alerts.length, icon: Bell, color: '#ef4444', bg: '#fee2e2' },
   ];
@@ -447,7 +442,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
 }
 
 // ==================== WATER POINTS ====================
-function WaterPointsSection({ waterPoints }) {
+function WaterPointsSection({ waterPoints, userLocation }) {
   const [searchTerm, setSearchTerm] = useState('');
   const filtered = waterPoints.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.location.toLowerCase().includes(searchTerm.toLowerCase()));
 
