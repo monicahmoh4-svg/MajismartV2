@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { Droplets, MapPin, Smartphone, Shield, TrendingUp, Users, Wifi, CheckCircle, ArrowRight, Activity, Globe, Zap, Phone, BarChart3, Award, Heart, Clock, ChevronRight, Play } from 'lucide-react';
+import { Droplets, MapPin, Smartphone, Shield, TrendingUp, Users, Wifi, CheckCircle, ArrowRight, Activity, Globe, Zap, Phone, BarChart3, Award, Heart, Clock, ChevronRight, Play, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState({});
 
   useEffect(() => {
@@ -31,86 +32,127 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', overflowX: 'hidden' }}>
-      {/* Animated Background Gradient */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        opacity: 0.05,
-        zIndex: 0,
-        pointerEvents: 'none'
-      }}></div>
-
       {/* Navigation */}
       <nav style={{
-        background: 'rgba(255, 255, 255, 0.95)',
+        background: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
-        padding: '20px 0',
+        padding: '16px 0',
         position: 'sticky',
         top: 0,
-        zIndex: 100,
+        zIndex: 1000,
         boxShadow: scrollY > 50 ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
         transition: 'all 0.3s ease'
       }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => window.scrollTo(0, 0)}>
             <div style={{
-              width: '44px',
-              height: '44px',
+              width: '40px',
+              height: '40px',
               background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
-              borderRadius: '12px',
+              borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)',
-              animation: 'pulse 2s infinite'
+              boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)'
             }}>
-              <Droplets style={{ color: 'white', width: '26px', height: '26px' }} />
+              <Droplets style={{ color: 'white', width: '24px', height: '24px' }} />
             </div>
-            <span style={{ fontSize: '22px', fontWeight: '800', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MajiSmart</span>
+            <span style={{ fontSize: '20px', fontWeight: '800', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MajiSmart</span>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          
+          {/* Desktop Nav */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button onClick={() => navigate('/login')} style={{
-              padding: '12px 24px',
+              padding: '10px 20px',
               background: 'transparent',
               border: '2px solid #0891b2',
               color: '#0891b2',
-              borderRadius: '10px',
+              borderRadius: '8px',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.3s',
-              fontSize: '15px'
+              fontSize: '14px',
+              whiteSpace: 'nowrap'
             }} onMouseEnter={(e) => { e.target.style.background = '#0891b2'; e.target.style.color = 'white'; }}
               onMouseLeave={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#0891b2'; }}>Sign In</button>
             <button onClick={() => navigate('/register')} style={{
-              padding: '12px 24px',
+              padding: '10px 20px',
               background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
               color: 'white',
               border: 'none',
-              borderRadius: '10px',
+              borderRadius: '8px',
               fontWeight: '600',
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)',
               transition: 'all 0.3s',
-              fontSize: '15px'
+              fontSize: '14px',
+              whiteSpace: 'nowrap'
             }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 20px rgba(8, 145, 178, 0.4)'; }}
               onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 12px rgba(8, 145, 178, 0.3)'; }}>Get Started</button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{
+            display: 'none',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px'
+          }}>
+            {mobileMenuOpen ? <X style={{ width: '24px', height: '24px' }} /> : <Menu style={{ width: '24px', height: '24px' }} />}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div style={{
+            display: 'none',
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'white',
+            borderBottom: '1px solid #e2e8f0',
+            padding: '20px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            zIndex: 1000
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={() => { navigate('/login'); setMobileMenuOpen(false); }} style={{
+                padding: '12px',
+                background: 'transparent',
+                border: '2px solid #0891b2',
+                color: '#0891b2',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '15px'
+              }}>Sign In</button>
+              <button onClick={() => { navigate('/register'); setMobileMenuOpen(false); }} style={{
+                padding: '12px',
+                background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '15px'
+              }}>Get Started</button>
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* Hero Section with Video Background */}
+      {/* Hero Section */}
       <section style={{
         position: 'relative',
-        minHeight: '90vh',
+        minHeight: 'calc(100vh - 73px)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
-        background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)'
+        background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)',
+        padding: '60px 20px'
       }}>
         {/* Background Image Overlay */}
         <div style={{
@@ -122,8 +164,7 @@ export default function Home() {
           backgroundImage: 'url("https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=1920&q=80")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          opacity: 0.2,
-          filter: 'blur(2px)'
+          opacity: 0.15
         }}></div>
         
         {/* Animated Circles */}
@@ -131,8 +172,8 @@ export default function Home() {
           position: 'absolute',
           top: '10%',
           right: '10%',
-          width: '400px',
-          height: '400px',
+          width: '300px',
+          height: '300px',
           background: 'rgba(255, 255, 255, 0.1)',
           borderRadius: '50%',
           animation: 'float 6s ease-in-out infinite'
@@ -141,15 +182,15 @@ export default function Home() {
           position: 'absolute',
           bottom: '10%',
           left: '5%',
-          width: '300px',
-          height: '300px',
+          width: '200px',
+          height: '200px',
           background: 'rgba(255, 255, 255, 0.08)',
           borderRadius: '50%',
           animation: 'float 8s ease-in-out infinite reverse'
         }}></div>
 
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1, width: '100%' }}>
-          <div style={{ maxWidth: '850px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1, width: '100%' }}>
+          <div style={{ maxWidth: '800px' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -158,134 +199,105 @@ export default function Home() {
               padding: '8px 16px',
               borderRadius: '50px',
               marginBottom: '24px',
-              backdropFilter: 'blur(10px)',
-              animation: 'fadeInDown 0.8s ease'
+              backdropFilter: 'blur(10px)'
             }}>
               <span style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
               <span style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>Trusted by 10M+ Kenyans</span>
             </div>
             
             <h1 style={{
-              margin: '0 0 24px 0',
-              fontSize: 'clamp(40px, 8vw, 72px)',
+              margin: '0 0 20px 0',
+              fontSize: 'clamp(32px, 6vw, 56px)',
               fontWeight: '900',
               lineHeight: '1.1',
-              color: 'white',
-              animation: 'fadeInUp 0.8s ease 0.2s both'
+              color: 'white'
             }}>
               Smart Water Intelligence for{' '}
               <span style={{
                 background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
                 WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                display: 'inline-block',
-                animation: 'glow 3s ease-in-out infinite'
+                WebkitTextFillColor: 'transparent'
               }}>Kenya</span>
             </h1>
             
             <p style={{
-              margin: '0 0 40px 0',
-              fontSize: '22px',
+              margin: '0 0 32px 0',
+              fontSize: 'clamp(16px, 2.5vw, 20px)',
               opacity: '0.95',
-              lineHeight: '1.7',
+              lineHeight: '1.6',
               color: 'white',
-              maxWidth: '700px',
-              animation: 'fadeInUp 0.8s ease 0.4s both'
+              maxWidth: '650px'
             }}>
-              Real-time monitoring, transparent data, and community-driven water management. Access clean water information from any device — smartphone or feature phone.
+              Real-time monitoring, transparent data, and community-driven water management. Access clean water information from any device.
             </p>
             
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', animation: 'fadeInUp 0.8s ease 0.6s both' }}>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               <button onClick={() => navigate('/register')} style={{
-                padding: '18px 40px',
+                padding: '16px 32px',
                 background: 'white',
                 color: '#0891b2',
                 border: 'none',
-                borderRadius: '12px',
-                fontSize: '17px',
-                fontWeight: '800',
+                borderRadius: '10px',
+                fontSize: '16px',
+                fontWeight: '700',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
+                gap: '8px',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
                 transition: 'all 0.3s'
-              }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-4px)'; e.target.style.boxShadow = '0 15px 40px rgba(0,0,0,0.3)'; }}
+              }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 15px 40px rgba(0,0,0,0.3)'; }}
                 onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)'; }}>
-                Get Started Free <ArrowRight style={{ width: '22px', height: '22px' }} />
+                Get Started Free <ArrowRight style={{ width: '20px', height: '20px' }} />
               </button>
               <button style={{
-                padding: '18px 40px',
+                padding: '16px 32px',
                 background: 'rgba(255,255,255,0.15)',
                 color: 'white',
                 border: '2px solid rgba(255,255,255,0.5)',
-                borderRadius: '12px',
-                fontSize: '17px',
+                borderRadius: '10px',
+                fontSize: '16px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 backdropFilter: 'blur(10px)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                transition: 'all 0.3s'
-              }} onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.25)'; e.target.style.transform = 'translateY(-4px)'; }}
-                onMouseLeave={(e) => { e.target.style.background = 'rgba(255,255,255,0.15)'; e.target.style.transform = 'translateY(0)'; }}>
-                <Play style={{ width: '20px', height: '20px', fill: 'white' }} /> Watch Demo
+                gap: '8px'
+              }}>
+                <Play style={{ width: '18px', height: '18px', fill: 'white' }} /> Watch Demo
               </button>
             </div>
 
             {/* Trust Badges */}
-            <div style={{ marginTop: '60px', display: 'flex', gap: '40px', flexWrap: 'wrap', animation: 'fadeInUp 0.8s ease 0.8s both' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'rgba(255,255,255,0.9)' }}>
-                <CheckCircle style={{ width: '24px', height: '24px', color: '#4ade80' }} />
-                <span style={{ fontSize: '15px', fontWeight: '600' }}>Free to use</span>
+            <div style={{ marginTop: '48px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.9)' }}>
+                <CheckCircle style={{ width: '20px', height: '20px', color: '#4ade80' }} />
+                <span style={{ fontSize: '14px', fontWeight: '600' }}>Free to use</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'rgba(255,255,255,0.9)' }}>
-                <CheckCircle style={{ width: '24px', height: '24px', color: '#4ade80' }} />
-                <span style={{ fontSize: '15px', fontWeight: '600' }}>No credit card required</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.9)' }}>
+                <CheckCircle style={{ width: '20px', height: '20px', color: '#4ade80' }} />
+                <span style={{ fontSize: '14px', fontWeight: '600' }}>No credit card</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'rgba(255,255,255,0.9)' }}>
-                <CheckCircle style={{ width: '24px', height: '24px', color: '#4ade80' }} />
-                <span style={{ fontSize: '15px', fontWeight: '600' }}>Works on any phone</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.9)' }}>
+                <CheckCircle style={{ width: '20px', height: '20px', color: '#4ade80' }} />
+                <span style={{ fontSize: '14px', fontWeight: '600' }}>Works on any phone</span>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div style={{
-          position: 'absolute',
-          bottom: '40px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          animation: 'bounce 2s infinite',
-          color: 'white',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-          opacity: 0.8
-        }}>
-          <span style={{ fontSize: '14px', fontWeight: '600' }}>Scroll to explore</span>
-          <ChevronRight style={{ width: '24px', height: '24px', transform: 'rotate(90deg)' }} />
         </div>
       </section>
 
       {/* Stats Section */}
       <section className="animate-on-scroll" id="stats" style={{
-        padding: '100px 24px',
-        background: 'white',
-        position: 'relative',
-        transform: `translateY(${isVisible['stats'] ? 0 : '50px'})`,
-        opacity: isVisible['stats'] ? 1 : 0,
-        transition: 'all 0.8s ease'
+        padding: '80px 20px',
+        background: 'white'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '40px',
-            marginBottom: '80px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '24px',
+            marginBottom: '60px'
           }}>
             {[
               { number: '10M+', label: 'Kenyans served', icon: Users, color: '#0891b2' },
@@ -295,30 +307,25 @@ export default function Home() {
             ].map((stat, i) => (
               <div key={i} style={{
                 textAlign: 'center',
-                padding: '40px',
+                padding: '32px 20px',
                 background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
-                borderRadius: '20px',
-                border: '1px solid #e2e8f0',
-                transition: 'all 0.3s',
-                transform: `translateY(${isVisible['stats'] ? 0 : '30px'})`,
-                opacity: isVisible['stats'] ? 1 : 0,
-                transitionDelay: `${i * 0.1}s`
-              }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.1)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
-                <stat.icon style={{ width: '48px', height: '48px', color: stat.color, margin: '0 auto 20px' }} />
-                <p style={{ margin: '0 0 8px 0', fontSize: '56px', fontWeight: '900', background: `linear-gradient(135deg, ${stat.color}, ${stat.color}88)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{stat.number}</p>
-                <p style={{ margin: 0, fontSize: '16px', color: '#64748b', fontWeight: '600' }}>{stat.label}</p>
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0'
+              }}>
+                <stat.icon style={{ width: '40px', height: '40px', color: stat.color, margin: '0 auto 16px' }} />
+                <p style={{ margin: '0 0 8px 0', fontSize: '40px', fontWeight: '900', background: `linear-gradient(135deg, ${stat.color}, ${stat.color}88)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{stat.number}</p>
+                <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: '600' }}>{stat.label}</p>
               </div>
             ))}
           </div>
 
           {/* Image Showcase */}
           <div style={{
-            borderRadius: '24px',
+            borderRadius: '20px',
             overflow: 'hidden',
             boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
             position: 'relative',
-            height: '500px',
+            height: '400px',
             backgroundImage: 'url("https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=1200&q=80")',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
@@ -329,39 +336,25 @@ export default function Home() {
               background: 'linear-gradient(135deg, rgba(8, 145, 178, 0.9), rgba(6, 182, 212, 0.8))',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              padding: '40px 20px'
             }}>
-              <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
-                <h3 style={{ margin: '0 0 16px 0', fontSize: '42px', fontWeight: '800' }}>Technology Meets Community</h3>
-                <p style={{ margin: 0, fontSize: '20px', opacity: 0.95, maxWidth: '600px', margin: '0 auto' }}>Bridging the gap between advanced IoT monitoring and everyday water access needs across Kenya</p>
+              <div style={{ textAlign: 'center', color: 'white' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: '800' }}>Technology Meets Community</h3>
+                <p style={{ margin: 0, fontSize: 'clamp(14px, 2vw, 18px)', opacity: 0.95, maxWidth: '500px', margin: '0 auto' }}>Bridging the gap between advanced IoT monitoring and everyday water access needs across Kenya</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* USSD Section with Image */}
+      {/* USSD Section */}
       <section className="animate-on-scroll" id="ussd" style={{
-        padding: '100px 24px',
-        background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
-        position: 'relative',
-        overflow: 'hidden',
-        transform: `translateY(${isVisible['ussd'] ? 0 : '50px'})`,
-        opacity: isVisible['ussd'] ? 1 : 0,
-        transition: 'all 0.8s ease'
+        padding: '80px 20px',
+        background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: '-100px',
-          right: '-100px',
-          width: '400px',
-          height: '400px',
-          background: 'rgba(8, 145, 178, 0.1)',
-          borderRadius: '50%'
-        }}></div>
-        
-        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '48px', alignItems: 'center' }}>
             <div>
               <div style={{
                 display: 'inline-flex',
@@ -370,53 +363,49 @@ export default function Home() {
                 background: 'rgba(8, 145, 178, 0.1)',
                 padding: '8px 16px',
                 borderRadius: '50px',
-                marginBottom: '20px'
+                marginBottom: '16px'
               }}>
-                <Smartphone style={{ width: '18px', height: '18px', color: '#0891b2' }} />
-                <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>NO SMARTPHONE? NO PROBLEM</span>
+                <Smartphone style={{ width: '16px', height: '16px', color: '#0891b2' }} />
+                <span style={{ color: '#0891b2', fontSize: '13px', fontWeight: '700' }}>NO SMARTPHONE? NO PROBLEM</span>
               </div>
               
-              <h2 style={{ margin: '0 0 20px 0', fontSize: '42px', fontWeight: '900', color: '#0f172a', lineHeight: '1.2' }}>
+              <h2 style={{ margin: '0 0 16px 0', fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: '900', color: '#0f172a', lineHeight: '1.2' }}>
                 Access MajiSmart on{' '}
                 <span style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Any Phone</span>
               </h2>
               
-              <p style={{ margin: '0 0 40px 0', fontSize: '18px', color: '#475569', lineHeight: '1.7' }}>
-                Access MajiSmart via basic feature phones using USSD. Check water levels, report issues, and manage your account from any phone — no internet required.
+              <p style={{ margin: '0 0 32px 0', fontSize: '16px', color: '#475569', lineHeight: '1.6' }}>
+                Access MajiSmart via basic feature phones using USSD. Check water levels, report issues, and manage your account from any phone.
               </p>
               
               <div style={{
                 background: 'white',
-                borderRadius: '20px',
-                padding: '40px',
+                borderRadius: '16px',
+                padding: '32px 24px',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-                marginBottom: '30px'
+                marginBottom: '24px'
               }}>
-                <h3 style={{ margin: '0 0 30px 0', fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>How to Use MajiSmart on Any Phone</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>How to Use</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {[
-                    { step: '1', text: 'Dial *384*99# on your phone', icon: Phone },
-                    { step: '2', text: 'Select Check Water Status or Report Issue', icon: MapPin },
-                    { step: '3', text: 'Get instant information or submit your report', icon: CheckCircle }
+                    { step: '1', text: 'Dial *384*99# on your phone' },
+                    { step: '2', text: 'Select Check Water Status or Report Issue' },
+                    { step: '3', text: 'Get instant information or submit report' }
                   ].map((item, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                    <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                       <div style={{
-                        width: '48px',
-                        height: '48px',
+                        width: '40px',
+                        height: '40px',
                         background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
-                        borderRadius: '12px',
+                        borderRadius: '10px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white',
                         fontWeight: '800',
-                        fontSize: '18px',
-                        flexShrink: 0,
-                        boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)'
+                        flexShrink: 0
                       }}>{item.step}</div>
-                      <div style={{ paddingTop: '8px' }}>
-                        <p style={{ margin: 0, fontSize: '16px', color: '#0f172a', fontWeight: '600' }}>{item.text}</p>
-                      </div>
+                      <p style={{ margin: 0, fontSize: '15px', color: '#475569', paddingTop: '6px' }}>{item.text}</p>
                     </div>
                   ))}
                 </div>
@@ -425,21 +414,20 @@ export default function Home() {
               <div style={{
                 background: '#0f172a',
                 color: 'white',
-                padding: '24px 32px',
-                borderRadius: '16px',
-                textAlign: 'center',
-                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.3)'
+                padding: '20px 24px',
+                borderRadius: '12px',
+                textAlign: 'center'
               }}>
-                <p style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: 0.8 }}>USSD Code</p>
-                <p style={{ margin: 0, fontSize: '42px', fontWeight: '900', fontFamily: 'monospace', letterSpacing: '2px' }}>*384*99#</p>
+                <p style={{ margin: '0 0 6px 0', fontSize: '12px', opacity: 0.8 }}>USSD Code</p>
+                <p style={{ margin: 0, fontSize: '32px', fontWeight: '900', fontFamily: 'monospace', letterSpacing: '2px' }}>*384*99#</p>
               </div>
             </div>
             
             <div style={{
-              borderRadius: '24px',
+              borderRadius: '20px',
               overflow: 'hidden',
               boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-              height: '700px',
+              height: '500px',
               backgroundImage: 'url("https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80")',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -451,12 +439,12 @@ export default function Home() {
                 background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%)',
                 display: 'flex',
                 alignItems: 'flex-end',
-                padding: '40px'
+                padding: '32px 24px'
               }}>
                 <div style={{ color: 'white', textAlign: 'center', width: '100%' }}>
-                  <Smartphone style={{ width: '64px', height: '64px', margin: '0 auto 16px', opacity: 0.9 }} />
-                  <p style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Available on all networks</p>
-                  <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>Safaricom • Airtel • Telkom</p>
+                  <Smartphone style={{ width: '48px', height: '48px', margin: '0 auto 12px', opacity: 0.9 }} />
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Available on all networks</p>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '13px', opacity: 0.8 }}>Safaricom • Airtel • Telkom</p>
                 </div>
               </div>
             </div>
@@ -466,14 +454,11 @@ export default function Home() {
 
       {/* Features Grid */}
       <section className="animate-on-scroll" id="features" style={{
-        padding: '100px 24px',
-        background: 'white',
-        transform: `translateY(${isVisible['features'] ? 0 : '50px'})`,
-        opacity: isVisible['features'] ? 1 : 0,
-        transition: 'all 0.8s ease'
+        padding: '80px 20px',
+        background: 'white'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -481,38 +466,34 @@ export default function Home() {
               background: 'rgba(8, 145, 178, 0.1)',
               padding: '8px 16px',
               borderRadius: '50px',
-              marginBottom: '20px'
+              marginBottom: '16px'
             }}>
-              <Zap style={{ width: '18px', height: '18px', color: '#0891b2' }} />
-              <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>POWERFUL FEATURES</span>
+              <Zap style={{ width: '16px', height: '16px', color: '#0891b2' }} />
+              <span style={{ color: '#0891b2', fontSize: '13px', fontWeight: '700' }}>POWERFUL FEATURES</span>
             </div>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>The Complete Water Ecosystem</h2>
-            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>Everything you need to monitor, manage, and conserve water in a smart world.</p>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: '900', color: '#0f172a' }}>The Complete Water Ecosystem</h2>
+            <p style={{ margin: 0, fontSize: '16px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>Everything you need to monitor, manage, and conserve water.</p>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
             {[
-              { icon: Activity, title: 'Real-Time Monitoring', desc: 'Live water quality, pressure, and flow data from IoT sensors across the network.', color: '#0891b2', image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=600&q=80' },
-              { icon: Shield, title: 'Transparent Data', desc: 'Blockchain-verified water usage records. No falsified readings or inflated bills.', color: '#06b6d4', image: 'https://images.unsplash.com/photo-1639762681485-074b7f413757?w=600&q=80' },
-              { icon: MapPin, title: 'Find Water Points', desc: 'Locate nearest functional water points with real-time availability status.', color: '#22d3ee', image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600&q=80' },
-              { icon: Users, title: 'Community Reports', desc: 'Report leaks, contamination, or infrastructure issues. Track resolution progress.', color: '#3b82f6', image: 'https://images.unsplash.com/photo-1573167243872-43c6433b9d40?w=600&q=80' },
-              { icon: Wifi, title: 'Smart Metering', desc: 'IoT meters record data automatically. Pay only for what you use.', color: '#8b5cf6', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=600&q=80' },
-              { icon: TrendingUp, title: 'Usage Analytics', desc: 'Track your consumption patterns, spending history, and conservation goals.', color: '#10b981', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80' }
+              { icon: Activity, title: 'Real-Time Monitoring', desc: 'Live water quality, pressure, and flow data from IoT sensors.', color: '#0891b2', image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=600&q=80' },
+              { icon: Shield, title: 'Transparent Data', desc: 'Blockchain-verified water usage records. No falsified readings.', color: '#06b6d4', image: 'https://images.unsplash.com/photo-1639762681485-074b7f413757?w=600&q=80' },
+              { icon: MapPin, title: 'Find Water Points', desc: 'Locate nearest functional water points with real-time status.', color: '#22d3ee', image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600&q=80' },
+              { icon: Users, title: 'Community Reports', desc: 'Report leaks, contamination, or infrastructure issues.', color: '#3b82f6', image: 'https://images.unsplash.com/photo-1573167243872-43c6433b9d40?w=600&q=80' },
+              { icon: Wifi, title: 'Smart Metering', desc: 'IoT meters record data automatically. Pay for what you use.', color: '#8b5cf6', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=600&q=80' },
+              { icon: TrendingUp, title: 'Usage Analytics', desc: 'Track consumption patterns and conservation goals.', color: '#10b981', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80' }
             ].map((feature, i) => (
               <div key={i} style={{
-                padding: '0',
                 background: 'white',
-                borderRadius: '20px',
+                borderRadius: '16px',
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden',
-                transition: 'all 0.3s',
-                transform: `translateY(${isVisible['features'] ? 0 : '30px'})`,
-                opacity: isVisible['features'] ? 1 : 0,
-                transitionDelay: `${i * 0.1}s`
-              }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)'; }}
+                transition: 'all 0.3s'
+              }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.1)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
                 <div style={{
-                  height: '200px',
+                  height: '160px',
                   backgroundImage: `url("${feature.image}")`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -529,91 +510,16 @@ export default function Home() {
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
                     background: 'white',
-                    padding: '16px',
-                    borderRadius: '16px',
+                    padding: '12px',
+                    borderRadius: '12px',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
                   }}>
-                    <feature.icon style={{ width: '32px', height: '32px', color: feature.color }} />
+                    <feature.icon style={{ width: '28px', height: '28px', color: feature.color }} />
                   </div>
                 </div>
-                <div style={{ padding: '32px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>{feature.title}</h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#64748b', lineHeight: '1.6' }}>{feature.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Section */}
-      <section className="animate-on-scroll" id="trust" style={{
-        padding: '100px 24px',
-        background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden',
-        transform: `translateY(${isVisible['trust'] ? 0 : '50px'})`,
-        opacity: isVisible['trust'] ? 1 : 0,
-        transition: 'all 0.8s ease'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: 'url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 0.1
-        }}></div>
-        
-        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'rgba(34, 211, 238, 0.2)',
-              padding: '8px 16px',
-              borderRadius: '50px',
-              marginBottom: '20px'
-            }}>
-              <Award style={{ width: '18px', height: '18px', color: '#22d3ee' }} />
-              <span style={{ color: '#22d3ee', fontSize: '14px', fontWeight: '700' }}>WHY CHOOSE US</span>
-            </div>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900' }}>Trustless Water Management</h2>
-            <p style={{ margin: 0, fontSize: '20px', opacity: '0.9', maxWidth: '700px', margin: '0 auto' }}>Every feature is anchored in transparency and accountability because water is a fundamental right.</p>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
-            {[
-              { icon: CheckCircle, title: 'Tamper-Proof Records', desc: 'Immutable water quality and usage data. No manipulation, no corruption.', stat: '99.9%', statLabel: 'Accuracy' },
-              { icon: Globe, title: 'Nationwide Coverage', desc: 'From Nairobi to rural villages — connected infrastructure across all 47 counties.', stat: '47', statLabel: 'Counties' },
-              { icon: Zap, title: 'Instant Alerts', desc: 'Real-time notifications for outages, contamination, or maintenance schedules.', stat: '<1s', statLabel: 'Response' },
-              { icon: Heart, title: 'Community First', desc: 'Built by Kenyans, for Kenyans. Local insights, global technology.', stat: '10M+', statLabel: 'Users' }
-            ].map((item, i) => (
-              <div key={i} style={{
-                padding: '40px',
-                background: 'rgba(255,255,255,0.05)',
-                borderRadius: '20px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.3s'
-              }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                <item.icon style={{ width: '48px', height: '48px', color: '#22d3ee', marginBottom: '20px' }} />
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '800' }}>{item.title}</h3>
-                <p style={{ margin: '0 0 24px 0', fontSize: '16px', opacity: '0.85', lineHeight: '1.6' }}>{item.desc}</p>
-                <div style={{
-                  padding: '16px',
-                  background: 'rgba(34, 211, 238, 0.1)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(34, 211, 238, 0.2)'
-                }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '32px', fontWeight: '900', color: '#22d3ee' }}>{item.stat}</p>
-                  <p style={{ margin: 0, fontSize: '13px', opacity: '0.7' }}>{item.statLabel}</p>
+                <div style={{ padding: '24px' }}>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{feature.title}</h3>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -623,121 +529,81 @@ export default function Home() {
 
       {/* CTA Section */}
       <section style={{
-        padding: '120px 24px',
+        padding: '80px 20px',
         background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-        position: 'relative',
-        overflow: 'hidden',
         textAlign: 'center'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: '-50%',
-          left: '-50%',
-          width: '200%',
-          height: '200%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-          opacity: 0.3
-        }}></div>
-        
-        <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <h2 style={{ margin: '0 0 20px 0', fontSize: '56px', fontWeight: '900', color: 'white', lineHeight: '1.1' }}>Ready to transform water access?</h2>
-          <p style={{ margin: '0 0 40px 0', fontSize: '22px', opacity: '0.95', maxWidth: '600px', margin: '0 auto' }}>Join thousands of Kenyans already using MajiSmart for reliable water information.</p>
-          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{ margin: '0 0 16px 0', fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: '900', color: 'white', lineHeight: '1.2' }}>Ready to transform water access?</h2>
+          <p style={{ margin: '0 0 32px 0', fontSize: '16px', opacity: '0.95', maxWidth: '500px', margin: '0 auto' }}>Join thousands of Kenyans already using MajiSmart.</p>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => navigate('/register')} style={{
-              padding: '20px 48px',
+              padding: '16px 32px',
               background: 'white',
               color: '#0891b2',
               border: 'none',
-              borderRadius: '12px',
-              fontSize: '18px',
-              fontWeight: '800',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '700',
               cursor: 'pointer',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-              transition: 'all 0.3s'
-            }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-4px)'; e.target.style.boxShadow = '0 15px 40px rgba(0,0,0,0.3)'; }}
-              onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)'; }}>
+              boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+            }}>
               Create Free Account
             </button>
             <button style={{
-              padding: '20px 48px',
+              padding: '16px 32px',
               background: 'rgba(255,255,255,0.15)',
               color: 'white',
               border: '2px solid rgba(255,255,255,0.5)',
-              borderRadius: '12px',
-              fontSize: '18px',
+              borderRadius: '10px',
+              fontSize: '16px',
               fontWeight: '700',
-              cursor: 'pointer',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.3s'
-            }} onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.25)'; }}
-              onMouseLeave={(e) => { e.target.style.background = 'rgba(255,255,255,0.15)'; }}>
-              Contact Sales
+              cursor: 'pointer'
+            }}>
+              Learn More
             </button>
           </div>
-          <p style={{ margin: '24px 0 0 0', fontSize: '14px', opacity: '0.8' }}>✓ Free forever for citizens ✓ No credit card required ✓ Cancel anytime</p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer style={{ background: '#0f172a', color: 'white', padding: '60px 24px 30px' }}>
+      <footer style={{ background: '#0f172a', color: 'white', padding: '48px 20px 24px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '40px', marginBottom: '60px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '32px', marginBottom: '48px' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Droplets style={{ color: 'white', width: '22px', height: '22px' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Droplets style={{ color: 'white', width: '20px', height: '20px' }} />
                 </div>
-                <span style={{ fontSize: '20px', fontWeight: '800' }}>MajiSmart Kenya</span>
+                <span style={{ fontSize: '18px', fontWeight: '800' }}>MajiSmart</span>
               </div>
-              <p style={{ margin: 0, fontSize: '15px', opacity: 0.8, lineHeight: '1.6' }}>Empowering communities with real-time water intelligence across Kenya.</p>
+              <p style={{ margin: 0, fontSize: '14px', opacity: 0.8, lineHeight: '1.6' }}>Empowering communities with real-time water intelligence.</p>
             </div>
             <div>
-              <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Product</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['Features', 'USSD Service', 'Pricing', 'API'].map((item) => (
-                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item}</a>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '700' }}>Product</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {['Features', 'USSD Service', 'Pricing'].map((item) => (
+                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '13px' }}>{item}</a>
                 ))}
               </div>
             </div>
             <div>
-              <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Company</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['About', 'Blog', 'Careers', 'Contact'].map((item) => (
-                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item}</a>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Legal</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['Privacy', 'Terms', 'Security'].map((item) => (
-                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item}</a>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '700' }}>Company</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {['About', 'Blog', 'Contact'].map((item) => (
+                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '13px' }}>{item}</a>
                 ))}
               </div>
             </div>
           </div>
-          <div style={{ paddingTop: '30px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-            <p style={{ margin: 0, fontSize: '14px', opacity: 0.7 }}>© 2024 MajiSmart Kenya. All rights reserved.</p>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              {['Twitter', 'Facebook', 'LinkedIn', 'Instagram'].map((social) => (
-                <a key={social} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{social}</a>
-              ))}
-            </div>
+          <div style={{ paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+            <p style={{ margin: 0, fontSize: '13px', opacity: 0.7 }}>© 2024 MajiSmart Kenya. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
       {/* CSS Animations */}
       <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-20px); }
@@ -746,13 +612,9 @@ export default function Home() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
-        @keyframes glow {
-          0%, 100% { filter: brightness(1); }
-          50% { filter: brightness(1.2); }
-        }
-        @keyframes bounce {
-          0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(-10px); }
+        @media (max-width: 768px) {
+          nav div div button { display: none; }
+          nav div button:last-child { display: block; }
         }
       `}</style>
     </div>
