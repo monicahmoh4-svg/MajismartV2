@@ -29,8 +29,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
           <RefreshCw className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600 font-medium">Loading dashboard...</p>
         </div>
@@ -40,12 +40,12 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center max-w-md">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '24px', textAlign: 'center', maxWidth: '400px' }}>
           <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Data</h3>
-          <p className="text-red-600 mb-4">{error}</p>
-          <button onClick={fetchStats} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#991b1b', marginBottom: '8px' }}>Error Loading Data</h3>
+          <p style={{ color: '#dc2626', marginBottom: '16px' }}>{error}</p>
+          <button onClick={fetchStats} style={{ padding: '8px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
             Retry
           </button>
         </div>
@@ -58,96 +58,140 @@ export default function Dashboard() {
       title: 'Total Water Nodes', 
       value: stats?.nodes?.total || 0, 
       icon: Droplets, 
-      color: 'blue',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      borderColor: 'border-blue-200',
-      trend: 'Active monitoring'
+      bg: '#eff6ff',
+      borderColor: '#bfdbfe',
+      iconColor: '#2563eb',
+      trend: 'Active monitoring',
+      indicator: '#3b82f6'
     },
     { 
       title: 'Active & Online', 
       value: stats?.nodes?.active || 0, 
       icon: Activity, 
-      color: 'emerald',
-      bgColor: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-      borderColor: 'border-emerald-200',
-      trend: 'Operating normally'
+      bg: '#d1fae5',
+      borderColor: '#a7f3d0',
+      iconColor: '#059669',
+      trend: 'Operating normally',
+      indicator: '#10b981'
     },
     { 
       title: 'Warnings / Maintenance', 
       value: stats?.nodes?.warning || 0, 
       icon: AlertTriangle, 
-      color: 'amber',
-      bgColor: 'bg-amber-50',
-      iconColor: 'text-amber-600',
-      borderColor: 'border-amber-200',
-      trend: 'Requires attention'
+      bg: '#fffbeb',
+      borderColor: '#fde68a',
+      iconColor: '#d97706',
+      trend: 'Requires attention',
+      indicator: '#f59e0b'
     },
     { 
       title: 'Offline Nodes', 
       value: stats?.nodes?.offline || 0, 
       icon: ServerOff, 
-      color: 'rose',
-      bgColor: 'bg-rose-50',
-      iconColor: 'text-rose-600',
-      borderColor: 'border-rose-200',
-      trend: 'Connection lost'
+      bg: '#fff1f2',
+      borderColor: '#fda4af',
+      iconColor: '#e11d48',
+      trend: 'Connection lost',
+      indicator: '#f43f5e'
     },
   ];
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-          <p className="text-gray-600 mt-1">
-            Welcome back, <span className="font-semibold text-blue-600">{user?.name || 'User'}</span>. 
-            Real-time status of Kenyan water networks.
-          </p>
-        </div>
-        <button 
-          onClick={fetchStats} 
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh Data
-        </button>
+    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>Dashboard Overview</h1>
+        <p style={{ color: '#4b5563' }}>
+          Welcome back, <span style={{ fontWeight: '600', color: '#2563eb' }}>{user?.name || 'User'}</span>. 
+          Real-time status of Kenyan water networks.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Grid */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: '24px',
+        marginBottom: '32px'
+      }}>
         {statsData.map((stat, index) => (
           <div 
             key={index}
-            className={`${stat.bgColor} border ${stat.borderColor} rounded-xl p-6 hover:shadow-lg transition-shadow`}
+            style={{
+              background: stat.bg,
+              border: `1px solid ${stat.borderColor}`,
+              borderRadius: '12px',
+              padding: '24px',
+              transition: 'box-shadow 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700 mb-2">{stat.title}</p>
-                <p className="text-4xl font-bold text-gray-900 mb-2">{stat.value}</p>
-                <div className="flex items-center gap-2">
-                  <span className={`inline-block w-2 h-2 rounded-full ${stat.color === 'emerald' ? 'bg-emerald-500' : stat.color === 'amber' ? 'bg-amber-500' : stat.color === 'rose' ? 'bg-rose-500' : 'bg-blue-500'}`}></span>
-                  <p className="text-xs text-gray-600">{stat.trend}</p>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>{stat.title}</p>
+                <p style={{ fontSize: '36px', fontWeight: '700', color: '#111827', marginBottom: '12px' }}>{stat.value}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ 
+                    display: 'inline-block', 
+                    width: '8px', 
+                    height: '8px', 
+                    borderRadius: '50%', 
+                    background: stat.indicator 
+                  }}></span>
+                  <p style={{ fontSize: '12px', color: '#4b5563' }}>{stat.trend}</p>
                 </div>
               </div>
-              <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                <stat.icon className={`h-8 w-8 ${stat.iconColor}`} />
+              <div style={{ 
+                background: stat.bg, 
+                padding: '12px', 
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <stat.icon className="h-8 w-8" style={{ color: stat.iconColor, width: '32px', height: '32px' }} />
               </div>
             </div>
           </div>
         ))}
       </div>
 
+      {/* Empty State */}
       {(!stats || stats.nodes.total === 0) && (
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-12 text-center">
-          <div className="bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-            <Droplets className="h-10 w-10 text-blue-600" />
+        <div style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdfa 100%)',
+          border: '1px solid #bfdbfe',
+          borderRadius: '12px',
+          padding: '48px',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            background: '#dbeafe',
+            borderRadius: '50%',
+            width: '80px',
+            height: '80px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px'
+          }}>
+            <Droplets className="h-10 w-10" style={{ color: '#2563eb', width: '40px', height: '40px' }} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Awaiting Real-Time Data</h3>
-          <p className="text-gray-600 max-w-md mx-auto mb-6">
+          <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>Awaiting Real-Time Data</h3>
+          <p style={{ color: '#4b5563', maxWidth: '480px', margin: '0 auto 24px', lineHeight: '1.6' }}>
             No water nodes registered yet. The dashboard will display real-time telemetry from Kenyan counties once nodes are added.
           </p>
-          <button className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
+          <button style={{
+            padding: '12px 24px',
+            background: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            fontSize: '15px'
+          }}>
             Add First Water Node
           </button>
         </div>
