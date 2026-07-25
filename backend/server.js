@@ -28,43 +28,56 @@ app.use(express.urlencoded({ extended: true }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'majismart_secret_key_2024';
 
-// 3. DATABASE INITIALIZATION & SEEDING
+// 3. DATABASE INITIALIZATION (NO FAKE SEEDING - READY FOR REAL DATA)
 const initDB = async () => {
   try {
     await pool.query(`
-      DROP TABLE IF EXISTS community_reports CASCADE;
-      DROP TABLE IF EXISTS maintenance CASCADE;
-      DROP TABLE IF EXISTS transactions CASCADE;
-      DROP TABLE IF EXISTS alerts CASCADE;
-      DROP TABLE IF EXISTS readings CASCADE;
-      DROP TABLE IF EXISTS water_nodes CASCADE;
-      DROP TABLE IF EXISTS users CASCADE;
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, 
+        password VARCHAR(255) NOT NULL, role VARCHAR(50) DEFAULT 'operator', county VARCHAR(100) DEFAULT '', 
+        phone VARCHAR(50) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS water_nodes (
+        id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, type VARCHAR(50) DEFAULT 'borehole', 
+        location VARCHAR(255) DEFAULT '', county VARCHAR(100) DEFAULT '', latitude DECIMAL(10,6) DEFAULT 0, 
+        longitude DECIMAL(10,6) DEFAULT 0, status VARCHAR(50) DEFAULT 'active', water_level INTEGER DEFAULT 50, 
+        flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, pressure DECIMAL(10,2) DEFAULT 0, 
+        last_reading TIMESTAMP DEFAULT CURRENT_TIMESTAMP, operator_id INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS readings (
+        id SERIAL PRIMARY KEY, node_id INTEGER, flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, 
+        pressure DECIMAL(10,2) DEFAULT 0, ph_level DECIMAL(5,2) DEFAULT 7.0, turbidity DECIMAL(10,2) DEFAULT 0, 
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS alerts (
+        id SERIAL PRIMARY KEY, node_id INTEGER, type VARCHAR(100) DEFAULT 'warning', message TEXT DEFAULT '', 
+        severity VARCHAR(50) DEFAULT 'medium', resolved BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY, user_id INTEGER, node_id INTEGER, amount DECIMAL(12,2) DEFAULT 0, 
+        type VARCHAR(50) DEFAULT 'payment', description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'completed', 
+        reference VARCHAR(255) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS maintenance (
+        id SERIAL PRIMARY KEY, node_id INTEGER, description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'pending', 
+        priority VARCHAR(50) DEFAULT 'medium', assigned_to INTEGER, scheduled_date TIMESTAMP, 
+        completed_date TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS community_reports (
+        id SERIAL PRIMARY KEY, user_id INTEGER, title VARCHAR(255) DEFAULT '', description TEXT DEFAULT '', 
+        category VARCHAR(100) DEFAULT 'general', type VARCHAR(100) DEFAULT 'other', county VARCHAR(100) DEFAULT '', 
+        location VARCHAR(255) DEFAULT '', latitude DECIMAL(10,6), longitude DECIMAL(10,6), status VARCHAR(50) DEFAULT 'open', 
+        upvotes INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
-
-    await pool.query(`
-      CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, role VARCHAR(50) DEFAULT 'operator', county VARCHAR(100) DEFAULT '', phone VARCHAR(50) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE water_nodes (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, type VARCHAR(50) DEFAULT 'borehole', location VARCHAR(255) DEFAULT '', county VARCHAR(100) DEFAULT '', latitude DECIMAL(10,6) DEFAULT 0, longitude DECIMAL(10,6) DEFAULT 0, status VARCHAR(50) DEFAULT 'active', water_level INTEGER DEFAULT 50, flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, pressure DECIMAL(10,2) DEFAULT 0, last_reading TIMESTAMP DEFAULT CURRENT_TIMESTAMP, operator_id INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE readings (id SERIAL PRIMARY KEY, node_id INTEGER, flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, pressure DECIMAL(10,2) DEFAULT 0, ph_level DECIMAL(5,2) DEFAULT 7.0, turbidity DECIMAL(10,2) DEFAULT 0, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE alerts (id SERIAL PRIMARY KEY, node_id INTEGER, type VARCHAR(100) DEFAULT 'warning', message TEXT DEFAULT '', severity VARCHAR(50) DEFAULT 'medium', resolved BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE transactions (id SERIAL PRIMARY KEY, user_id INTEGER, node_id INTEGER, amount DECIMAL(12,2) DEFAULT 0, type VARCHAR(50) DEFAULT 'payment', description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'completed', reference VARCHAR(255) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE maintenance (id SERIAL PRIMARY KEY, node_id INTEGER, description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'pending', priority VARCHAR(50) DEFAULT 'medium', assigned_to INTEGER, scheduled_date TIMESTAMP, completed_date TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE community_reports (id SERIAL PRIMARY KEY, user_id INTEGER, title VARCHAR(255) DEFAULT '', description TEXT DEFAULT '', category VARCHAR(100) DEFAULT 'general', type VARCHAR(100) DEFAULT 'other', county VARCHAR(100) DEFAULT '', location VARCHAR(255) DEFAULT '', latitude DECIMAL(10,6), longitude DECIMAL(10,6), status VARCHAR(50) DEFAULT 'open', upvotes INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-    `);
-    console.log('✅ Database tables created successfully.');
-
-    // Seed Data
-    const adminPwd = await bcrypt.hash('admin123', 10);
-    await pool.query(`INSERT INTO users (name, email, password, role, county, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING`, ['System Admin', 'admin@majismart.co.ke', adminPwd, 'admin', 'Nairobi', '+254700000000']);
-
-    const counties = [{name:'Nairobi', lat:-1.2921, lng:36.8219}, {name:'Mombasa', lat:-4.0435, lng:39.6682}, {name:'Kisumu', lat:-0.0917, lng:34.7680}, {name:'Nakuru', lat:-0.3031, lng:36.0800}, {name:'Kiambu', lat:-1.1714, lng:36.8356}, {name:'Machakos', lat:-1.5177, lng:37.2634}, {name:'Kakamega', lat:0.2827, lng:34.7519}, {name:'Meru', lat:0.0469, lng:37.6556}, {name:'Kilifi', lat:-3.6305, lng:39.8499}, {name:'Uasin Gishu', lat:0.5143, lng:35.2698}];
+    console.log('✅ Database schema verified/created successfully. Ready for real data.');
     
-    for (const c of counties) {
-      for (let i = 1; i <= 3; i++) {
-        await pool.query(`INSERT INTO water_nodes (name, type, location, county, latitude, longitude, status, water_level, quality_index, flow_rate, pressure) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`, 
-          [`${c.name} Water Point ${i}`, i%2===0?'borehole':'kiosk', `${c.name} Central`, c.name, c.lat+(Math.random()-0.5)*0.1, c.lng+(Math.random()-0.5)*0.1, 'active', Math.floor(Math.random()*60)+30, Math.floor(Math.random()*30)+70, Math.random()*100, Math.random()*50+20]);
-      }
-    }
-    console.log('✅ Real Kenyan data seeded successfully.');
+    // Create default admin if not exists
+    const adminPwd = await bcrypt.hash('admin123', 10);
+    await pool.query(
+      `INSERT INTO users (name, email, password, role, county, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING`,
+      ['System Admin', 'admin@majismart.co.ke', adminPwd, 'admin', 'Nairobi', '+254700000000']
+    );
   } catch (err) {
     console.error('❌ DB Init Error:', err.message);
   }
@@ -210,89 +223,4 @@ app.get('/api/nodes', authenticate, async (req, res) => {
 app.post('/api/nodes', authenticate, authorize('admin', 'county_officer'), async (req, res) => {
   try {
     const { name, type, location, county, latitude, longitude, operator_id } = req.body;
-    const result = await pool.query(`INSERT INTO water_nodes (name, type, location, county, latitude, longitude, operator_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`, [name, type || 'borehole', location || '', county || '', latitude || 0, longitude || 0, operator_id || null]);
-    res.status(201).json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: 'Failed to create node.' }); }
-});
-
-app.get('/api/alerts', authenticate, async (req, res) => {
-  try {
-    const { resolved, limit, county } = req.query;
-    let query = 'SELECT a.*, w.name as node_name, w.county FROM alerts a LEFT JOIN water_nodes w ON a.node_id = w.id';
-    const params = [], conditions = [];
-    if (resolved === 'false') conditions.push('a.resolved = FALSE');
-    if (county) { conditions.push(`w.county = $${params.length + 1}`); params.push(county); }
-    if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
-    query += ' ORDER BY a.created_at DESC';
-    if (limit) { query += ` LIMIT $${params.length + 1}`; params.push(parseInt(limit)); }
-    res.json((await pool.query(query, params)).rows);
-  } catch (err) { res.status(500).json({ error: 'Failed to fetch alerts.' }); }
-});
-
-app.post('/api/alerts', authenticate, async (req, res) => {
-  try {
-    const { node_id, type, message, severity } = req.body;
-    const result = await pool.query('INSERT INTO alerts (node_id, type, message, severity) VALUES ($1, $2, $3, $4) RETURNING *', [node_id, type || 'warning', message || '', severity || 'medium']);
-    res.status(201).json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: 'Failed to create alert.' }); }
-});
-
-app.put('/api/alerts/:id/resolve', authenticate, async (req, res) => {
-  try {
-    const result = await pool.query('UPDATE alerts SET resolved = TRUE WHERE id = $1 RETURNING *', [req.params.id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Alert not found.' });
-    res.json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: 'Failed to resolve alert.' }); }
-});
-
-app.get('/api/reports', authenticate, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT r.*, u.name as reporter_name FROM community_reports r LEFT JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC');
-    res.json(result.rows);
-  } catch (err) { res.status(500).json({ error: 'Failed to fetch reports.' }); }
-});
-
-app.get('/api/reports/stats/summary', authenticate, async (req, res) => {
-  try {
-    const total = await pool.query('SELECT COUNT(*) FROM community_reports');
-    const open = await pool.query("SELECT COUNT(*) FROM community_reports WHERE status = 'open'");
-    const in_progress = await pool.query("SELECT COUNT(*) FROM community_reports WHERE status = 'in_progress'");
-    const resolved = await pool.query("SELECT COUNT(*) FROM community_reports WHERE status = 'resolved'");
-    res.json({ total: parseInt(total.rows[0].count), open: parseInt(open.rows[0].count), in_progress: parseInt(in_progress.rows[0].count), resolved: parseInt(resolved.rows[0].count) });
-  } catch (err) { res.status(500).json({ error: 'Failed to fetch report stats.' }); }
-});
-
-app.post('/api/reports', authenticate, async (req, res) => {
-  try {
-    const { title, description, category, type, county, location, latitude, longitude } = req.body;
-    const result = await pool.query(`INSERT INTO community_reports (user_id, title, description, category, type, county, location, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`, [req.user.id, title || '', description || '', category || 'general', type || 'other', county || '', location || '', latitude || null, longitude || null]);
-    res.status(201).json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: 'Failed to create report.' }); }
-});
-
-app.patch('/api/reports/:id/status', authenticate, async (req, res) => {
-  try {
-    const { status } = req.body;
-    const result = await pool.query('UPDATE community_reports SET status = $1 WHERE id = $2 RETURNING *', [status, req.params.id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Report not found.' });
-    res.json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: 'Failed to update report status.' }); }
-});
-
-app.get('/api/users', authenticate, authorize('admin', 'county_officer'), async (req, res) => {
-  try {
-    const result = await pool.query('SELECT id, name, email, role, county, phone, created_at FROM users ORDER BY created_at DESC');
-    res.json(result.rows);
-  } catch (err) { res.status(500).json({ error: 'Failed to fetch users.' }); }
-});
-
-// ERROR HANDLERS & START
-app.use((err, req, res, next) => { console.error('Unhandled error:', err); res.status(500).json({ error: 'Internal server error.' }); });
-app.use('*', (req, res) => res.status(404).json({ error: `Route ${req.originalUrl} not found.` }));
-
-const PORT = process.env.PORT || 5000;
-const startServer = async () => {
-  await initDB();
-  app.listen(PORT, () => console.log(`✅ MajiSmart API running on port ${PORT}`));
-};
-startServer();
+    const result
