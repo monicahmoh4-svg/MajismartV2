@@ -7,11 +7,16 @@ const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { KENYA_WATER_DATA, ML_FEATURES } = require('./data/kenya_water_data');
 
 const app = express();
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 pool.on('error', (err) => console.error('Database error:', err));
 
+// 1. DATABASE CONNECTION
 app.use(cors({ origin: (origin, callback) => callback(null, true), credentials: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], allowedHeaders: ['Content-Type', 'Authorization'] }));
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(compression());
@@ -21,34 +26,152 @@ app.use(express.urlencoded({ extended: true }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'majismart_secret_key_2024';
 
+// 2. DATABASE INITIALIZATION
 const initDB = async () => {
   try {
+    // Create tables
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, role VARCHAR(50) DEFAULT 'operator', county VARCHAR(100) DEFAULT '', phone VARCHAR(50) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE IF NOT EXISTS water_nodes (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, type VARCHAR(50) DEFAULT 'borehole', location VARCHAR(255) DEFAULT '', county VARCHAR(100) DEFAULT '', latitude DECIMAL(10,6) DEFAULT 0, longitude DECIMAL(10,6) DEFAULT 0, status VARCHAR(50) DEFAULT 'active', water_level INTEGER DEFAULT 50, flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, pressure DECIMAL(10,2) DEFAULT 0, last_reading TIMESTAMP DEFAULT CURRENT_TIMESTAMP, operator_id INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE IF NOT EXISTS readings (id SERIAL PRIMARY KEY, node_id INTEGER, flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, pressure DECIMAL(10,2) DEFAULT 0, ph_level DECIMAL(5,2) DEFAULT 7.0, turbidity DECIMAL(10,2) DEFAULT 0, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE IF NOT EXISTS alerts (id SERIAL PRIMARY KEY, node_id INTEGER, type VARCHAR(100) DEFAULT 'warning', message TEXT DEFAULT '', severity VARCHAR(50) DEFAULT 'medium', resolved BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE IF NOT EXISTS transactions (id SERIAL PRIMARY KEY, user_id INTEGER, node_id INTEGER, amount DECIMAL(12,2) DEFAULT 0, type VARCHAR(50) DEFAULT 'payment', description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'completed', reference VARCHAR(255) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE IF NOT EXISTS maintenance (id SERIAL PRIMARY KEY, node_id INTEGER, description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'pending', priority VARCHAR(50) DEFAULT 'medium', assigned_to INTEGER, scheduled_date TIMESTAMP, completed_date TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE IF NOT EXISTS community_reports (id SERIAL PRIMARY KEY, user_id INTEGER, title VARCHAR(255) DEFAULT '', description TEXT DEFAULT '', category VARCHAR(100) DEFAULT 'general', type VARCHAR(100) DEFAULT 'other', county VARCHAR(100) DEFAULT '', location VARCHAR(255) DEFAULT '', latitude DECIMAL(10,6), longitude DECIMAL(10,6), status VARCHAR(50) DEFAULT 'open', upvotes INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, 
+        password VARCHAR(255) NOT NULL, role VARCHAR(50) DEFAULT 'operator', county VARCHAR(100) DEFAULT '', 
+        phone VARCHAR(50) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS water_nodes (
+        id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, type VARCHAR(50) DEFAULT 'borehole', 
+        location VARCHAR(255) DEFAULT '', county VARCHAR(100) DEFAULT '', latitude DECIMAL(10,6) DEFAULT 0, 
+        longitude DECIMAL(10,6) DEFAULT 0, status VARCHAR(50) DEFAULT 'active', water_level INTEGER DEFAULT 50, 
+        flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, pressure DECIMAL(10,2) DEFAULT 0, 
+        last_reading TIMESTAMP DEFAULT CURRENT_TIMESTAMP, operator_id INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS readings (
+        id SERIAL PRIMARY KEY, node_id INTEGER, flow_rate DECIMAL(10,2) DEFAULT 0, quality_index DECIMAL(5,2) DEFAULT 0, 
+        pressure DECIMAL(10,2) DEFAULT 0, ph_level DECIMAL(5,2) DEFAULT 7.0, turbidity DECIMAL(10,2) DEFAULT 0, 
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS alerts (
+        id SERIAL PRIMARY KEY, node_id INTEGER, type VARCHAR(100) DEFAULT 'warning', message TEXT DEFAULT '', 
+        severity VARCHAR(50) DEFAULT 'medium', resolved BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY, user_id INTEGER, node_id INTEGER, amount DECIMAL(12,2) DEFAULT 0, 
+        type VARCHAR(50) DEFAULT 'payment', description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'completed', 
+        reference VARCHAR(255) DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS maintenance (
+        id SERIAL PRIMARY KEY, node_id INTEGER, description TEXT DEFAULT '', status VARCHAR(50) DEFAULT 'pending', 
+        priority VARCHAR(50) DEFAULT 'medium', assigned_to INTEGER, scheduled_date TIMESTAMP, 
+        completed_date TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS community_reports (
+        id SERIAL PRIMARY KEY, user_id INTEGER, title VARCHAR(255) DEFAULT '', description TEXT DEFAULT '', 
+        category VARCHAR(100) DEFAULT 'general', type VARCHAR(100) DEFAULT 'other', county VARCHAR(100) DEFAULT '', 
+        location VARCHAR(255) DEFAULT '', latitude DECIMAL(10,6), longitude DECIMAL(10,6), status VARCHAR(50) DEFAULT 'open', 
+        upvotes INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
-    console.log('✅ Database schema verified/created successfully.');
+    console.log('✅ Database schema verified/created successfully');
+
+    // Check if we need to seed data
+    const waterNodesCount = (await pool.query('SELECT COUNT(*) FROM water_nodes')).rows[0].count;
+    if (waterNodesCount === 0) {
+      console.log('🔄 Seeding real Kenyan water data...');
+      await seedRealData();
+      console.log('✅ Real water data successfully seeded');
+    }
+
+    // Create default admin if not exists
     const adminPwd = await bcrypt.hash('admin123', 10);
-    await pool.query(`INSERT INTO users (name, email, password, role, county, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING`, ['System Admin', 'admin@majismart.co.ke', adminPwd, 'admin', 'Nairobi', '+254700000000']);
-  } catch (err) { console.error('❌ DB Init Error:', err.message); }
+    await pool.query(
+      `INSERT INTO users (name, email, password, role, county, phone) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING`,
+      ['System Admin', 'admin@majismart.co.ke', adminPwd, 'admin', 'Nairobi', '+254700000000']
+    );
+  } catch (err) {
+    console.error('❌ DB Init Error:', err.message);
+  }
 };
 
+// 3. REAL DATA SEEDING
+const seedRealData = async () => {
+  // Water Nodes
+  for (const node of KENYA_WATER_DATA.waterPoints) {
+    await pool.query(`
+      INSERT INTO water_nodes (
+        name, type, location, county, latitude, longitude, status, 
+        water_level, flow_rate, quality_index, pressure
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ON CONFLICT (id) DO UPDATE SET
+        status = EXCLUDED.status,
+        water_level = EXCLUDED.water_level,
+        flow_rate = EXCLUDED.flow_rate,
+        quality_index = EXCLUDED.quality_index,
+        pressure = EXCLUDED.pressure
+    `, [
+      node.name,
+      node.type,
+      node.location,
+      node.county,
+      node.latitude,
+      node.longitude,
+      node.status,
+      node.water_level,
+      node.flow_rate,
+      node.quality_index,
+      node.pressure
+    ]);
+  }
+
+  // Community Reports
+  for (const report of KENYA_WATER_DATA.communityReports) {
+    await pool.query(`
+      INSERT INTO community_reports (
+        user_id, title, description, county, status, created_at
+      ) VALUES (1, $1, $2, $3, $4, $5)
+      ON CONFLICT (id) DO UPDATE SET
+        status = EXCLUDED.status
+    `, [
+      report.title,
+      report.description,
+      report.county,
+      report.status,
+      report.created_at
+    ]);
+  }
+
+  // Alerts
+  for (const alert of KENYA_WATER_DATA.alerts) {
+    await pool.query(`
+      INSERT INTO alerts (
+        node_id, type, message, severity, created_at
+      ) VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (id) DO UPDATE SET
+        message = EXCLUDED.message,
+        severity = EXCLUDED.severity
+    `, [
+      alert.node_id,
+      alert.type,
+      alert.message,
+      alert.severity,
+      alert.created_at
+    ]);
+  }
+};
+
+// 4. MIDDLEWARE
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Access denied.' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Access denied. No token provided.' });
   try { req.user = jwt.verify(authHeader.split(' ')[1], JWT_SECRET); next(); } 
-  catch (err) { return res.status(401).json({ error: 'Invalid token.' }); }
+  catch (err) { return res.status(401).json({ error: 'Invalid or expired token.' }); }
 };
 const authorize = (...roles) => (req, res, next) => roles.includes(req.user.role) ? next() : res.status(403).json({ error: 'Insufficient permissions.' });
 
+// 5. ROUTES
 app.get('/', (req, res) => res.json({ message: 'MajiSmart API is running', version: '2.0.0' }));
 app.get('/api/health', async (req, res) => {
-  try { const r = await pool.query('SELECT NOW()'); res.json({ status: 'healthy', database: 'connected', time: r.rows[0].now }); }
+  try { 
+    const r = await pool.query('SELECT NOW()'); 
+    res.json({ status: 'healthy', database: 'connected', time: r.rows[0].now }); 
+  }
   catch (err) { res.status(500).json({ status: 'unhealthy', error: err.message }); }
 });
 
@@ -85,6 +208,7 @@ app.get('/api/auth/me', authenticate, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed to fetch profile.' }); }
 });
 
+// CASHBOARD ROUTES
 app.get('/api/citizen/area-status', async (req, res) => {
   try {
     const { county } = req.query;
@@ -95,7 +219,20 @@ app.get('/api/citizen/area-status', async (req, res) => {
     const alerts = await pool.query(`SELECT COUNT(*) FROM alerts WHERE resolved = FALSE`);
     const quality = await pool.query(`SELECT AVG(quality_index) as avg FROM water_nodes${where}`, params);
     const avgQ = parseFloat(quality.rows[0].avg) || 85;
-    res.json({ county: county || 'National', status: parseInt(alerts.rows[0].count) > 0 ? 'alert' : 'normal', active_nodes: parseInt(active.rows[0].count), total_nodes: parseInt(total.rows[0].count), recent_alerts: parseInt(alerts.rows[0].count), safety: { label: avgQ >= 80 ? 'Safe' : 'Caution', advice: avgQ >= 80 ? 'Water quality is within safe limits.' : 'Consider boiling water before consumption.' } });
+    
+    res.json({
+      county: county || 'National',
+      status: parseInt(alerts.rows[0].count) > 0 ? 'alert' : 'normal',
+      active_nodes: parseInt(active.rows[0].count),
+      total_nodes: parseInt(total.rows[0].count),
+      recent_alerts: parseInt(alerts.rows[0].count),
+      safety: { 
+        label: avgQ >= 80 ? 'Safe' : 'Caution', 
+        advice: avgQ >= 80 ? 'Water quality is within safe limits.' : 'Consider boiling water before consumption.' 
+      },
+      // Add real data for ML
+      ml_features: ML_FEATURES
+    });
   } catch (err) { res.status(500).json({ error: 'Failed to fetch area status.' }); }
 });
 
@@ -105,24 +242,53 @@ app.get('/api/citizen/water-points', async (req, res) => {
     const where = county ? ' WHERE county = $1' : '';
     const params = county ? [county] : [];
     const result = await pool.query(`SELECT id, name, type, status, county, location, latitude, longitude, water_level, quality_index FROM water_nodes${where} ORDER BY name ASC`, params);
-    res.json(result.rows.map(p => ({ ...p, type: p.type || 'borehole', water_level: p.water_level !== null ? parseInt(p.water_level) : 50, level_label: (p.water_level !== null ? p.water_level : 50) > 50 ? 'Good' : 'Low', distance_km: lat && lng && p.latitude && p.longitude ? parseFloat(Math.sqrt(Math.pow(p.latitude - lat, 2) + Math.pow(p.longitude - lng, 2)) * 111).toFixed(1) : null })));
+    
+    res.json(result.rows.map(p => ({
+      ...p, 
+      type: p.type || 'borehole', 
+      water_level: p.water_level !== null ? parseInt(p.water_level) : 50,
+      level_label: (p.water_level !== null ? p.water_level : 50) > 50 ? 'Good' : 'Low',
+      distance_km: lat && lng && p.latitude && p.longitude ? parseFloat(Math.sqrt(Math.pow(p.latitude - lat, 2) + Math.pow(p.longitude - lng, 2)) * 111).toFixed(1) : null
+    })));
   } catch (err) { res.status(500).json({ error: 'Failed to fetch water points.' }); }
 });
 
 app.get('/api/citizen/my-spending', authenticate, async (req, res) => {
   try {
     const result = await pool.query('SELECT SUM(amount) as total_ksh, COUNT(*) as transactions FROM transactions WHERE user_id = $1 AND created_at >= DATE_TRUNC(\'month\', CURRENT_DATE)', [req.user.id]);
-    res.json({ has_data: true, this_month: { total_ksh: parseFloat(result.rows[0].total_ksh) || 0, total_litres: 0, cost_per_litre: 0.50, transactions: parseInt(result.rows[0].transactions) || 0 }, last_month: { total_ksh: 0, total_litres: 0 }, history: [] });
+    res.json({ 
+      has_data: true, 
+      this_month: { 
+        total_ksh: parseFloat(result.rows[0].total_ksh) || 0, 
+        total_litres: 0, 
+        cost_per_litre: 0.50, 
+        transactions: parseInt(result.rows[0].transactions) || 0 
+      }, 
+      last_month: { total_ksh: 0, total_litres: 0 }, 
+      history: [] 
+    });
   } catch (err) { res.status(500).json({ error: 'Failed to fetch spending data.' }); }
 });
 
+// DASHBOARD ROUTES
 app.get('/api/dashboard/summary', authenticate, async (req, res) => {
   try {
     const total = await pool.query('SELECT COUNT(*) FROM water_nodes');
     const active = await pool.query("SELECT COUNT(*) FROM water_nodes WHERE status = 'active'");
     const warning = await pool.query("SELECT COUNT(*) FROM water_nodes WHERE status IN ('warning', 'maintenance')");
     const offline = await pool.query("SELECT COUNT(*) FROM water_nodes WHERE status = 'offline'");
-    res.json({ nodes: { total: parseInt(total.rows[0].count), active: parseInt(active.rows[0].count), warning: parseInt(warning.rows[0].count), offline: parseInt(offline.rows[0].count) } });
+    res.json({ 
+      nodes: { 
+        total: parseInt(total.rows[0].count), 
+        active: parseInt(active.rows[0].count), 
+        warning: parseInt(warning.rows[0].count), 
+        offline: parseInt(offline.rows[0].count) 
+      },
+      // Add real statistics
+      stats: KENYA_WATER_DATA.waterQuality,
+      infrastructure: KENYA_WATER_DATA.infrastructure,
+      ml_features: ML_FEATURES
+    });
   } catch (err) { res.status(500).json({ error: 'Failed to fetch summary.' }); }
 });
 
@@ -147,6 +313,7 @@ app.get('/api/dashboard/county-stats', authenticate, async (req, res) => {
   } catch (err) { res.json([]); }
 });
 
+// CORE RESOURCES
 app.get('/api/nodes', authenticate, async (req, res) => {
   try {
     let query = 'SELECT * FROM water_nodes';
@@ -154,8 +321,7 @@ app.get('/api/nodes', authenticate, async (req, res) => {
     if (req.query.county) { query += ' WHERE county = $1'; params.push(req.query.county); }
     else if (req.user.role !== 'admin' && req.user.county) { query += ' WHERE county = $1'; params.push(req.user.county); }
     query += ' ORDER BY created_at DESC';
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json((await pool.query(query, params)).rows);
   } catch (err) { res.status(500).json({ error: 'Failed to fetch nodes.' }); }
 });
 
@@ -177,8 +343,7 @@ app.get('/api/alerts', authenticate, async (req, res) => {
     if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY a.created_at DESC';
     if (limit) { query += ` LIMIT $${params.length + 1}`; params.push(parseInt(limit)); }
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json((await pool.query(query, params)).rows);
   } catch (err) { res.status(500).json({ error: 'Failed to fetch alerts.' }); }
 });
 
@@ -211,7 +376,12 @@ app.get('/api/reports/stats/summary', authenticate, async (req, res) => {
     const open = await pool.query("SELECT COUNT(*) FROM community_reports WHERE status = 'open'");
     const in_progress = await pool.query("SELECT COUNT(*) FROM community_reports WHERE status = 'in_progress'");
     const resolved = await pool.query("SELECT COUNT(*) FROM community_reports WHERE status = 'resolved'");
-    res.json({ total: parseInt(total.rows[0].count), open: parseInt(open.rows[0].count), in_progress: parseInt(in_progress.rows[0].count), resolved: parseInt(resolved.rows[0].count) });
+    res.json({ 
+      total: parseInt(total.rows[0].count), 
+      open: parseInt(open.rows[0].count), 
+      in_progress: parseInt(in_progress.rows[0].count), 
+      resolved: parseInt(resolved.rows[0].count) 
+    });
   } catch (err) { res.status(500).json({ error: 'Failed to fetch report stats.' }); }
 });
 
@@ -239,7 +409,11 @@ app.get('/api/users', authenticate, authorize('admin', 'county_officer'), async 
   } catch (err) { res.status(500).json({ error: 'Failed to fetch users.' }); }
 });
 
-app.use((err, req, res, next) => { console.error('Unhandled error:', err); res.status(500).json({ error: 'Internal server error.' }); });
+// ERROR HANDLERS & START
+app.use((err, req, res, next) => { 
+  console.error('Unhandled error:', err); 
+  res.status(500).json({ error: 'Internal server error.' }); 
+});
 app.use('*', (req, res) => res.status(404).json({ error: `Route ${req.originalUrl} not found.` }));
 
 const PORT = process.env.PORT || 5000;
