@@ -24,7 +24,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section style={{ background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)', padding: '100px 24px', color: 'white', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', opacity: '0.1', backgroundImage: 'radial-gradient(circle at 20% 50%, white 0%, transparent 50%), radial-gradient(circle at 80% 80%, white 0%, transparent 50%)' }}></div>
+        <div style={{ position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', opacity: '0.1', backgroundImage: 'radial-gradient(circle at 20% 50%, 'white' 0%, 'transparent' 50%), radial-gradient(circle at 80% 80%, 'white' 0%, 'transparent' 50%)' }}></div>
         <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ maxWidth: '800px' }}>
             <h1 style={{ margin: '0 0 24px 0', fontSize: '56px', fontWeight: '800', lineHeight: '1.1' }}>
@@ -87,7 +87,7 @@ export default function Home() {
                     { step: '3', text: 'Get instant information or submit your report' }
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                      <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', flexShrink: 0' }}>{item.step}</div>
+                      <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', flexShrink: '0' }}>{item.step}</div>
                       <p style={{ margin: 0, fontSize: '15px', color: '#475569', paddingTop: '6px' }}>{item.text}</p>
                     </div>
                   ))}
