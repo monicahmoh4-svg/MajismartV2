@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Safely construct the base URL, ensuring no double slashes
 const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const baseURL = rawUrl.replace(/\/+$/, '') + '/api';
 
@@ -22,7 +21,6 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res.data, 
   err => {
-    // LOG THE EXACT ERROR TO CONSOLE FOR DEBUGGING
     console.error('❌ API REQUEST FAILED:', {
       url: err.config?.url,
       method: err.config?.method,
