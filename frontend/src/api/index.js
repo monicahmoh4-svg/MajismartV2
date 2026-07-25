@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Fallback to the actual Render URL if VITE_API_URL is not set in Vercel
+const rawUrl = import.meta.env.VITE_API_URL || 'https://majismartv2.onrender.com';
 const baseURL = rawUrl.replace(/\/+$/, '') + '/api';
 
 console.log('🚀 MajiSmart API configured for:', baseURL);
