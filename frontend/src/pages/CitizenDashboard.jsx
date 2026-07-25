@@ -3,12 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import {
   Droplets, MapPin, Wallet, Bell, FileText, User, Home,
-  TrendingUp, AlertTriangle, CheckCircle, Clock, Search,
-  Navigation, Phone, Star, Filter, Download, Plus, Eye,
-  Heart, MessageSquare, Settings, LogOut, Menu, X,
-  Thermometer, Zap, Activity, Calendar, CreditCard,
-  ArrowUpRight, ArrowDownRight, EyeOff, Share2, Bookmark,
-  Cloud, Sun, CloudRain, Wind, Droplet, AlertCircle, BarChart3
+  AlertTriangle, CheckCircle, Clock, Search, Navigation,
+  MessageSquare, LogOut, Menu, X, Droplet, BarChart3, Plus
 } from 'lucide-react';
 
 export default function CitizenDashboard() {
@@ -24,7 +20,11 @@ export default function CitizenDashboard() {
   const [myReports, setMyReports] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [communityReports, setCommunityReports] = useState([]);
-  const [userLocation, setUserLocation] = useState({ lat: null, lng: null });
+  
+  // NEW: Dataset States
+  const [waterQualityData, setWaterQualityData] = useState([]);
+  const [infrastructureData, setInfrastructureData] = useState([]);
+  const [countyStats, setCountyStats] = useState([]);
   
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportForm, setReportForm] = useState({ title: '', description: '', category: 'leak', location: '' });
@@ -33,43 +33,30 @@ export default function CitizenDashboard() {
   useEffect(() => {
     fetchAllData();
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    getUserLocation();
     return () => clearInterval(timer);
   }, []);
 
-  // Responsive sidebar handling
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
+    const handleResize = () => setSidebarOpen(window.innerWidth > 768);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const getUserLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        (error) => console.log('Location access denied')
-      );
-    }
-  };
-
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [areaData, pointsData, spendingData, reportsData, alertsData, communityData] = await Promise.all([
+      const [areaData, pointsData, spendingData, reportsData, alertsData, communityData, qualityData, infraData, countyData] = await Promise.all([
         api.get(`/citizen/area-status?county=${user?.county || ''}`),
         api.get(`/citizen/water-points?county=${user?.county || ''}`),
         api.get('/citizen/my-spending'),
         api.get('/reports'),
         api.get('/alerts?resolved=false&limit=5'),
-        api.get('/reports')
+        api.get('/reports'),
+        // NEW: Fetch Datasets
+        api.get('/datasets/water-quality'),
+        api.get('/datasets/infrastructure'),
+        api.get('/datasets/county-stats')
       ]);
       
       setAreaStatus(areaData);
@@ -78,18 +65,20 @@ export default function CitizenDashboard() {
       setMyReports(Array.isArray(reportsData) ? reportsData.filter(r => r.user_id === user?.id) : []);
       setAlerts(Array.isArray(alertsData) ? alertsData : []);
       setCommunityReports(Array.isArray(communityData) ? communityData : []);
-    } catch (err) {
-      console.error('Fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
+      
+      // NEW: Set Datasets
+      setWaterQualityData(qualityData?.data || []);
+      setInfrastructureData(infraData?.data || []);
+      setCountyStats(countyData?.data || []);
+    } catch (err) { console.error('Fetch error:', err); } 
+    finally { setLoading(false); }
   };
 
   const submitReport = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await api.post('/reports', { ...reportForm, county: user?.county, latitude: userLocation.lat, longitude: userLocation.lng });
+      await api.post('/reports', { ...reportForm, county: user?.county });
       setShowReportModal(false);
       setReportForm({ title: '', description: '', category: 'leak', location: '' });
       fetchAllData();
@@ -107,6 +96,7 @@ export default function CitizenDashboard() {
   const navItems = [
     { id: 'overview', label: 'Overview', icon: Home },
     { id: 'water-points', label: 'Water Points', icon: MapPin },
+    { id: 'datasets', label: 'Water Data', icon: BarChart3 }, // NEW TAB
     { id: 'spending', label: 'My Spending', icon: Wallet },
     { id: 'reports', label: 'My Reports', icon: FileText },
     { id: 'alerts', label: 'Alerts', icon: Bell },
@@ -128,20 +118,10 @@ export default function CitizenDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', display: 'flex' }}>
       {/* Sidebar */}
-      <aside className="dashboard-sidebar" style={{
-        width: sidebarOpen ? '260px' : '0px',
-        background: 'white',
-        borderRight: '1px solid #e2e8f0',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        height: '100vh',
-        zIndex: 1000,
-        transition: 'width 0.3s ease',
-        overflow: 'hidden',
-        boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.05)' : 'none',
-        display: 'flex',
-        flexDirection: 'column'
+      <aside style={{
+        width: sidebarOpen ? '260px' : '0px', background: 'white', borderRight: '1px solid #e2e8f0',
+        position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 1000, transition: 'width 0.3s ease',
+        overflow: 'hidden', boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.05)' : 'none', display: 'flex', flexDirection: 'column'
       }}>
         <div style={{ padding: '20px', borderBottom: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -162,29 +142,11 @@ export default function CitizenDashboard() {
 
         <nav style={{ padding: '12px', flex: 1, overflowY: 'auto' }}>
           {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => { setActiveSection(item.id); if (window.innerWidth <= 768) setSidebarOpen(false); }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px',
-                marginBottom: '4px',
-                border: 'none',
-                background: activeSection === item.id ? '#eff6ff' : 'transparent',
-                color: activeSection === item.id ? '#0891b2' : '#475569',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: activeSection === item.id ? '600' : '500',
-                transition: 'all 0.2s',
-                textAlign: 'left'
-              }}
-            >
-              <item.icon style={{ width: '18px', height: '18px' }} />
-              {item.label}
+            <button key={item.id} onClick={() => { setActiveSection(item.id); if (window.innerWidth <= 768) setSidebarOpen(false); }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', marginBottom: '4px', border: 'none',
+                background: activeSection === item.id ? '#eff6ff' : 'transparent', color: activeSection === item.id ? '#0891b2' : '#475569',
+                borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: activeSection === item.id ? '600' : '500', transition: 'all 0.2s', textAlign: 'left' }}>
+              <item.icon style={{ width: '18px', height: '18px' }} /> {item.label}
             </button>
           ))}
         </nav>
@@ -200,15 +162,13 @@ export default function CitizenDashboard() {
             </div>
           </div>
           <button onClick={logout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', border: 'none', background: '#fee2e2', color: '#dc2626', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
-            <LogOut style={{ width: '16px', height: '16px' }} />
-            Sign Out
+            <LogOut style={{ width: '16px', height: '16px' }} /> Sign Out
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <div style={{ flex: 1, marginLeft: sidebarOpen ? '260px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh', width: '100%' }}>
-        {/* Top Bar */}
         <header style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button onClick={() => setSidebarOpen(true)} className="mobile-menu-btn" style={{ display: 'none', background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px' }}>
@@ -219,7 +179,6 @@ export default function CitizenDashboard() {
               <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>{currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
           </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div className="desktop-search" style={{ display: 'none', alignItems: 'center', background: '#f1f5f9', borderRadius: '8px', padding: '8px 12px', gap: '8px' }}>
               <Search style={{ width: '16px', height: '16px', color: '#64748b' }} />
@@ -232,10 +191,10 @@ export default function CitizenDashboard() {
           </div>
         </header>
 
-        {/* Content Area */}
         <main style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
           {activeSection === 'overview' && <OverviewSection user={user} areaStatus={areaStatus} waterPoints={waterPoints} mySpending={mySpending} alerts={alerts} currentTime={currentTime} getGreeting={getGreeting} formatTime={(d) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} setActiveSection={setActiveSection} setShowReportModal={setShowReportModal} />}
-          {activeSection === 'water-points' && <WaterPointsSection waterPoints={waterPoints} userLocation={userLocation} />}
+          {activeSection === 'water-points' && <WaterPointsSection waterPoints={waterPoints} />}
+          {activeSection === 'datasets' && <DatasetsSection waterQuality={waterQualityData} infrastructure={infrastructureData} countyStats={countyStats} />}
           {activeSection === 'spending' && <SpendingSection mySpending={mySpending} />}
           {activeSection === 'reports' && <ReportsSection myReports={myReports} setShowReportModal={setShowReportModal} />}
           {activeSection === 'alerts' && <AlertsSection alerts={alerts} />}
@@ -257,28 +216,13 @@ export default function CitizenDashboard() {
             <form onSubmit={submitReport} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Issue Title</label>
-                <input type="text" value={reportForm.title} onChange={(e) => setReportForm({...reportForm, title: e.target.value})} required style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g., Broken pipe at Main Street" />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Category</label>
-                <select value={reportForm.category} onChange={(e) => setReportForm({...reportForm, category: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }}>
-                  <option value="leak">Water Leak</option>
-                  <option value="contamination">Water Contamination</option>
-                  <option value="dry_tap">Dry Tap / No Water</option>
-                  <option value="infrastructure">Infrastructure Damage</option>
-                  <option value="billing">Billing Issue</option>
-                  <option value="other">Other</option>
-                </select>
+                <input type="text" value={reportForm.title} onChange={(e) => setReportForm({...reportForm, title: e.target.value})} required style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Description</label>
-                <textarea value={reportForm.description} onChange={(e) => setReportForm({...reportForm, description: e.target.value})} required rows="4" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }} placeholder="Describe the issue in detail..." />
+                <textarea value={reportForm.description} onChange={(e) => setReportForm({...reportForm, description: e.target.value})} required rows="4" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }} />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Location</label>
-                <input type="text" value={reportForm.location} onChange={(e) => setReportForm({...reportForm, location: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g., Near Kiosk #5, Westlands" />
-              </div>
-              <button type="submit" disabled={submitting} style={{ padding: '14px', background: 'linear-gradient(90deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
+              <button type="submit" disabled={submitting} style={{ padding: '14px', background: 'linear-gradient(90deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer' }}>
                 {submitting ? 'Submitting...' : 'Submit Report'}
               </button>
             </form>
@@ -286,23 +230,10 @@ export default function CitizenDashboard() {
         </div>
       )}
 
-      {/* Responsive CSS Fixes */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* Desktop: Show search, hide mobile buttons */
-        @media (min-width: 769px) {
-          .desktop-search { display: flex !important; }
-          .mobile-menu-btn { display: none !important; }
-          .mobile-close-btn { display: none !important; }
-        }
-        
-        /* Mobile: Hide search, show mobile buttons */
-        @media (max-width: 768px) {
-          .desktop-search { display: none !important; }
-          .mobile-menu-btn { display: block !important; }
-          .mobile-close-btn { display: block !important; }
-        }
+        @media (min-width: 769px) { .desktop-search { display: flex !important; } .mobile-menu-btn { display: none !important; } .mobile-close-btn { display: none !important; } }
+        @media (max-width: 768px) { .desktop-search { display: none !important; } .mobile-menu-btn { display: block !important; } .mobile-close-btn { display: block !important; } }
       `}</style>
     </div>
   );
@@ -311,8 +242,8 @@ export default function CitizenDashboard() {
 // ==================== OVERVIEW SECTION ====================
 function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, currentTime, getGreeting, formatTime, setActiveSection, setShowReportModal }) {
   const stats = [
-    { label: 'Active Nodes', value: areaStatus?.nodes?.active || 0, icon: Droplets, color: '#0891b2', bg: '#eff6ff' },
-    { label: 'Area Status', value: areaStatus?.status || 'Normal', icon: areaStatus?.status === 'alert' ? AlertTriangle : CheckCircle, color: areaStatus?.status === 'alert' ? '#f59e0b' : '#10b981', bg: areaStatus?.status === 'alert' ? '#fef3c7' : '#d1fae5' },
+    { label: 'Active Nodes', value: areaStatus?.active_nodes || 0, icon: Droplets, color: '#0891b2', bg: '#eff6ff' },
+    { label: 'Area Status', value: areaStatus?.status === 'alert' ? 'Alert' : 'Normal', icon: areaStatus?.status === 'alert' ? AlertTriangle : CheckCircle, color: areaStatus?.status === 'alert' ? '#f59e0b' : '#10b981', bg: areaStatus?.status === 'alert' ? '#fef3c7' : '#d1fae5' },
     { label: 'This Month', value: `KES ${mySpending?.this_month?.total_ksh || 0}`, icon: Wallet, color: '#8b5cf6', bg: '#ede9fe' },
     { label: 'Active Alerts', value: alerts.length, icon: Bell, color: '#ef4444', bg: '#fee2e2' },
   ];
@@ -324,28 +255,18 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
         <div style={{ position: 'relative', zIndex: 1 }}>
           <h2 style={{ margin: '0 0 8px 0', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: '800' }}>{getGreeting()}, {user?.name || 'User'}!</h2>
           <p style={{ margin: '0 0 20px 0', fontSize: 'clamp(14px, 2.5vw, 16px)', opacity: 0.9 }}>Here's your water network update</p>
-          
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px', backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px' }}>
               <MapPin style={{ width: '20px', height: '20px' }} />
-              <div>
-                <p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>County</p>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{user?.county || 'Not set'}</p>
-              </div>
+              <div><p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>County</p><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{user?.county || 'Not set'}</p></div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px', backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px' }}>
               <Clock style={{ width: '20px', height: '20px' }} />
-              <div>
-                <p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Time</p>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{formatTime(currentTime)}</p>
-              </div>
+              <div><p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Time</p><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{formatTime(currentTime)}</p></div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px', backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px' }}>
               <Droplet style={{ width: '20px', height: '20px' }} />
-              <div>
-                <p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Quality</p>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{areaStatus?.safety?.label || 'Safe'}</p>
-              </div>
+              <div><p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Quality</p><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{areaStatus?.safety?.label || 'Safe'}</p></div>
             </div>
           </div>
         </div>
@@ -357,29 +278,8 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
             <div style={{ width: '48px', height: '48px', background: stat.bg, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <stat.icon style={{ width: '24px', height: '24px', color: stat.color }} />
             </div>
-            <div>
-              <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>{stat.label}</p>
-              <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>{stat.value}</p>
-            </div>
+            <div><p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>{stat.label}</p><p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>{stat.value}</p></div>
           </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-        {[
-          { label: 'Find Water Points', icon: MapPin, color: '#0891b2', action: () => setActiveSection('water-points') },
-          { label: 'Report Issue', icon: FileText, color: '#ef4444', action: () => setShowReportModal(true) },
-          { label: 'View Spending', icon: Wallet, color: '#8b5cf6', action: () => setActiveSection('spending') },
-          { label: 'Check Alerts', icon: Bell, color: '#f59e0b', action: () => setActiveSection('alerts') },
-        ].map((action, i) => (
-          <button key={i} onClick={action.action} style={{ padding: '14px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = action.color; e.currentTarget.style.background = action.color + '10'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'white'; }}>
-            <div style={{ width: '36px', height: '36px', background: action.color + '15', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <action.icon style={{ width: '18px', height: '18px', color: action.color }} />
-            </div>
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{action.label}</span>
-          </button>
         ))}
       </div>
 
@@ -402,12 +302,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
                 <span style={{ padding: '3px 8px', background: point.level_label === 'Good' ? '#d1fae5' : '#fef3c7', color: point.level_label === 'Good' ? '#059669' : '#d97706', borderRadius: '6px', fontSize: '10px', fontWeight: '600', whiteSpace: 'nowrap' }}>{point.level_label}</span>
               </div>
             ))}
-            {waterPoints.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
-                <MapPin style={{ width: '40px', height: '40px', margin: '0 auto 8px', color: '#94a3b8' }} />
-                <p style={{ margin: 0, fontSize: '13px' }}>No water points found</p>
-              </div>
-            )}
+            {waterPoints.length === 0 && <p style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>No water points found</p>}
           </div>
         </div>
 
@@ -428,12 +323,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
                 </div>
               </div>
             ))}
-            {alerts.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
-                <CheckCircle style={{ width: '40px', height: '40px', margin: '0 auto 8px', color: '#10b981' }} />
-                <p style={{ margin: 0, fontSize: '13px', fontWeight: '500' }}>No active alerts</p>
-              </div>
-            )}
+            {alerts.length === 0 && <p style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>No active alerts</p>}
           </div>
         </div>
       </div>
@@ -442,7 +332,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
 }
 
 // ==================== WATER POINTS ====================
-function WaterPointsSection({ waterPoints, userLocation }) {
+function WaterPointsSection({ waterPoints }) {
   const [searchTerm, setSearchTerm] = useState('');
   const filtered = waterPoints.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.location.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -489,6 +379,85 @@ function WaterPointsSection({ waterPoints, userLocation }) {
   );
 }
 
+// ==================== DATASETS SECTION (NEW) ====================
+function DatasetsSection({ waterQuality, infrastructure, countyStats }) {
+  return (
+    <div>
+      <div style={{ background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', borderRadius: '16px', padding: '24px', marginBottom: '24px', color: 'white' }}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '800' }}>Real-Time Water Intelligence</h2>
+        <p style={{ margin: 0, opacity: 0.9 }}>Live data aggregated from water nodes across 10 major Kenyan counties.</p>
+      </div>
+
+      {/* Water Quality by County */}
+      <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Water Quality Index by County</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+          {waterQuality.map((item, i) => (
+            <div key={i} style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{item.county}</h4>
+              <div style={{ marginBottom: '8px' }}>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b' }}>Avg Quality Index</p>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: parseFloat(item.avg_quality) >= 80 ? '#10b981' : '#f59e0b' }}>{parseFloat(item.avg_quality).toFixed(1)}%</p>
+              </div>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div><p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b' }}>Total Nodes</p><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{item.total_nodes}</p></div>
+                <div><p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b' }}>Active</p><p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#10b981' }}>{item.active_nodes}</p></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Infrastructure Table */}
+      <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Water Infrastructure Breakdown</h3>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                <th style={{ textAlign: 'left', padding: '12px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>County</th>
+                <th style={{ textAlign: 'center', padding: '12px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Total</th>
+                <th style={{ textAlign: 'center', padding: '12px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Boreholes</th>
+                <th style={{ textAlign: 'center', padding: '12px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Wells</th>
+                <th style={{ textAlign: 'center', padding: '12px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Taps</th>
+              </tr>
+            </thead>
+            <tbody>
+              {infrastructure.map((item, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '12px', fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{item.county}</td>
+                  <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center' }}>{item.total_nodes}</td>
+                  <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#0891b2' }}>{item.boreholes}</td>
+                  <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#8b5cf6' }}>{item.wells}</td>
+                  <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#10b981' }}>{item.taps}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* County Stats Grid */}
+      <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0' }}>
+        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>County Water Statistics</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+          {countyStats.map((item, i) => (
+            <div key={i} style={{ padding: '16px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{item.county}</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div><p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b' }}>Avg Water Level</p><p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0891b2' }}>{parseFloat(item.avg_water_level || 0).toFixed(0)}%</p></div>
+                <div><p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b' }}>Avg Quality</p><p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#10b981' }}>{parseFloat(item.avg_quality || 0).toFixed(0)}%</p></div>
+                <div><p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b' }}>Active</p><p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#10b981' }}>{item.active}</p></div>
+                <div><p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b' }}>Warning</p><p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#f59e0b' }}>{item.warning}</p></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ==================== SPENDING ====================
 function SpendingSection({ mySpending }) {
   return (
@@ -498,14 +467,8 @@ function SpendingSection({ mySpending }) {
           <p style={{ margin: '0 0 8px 0', fontSize: '13px', opacity: 0.9 }}>This Month</p>
           <p style={{ margin: '0 0 12px 0', fontSize: '28px', fontWeight: '800' }}>KES {mySpending?.this_month?.total_ksh || 0}</p>
           <div style={{ display: 'flex', gap: '16px' }}>
-            <div>
-              <p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Litres</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{mySpending?.this_month?.total_litres || 0}L</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Transactions</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{mySpending?.this_month?.transactions || 0}</p>
-            </div>
+            <div><p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Litres</p><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{mySpending?.this_month?.total_litres || 0}L</p></div>
+            <div><p style={{ margin: 0, fontSize: '11px', opacity: 0.8 }}>Transactions</p><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{mySpending?.this_month?.transactions || 0}</p></div>
           </div>
         </div>
       </div>
@@ -518,10 +481,7 @@ function ReportsSection({ myReports, setShowReportModal }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>My Reports</h2>
-          <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Track your submitted reports</p>
-        </div>
+        <div><h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>My Reports</h2><p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Track your submitted reports</p></div>
         <button onClick={() => setShowReportModal(true)} style={{ padding: '10px 16px', background: 'linear-gradient(90deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Plus style={{ width: '14px', height: '14px' }} /> New Report
         </button>
@@ -537,6 +497,7 @@ function ReportsSection({ myReports, setShowReportModal }) {
             <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>{report.description}</p>
           </div>
         ))}
+        {myReports.length === 0 && <p style={{ color: '#64748b' }}>No reports submitted yet.</p>}
       </div>
     </div>
   );
@@ -559,6 +520,7 @@ function AlertsSection({ alerts }) {
             </div>
           </div>
         ))}
+        {alerts.length === 0 && <p style={{ color: '#64748b' }}>No active alerts.</p>}
       </div>
     </div>
   );
@@ -573,10 +535,7 @@ function CommunitySection({ communityReports }) {
         {communityReports.map((report, i) => (
           <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-              <div>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{report.title}</h4>
-                <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>{report.reporter_name} • {new Date(report.created_at).toLocaleDateString()}</p>
-              </div>
+              <div><h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{report.title}</h4><p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>{report.reporter_name} • {new Date(report.created_at).toLocaleDateString()}</p></div>
               <span style={{ padding: '3px 8px', background: '#eff6ff', color: '#0891b2', borderRadius: '6px', fontSize: '10px', fontWeight: '600' }}>{report.category}</span>
             </div>
             <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>{report.description}</p>
@@ -609,13 +568,7 @@ function ProfileSection({ user }) {
       <div style={{ background: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Account Information</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {[
-            { label: 'Full Name', value: user?.name },
-            { label: 'Email', value: user?.email },
-            { label: 'Phone', value: user?.phone || 'Not provided' },
-            { label: 'Role', value: user?.role },
-            { label: 'County', value: user?.county },
-          ].map((item, i) => (
+          {[{ label: 'Full Name', value: user?.name }, { label: 'Email', value: user?.email }, { label: 'Phone', value: user?.phone || 'Not provided' }, { label: 'Role', value: user?.role }, { label: 'County', value: user?.county }].map((item, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: i < 4 ? '1px solid #f1f5f9' : 'none' }}>
               <span style={{ fontSize: '13px', color: '#64748b' }}>{item.label}</span>
               <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{item.value}</span>
