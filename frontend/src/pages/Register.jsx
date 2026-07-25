@@ -30,159 +30,212 @@ export default function Register() {
       await register(form);
       navigate('/app/dashboard');
     } catch (err) {
-      setError(err?.error || err?.response?.data?.error || err?.message || 'Registration failed');
+      setError(err?.error || err?.response?.data?.error || err?.message || 'Registration failed. Please check your connection.');
     } finally {
       setLoading(false);
     }
   };
 
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px 12px 44px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    fontSize: '15px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+    boxSizing: 'border-box'
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: '6px'
+  };
+
+  const iconContainerStyle = {
+    position: 'absolute',
+    left: '14px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#9ca3af'
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <div className="text-center mb-8">
-            <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <Droplets className="h-8 w-8 text-blue-600" />
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '40px',
+        width: '100%',
+        maxWidth: '480px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{
+            background: '#eff6ff',
+            borderRadius: '50%',
+            width: '64px',
+            height: '64px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px'
+          }}>
+            <Droplets style={{ color: '#2563eb', width: '32px', height: '32px' }} />
+          </div>
+          <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>Create Account</h2>
+          <p style={{ color: '#6b7280', margin: 0, fontSize: '15px' }}>Join MajiSmart Kenya water intelligence network</p>
+        </div>
+
+        {error && (
+          <div style={{
+            background: '#fef2f2',
+            borderLeft: '4px solid #ef4444',
+            padding: '12px 16px',
+            marginBottom: '24px',
+            borderRadius: '0 8px 8px 0'
+          }}>
+            <p style={{ color: '#991b1b', margin: 0, fontSize: '14px' }}>{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={labelStyle}>Full Name</label>
+            <div style={{ position: 'relative' }}>
+              <User style={iconContainerStyle} size={20} />
+              <input
+                type="text"
+                value={form.name}
+                onChange={handleChange('name')}
+                required
+                style={inputStyle}
+                placeholder="John Doe"
+              />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-            <p className="text-gray-600 mt-2">Join MajiSmart Kenya water intelligence network</p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
-              <p className="text-sm text-red-700">{error}</p>
+          <div>
+            <label style={labelStyle}>Email Address</label>
+            <div style={{ position: 'relative' }}>
+              <Mail style={iconContainerStyle} size={20} />
+              <input
+                type="email"
+                value={form.email}
+                onChange={handleChange('email')}
+                required
+                style={inputStyle}
+                placeholder="john@example.com"
+              />
             </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={handleChange('name')}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="John Doe"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange('email')}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="john@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={handleChange('phone')}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="+254 700 000 000"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={handleChange('password')}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <select
-                    value={form.role}
-                    onChange={handleChange('role')}
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white"
-                  >
-                    {ROLES.map(r => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">County</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <select
-                    value={form.county}
-                    onChange={handleChange('county')}
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white"
-                  >
-                    <option value="">Select County</option>
-                    {COUNTIES.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 focus:ring-4 focus:ring-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                  Creating Account...
-                </span>
-              ) : (
-                'Create Account'
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-500">
-                Sign in here
-              </Link>
-            </p>
           </div>
+
+          <div>
+            <label style={labelStyle}>Phone Number</label>
+            <div style={{ position: 'relative' }}>
+              <Phone style={iconContainerStyle} size={20} />
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={handleChange('phone')}
+                style={inputStyle}
+                placeholder="+254 700 000 000"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock style={iconContainerStyle} size={20} />
+              <input
+                type="password"
+                value={form.password}
+                onChange={handleChange('password')}
+                required
+                style={inputStyle}
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={labelStyle}>Role</label>
+              <div style={{ position: 'relative' }}>
+                <Briefcase style={iconContainerStyle} size={20} />
+                <select
+                  value={form.role}
+                  onChange={handleChange('role')}
+                  style={{ ...inputStyle, appearance: 'none', backgroundColor: 'white' }}
+                >
+                  {ROLES.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>County</label>
+              <div style={{ position: 'relative' }}>
+                <MapPin style={iconContainerStyle} size={20} />
+                <select
+                  value={form.county}
+                  onChange={handleChange('county')}
+                  style={{ ...inputStyle, appearance: 'none', backgroundColor: 'white' }}
+                >
+                  <option value="">Select County</option>
+                  {COUNTIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: 'linear-gradient(90deg, #2563eb, #06b6d4)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              transition: 'opacity 0.2s',
+              marginTop: '8px'
+            }}
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}>
+              Sign in here
+            </Link>
+          </p>
         </div>
       </div>
     </div>
-  );
-}
-
-function RefreshCw({ className }) {
-  return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
   );
 }
