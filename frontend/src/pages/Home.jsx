@@ -24,7 +24,9 @@ export default function Home() {
 
       {/* Hero Section */}
       <section style={{ background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)', padding: '100px 24px', color: 'white', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', opacity: '0.1', backgroundImage: 'radial-gradient(circle at 20% 50%, 'white' 0%, 'transparent' 50%), radial-gradient(circle at 80% 80%, 'white' 0%, 'transparent' 50%)' }}></div>
+        <div style={{ position: 'absolute', top: '-50%', right: '-10%', width: '600px', height: '600px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '50%' }}></div>
+        <div style={{ position: 'absolute', bottom: '-20%', left: '-5%', width: '400px', height: '400px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '50%' }}></div>
+        
         <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ maxWidth: '800px' }}>
             <h1 style={{ margin: '0 0 24px 0', fontSize: '56px', fontWeight: '800', lineHeight: '1.1' }}>
@@ -83,11 +85,11 @@ export default function Home() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {[
                     { step: '1', text: 'Dial *384*99# on your phone' },
-                    { step: '2', text: 'Select "Check Water Status" or "Report Issue"' },
+                    { step: '2', text: 'Select Check Water Status or Report Issue' },
                     { step: '3', text: 'Get instant information or submit your report' }
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                      <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', flexShrink: '0' }}>{item.step}</div>
+                      <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', flexShrink: 0 }}>{item.step}</div>
                       <p style={{ margin: 0, fontSize: '15px', color: '#475569', paddingTop: '6px' }}>{item.text}</p>
                     </div>
                   ))}
@@ -138,7 +140,7 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <h2 style={{ margin: '0 0 16px 0', fontSize: '36px', fontWeight: '800' }}>Trustless Water Management, Powered by Technology</h2>
-            <p style={{ margin: 0, fontSize: '18px', opacity: '0.9', maxWidth: '700px', margin: '0 auto' }}>Every feature is anchored in transparency and accountability — because water is a fundamental right.</p>
+            <p style={{ margin: '0 0 16px 0', fontSize: '18px', opacity: '0.9', maxWidth: '700px' }}>Every feature is anchored in transparency and accountability — because water is a fundamental right.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
             {[
