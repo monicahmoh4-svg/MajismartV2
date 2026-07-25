@@ -14,7 +14,9 @@ import {
 export default function CitizenDashboard() {
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // FIX: Default to true for desktop, handle mobile via resize effect
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   
@@ -37,15 +39,27 @@ export default function CitizenDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  // FIX: Handle responsive sidebar visibility
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    
+    // Run on mount
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const getUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
+        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
         (error) => console.log('Location access denied')
       );
     }
@@ -80,20 +94,12 @@ export default function CitizenDashboard() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await api.post('/reports', {
-        ...reportForm,
-        county: user?.county,
-        latitude: userLocation.lat,
-        longitude: userLocation.lng
-      });
+      await api.post('/reports', { ...reportForm, county: user?.county, latitude: userLocation.lat, longitude: userLocation.lng });
       setShowReportModal(false);
       setReportForm({ title: '', description: '', category: 'leak', location: '' });
       fetchAllData();
-    } catch (err) {
-      console.error('Report error:', err);
-    } finally {
-      setSubmitting(false);
-    }
+    } catch (err) { console.error('Report error:', err); } 
+    finally { setSubmitting(false); }
   };
 
   const getGreeting = () => {
@@ -127,7 +133,7 @@ export default function CitizenDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', display: 'flex' }}>
       {/* Sidebar */}
-      <aside style={{
+      <aside className="dashboard-sidebar" style={{
         width: sidebarOpen ? '260px' : '0px',
         background: 'white',
         borderRight: '1px solid #e2e8f0',
@@ -138,7 +144,7 @@ export default function CitizenDashboard() {
         zIndex: 1000,
         transition: 'width 0.3s ease',
         overflow: 'hidden',
-        boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.1)' : 'none',
+        boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.05)' : 'none',
         display: 'flex',
         flexDirection: 'column'
       }}>
@@ -153,7 +159,7 @@ export default function CitizenDashboard() {
                 <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>Citizen Portal</p>
               </div>
             </div>
-            <button onClick={() => setSidebarOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'none' }}>
+            <button onClick={() => setSidebarOpen(false)} className="mobile-close-btn" style={{ display: 'none', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}>
               <X style={{ width: '18px', height: '18px', color: '#64748b' }} />
             </button>
           </div>
@@ -163,7 +169,7 @@ export default function CitizenDashboard() {
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
+              onClick={() => { setActiveSection(item.id); if (window.innerWidth <= 768) setSidebarOpen(false); }}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -206,11 +212,11 @@ export default function CitizenDashboard() {
       </aside>
 
       {/* Main Content */}
-      <div style={{ flex: 1, marginLeft: sidebarOpen ? '260px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh' }}>
+      <div style={{ flex: 1, marginLeft: sidebarOpen ? '260px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh', width: '100%' }}>
         {/* Top Bar */}
         <header style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button onClick={() => setSidebarOpen(true)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px', display: 'none' }}>
+            <button onClick={() => setSidebarOpen(true)} className="mobile-menu-btn" style={{ display: 'none', background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px' }}>
               <Menu style={{ width: '22px', height: '22px', color: '#0f172a' }} />
             </button>
             <div>
@@ -220,7 +226,7 @@ export default function CitizenDashboard() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ display: 'none', alignItems: 'center', background: '#f1f5f9', borderRadius: '8px', padding: '8px 12px', gap: '8px' }}>
+            <div className="desktop-search" style={{ display: 'none', alignItems: 'center', background: '#f1f5f9', borderRadius: '8px', padding: '8px 12px', gap: '8px' }}>
               <Search style={{ width: '16px', height: '16px', color: '#64748b' }} />
               <input type="text" placeholder="Search..." style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', width: '150px' }} />
             </div>
@@ -285,12 +291,22 @@ export default function CitizenDashboard() {
         </div>
       )}
 
+      {/* Responsive CSS Fixes */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Desktop: Show search, hide mobile buttons */
+        @media (min-width: 769px) {
+          .desktop-search { display: flex !important; }
+          .mobile-menu-btn { display: none !important; }
+          .mobile-close-btn { display: none !important; }
+        }
+        
+        /* Mobile: Hide search, show mobile buttons */
         @media (max-width: 768px) {
-          header button:first-child { display: block; }
-          aside div div button { display: block; }
-          header div div { display: none; }
+          .desktop-search { display: none !important; }
+          .mobile-menu-btn { display: block !important; }
+          .mobile-close-btn { display: block !important; }
         }
       `}</style>
     </div>
@@ -308,7 +324,6 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
 
   return (
     <div>
-      {/* Welcome Banner */}
       <div style={{ background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', borderRadius: '16px', padding: 'clamp(20px, 4vw, 32px)', marginBottom: '24px', color: 'white', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -341,7 +356,6 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         {stats.map((stat, i) => (
           <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -356,7 +370,6 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
         ))}
       </div>
 
-      {/* Quick Actions */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {[
           { label: 'Find Water Points', icon: MapPin, color: '#0891b2', action: () => setActiveSection('water-points') },
@@ -375,9 +388,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
         ))}
       </div>
 
-      {/* Two Column Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-        {/* Nearby Water Points */}
         <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Nearby Water Points</h3>
@@ -405,7 +416,6 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
           </div>
         </div>
 
-        {/* Recent Alerts */}
         <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Recent Alerts</h3>
@@ -436,14 +446,10 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
   );
 }
 
-// ==================== OTHER SECTIONS (Simplified for brevity) ====================
-function WaterPointsSection({ waterPoints, userLocation }) {
+// ==================== WATER POINTS ====================
+function WaterPointsSection({ waterPoints }) {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const filtered = waterPoints.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = waterPoints.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.location.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div>
@@ -453,7 +459,6 @@ function WaterPointsSection({ waterPoints, userLocation }) {
           <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search water points..." style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', flex: 1 }} />
         </div>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
         {filtered.map((point, i) => (
           <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
@@ -469,7 +474,6 @@ function WaterPointsSection({ waterPoints, userLocation }) {
               </div>
               <span style={{ padding: '3px 8px', background: point.status === 'active' ? '#d1fae5' : '#fee2e2', color: point.status === 'active' ? '#059669' : '#dc2626', borderRadius: '6px', fontSize: '10px', fontWeight: '600' }}>{point.status}</span>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
               <div style={{ padding: '10px', background: '#f8fafc', borderRadius: '8px' }}>
                 <p style={{ margin: '0 0 2px 0', fontSize: '10px', color: '#64748b', fontWeight: '500' }}>Water Level</p>
@@ -480,7 +484,6 @@ function WaterPointsSection({ waterPoints, userLocation }) {
                 <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{point.quality_index || 85}%</p>
               </div>
             </div>
-
             <button style={{ width: '100%', padding: '10px', background: '#0891b2', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <Navigation style={{ width: '14px', height: '14px' }} /> Navigate
             </button>
@@ -491,6 +494,7 @@ function WaterPointsSection({ waterPoints, userLocation }) {
   );
 }
 
+// ==================== SPENDING ====================
 function SpendingSection({ mySpending }) {
   return (
     <div>
@@ -514,6 +518,7 @@ function SpendingSection({ mySpending }) {
   );
 }
 
+// ==================== REPORTS ====================
 function ReportsSection({ myReports, setShowReportModal }) {
   return (
     <div>
@@ -526,7 +531,6 @@ function ReportsSection({ myReports, setShowReportModal }) {
           <Plus style={{ width: '14px', height: '14px' }} /> New Report
         </button>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
         {myReports.map((report, i) => (
           <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
@@ -543,6 +547,7 @@ function ReportsSection({ myReports, setShowReportModal }) {
   );
 }
 
+// ==================== ALERTS ====================
 function AlertsSection({ alerts }) {
   return (
     <div>
@@ -564,6 +569,7 @@ function AlertsSection({ alerts }) {
   );
 }
 
+// ==================== COMMUNITY ====================
 function CommunitySection({ communityReports }) {
   return (
     <div>
@@ -586,6 +592,7 @@ function CommunitySection({ communityReports }) {
   );
 }
 
+// ==================== PROFILE ====================
 function ProfileSection({ user }) {
   return (
     <div>
@@ -604,7 +611,6 @@ function ProfileSection({ user }) {
           </div>
         </div>
       </div>
-
       <div style={{ background: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Account Information</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
