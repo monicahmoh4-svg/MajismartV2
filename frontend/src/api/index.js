@@ -1,15 +1,43 @@
-import axios from 'axios'
-const api = axios.create({ baseURL: `${import.meta.env.VITE_API_URL}/api`, timeout: 15000 })
+import axios from 'axios';
+
+// Safely construct the base URL, ensuring no double slashes
+const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const baseURL = rawUrl.replace(/\/+$/, '') + '/api';
+
+console.log('🚀 MajiSmart API configured for:', baseURL);
+
+const api = axios.create({ 
+  baseURL, 
+  timeout: 15000 
+});
+
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('ms_token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
-api.interceptors.response.use(res => res.data, err => {
-  if (err.response?.status === 401) {
-    localStorage.removeItem('ms_token'); localStorage.removeItem('ms_user')
-    window.location.href = '/login'
+  const token = localStorage.getItem('ms_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return Promise.reject(err.response?.data || err)
-})
-export default api
+  return config;
+});
+
+api.interceptors.response.use(
+  res => res.data, 
+  err => {
+    // LOG THE EXACT ERROR TO CONSOLE FOR DEBUGGING
+    console.error('❌ API REQUEST FAILED:', {
+      url: err.config?.url,
+      method: err.config?.method,
+      status: err.response?.status,
+      errorMessage: err.response?.data?.error || err.message,
+      fullError: err
+    });
+    
+    if (err.response?.status === 401) {
+      localStorage.removeItem('ms_token'); 
+      localStorage.removeItem('ms_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err.response?.data || err);
+  }
+);
+
+export default api;
