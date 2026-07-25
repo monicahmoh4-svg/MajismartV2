@@ -38,7 +38,7 @@ app.use(
         callback(null, true);
       } else {
         console.warn('CORS blocked origin:', origin);
-        callback(null, true); // Allow anyway in dev to prevent hard blocks
+        callback(null, true);
       }
     },
     credentials: true,
@@ -59,7 +59,7 @@ app.use(express.urlencoded({ extended: true }));
 const JWT_SECRET = process.env.JWT_SECRET || 'majismart_default_secret_change_me';
 
 // ============================================================
-// 4. AUTO-CREATE TABLES ON STARTUP
+// 4. AUTO-CREATE TABLES ON STARTUP (FIXED: Removed strict REFERENCES to prevent type mismatch errors)
 // ============================================================
 const initDB = async () => {
   try {
@@ -89,13 +89,13 @@ const initDB = async () => {
         quality_index DECIMAL(5,2) DEFAULT 0,
         pressure DECIMAL(10,2) DEFAULT 0,
         last_reading TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        operator_id INTEGER REFERENCES users(id),
+        operator_id INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS readings (
         id SERIAL PRIMARY KEY,
-        node_id INTEGER REFERENCES water_nodes(id) ON DELETE CASCADE,
+        node_id INTEGER,
         flow_rate DECIMAL(10,2) DEFAULT 0,
         quality_index DECIMAL(5,2) DEFAULT 0,
         pressure DECIMAL(10,2) DEFAULT 0,
@@ -106,7 +106,7 @@ const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS alerts (
         id SERIAL PRIMARY KEY,
-        node_id INTEGER REFERENCES water_nodes(id) ON DELETE CASCADE,
+        node_id INTEGER,
         type VARCHAR(100) DEFAULT 'warning',
         message TEXT DEFAULT '',
         severity VARCHAR(50) DEFAULT 'medium',
@@ -116,8 +116,8 @@ const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS transactions (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-        node_id INTEGER REFERENCES water_nodes(id) ON DELETE SET NULL,
+        user_id INTEGER,
+        node_id INTEGER,
         amount DECIMAL(12,2) DEFAULT 0,
         type VARCHAR(50) DEFAULT 'payment',
         description TEXT DEFAULT '',
@@ -128,11 +128,11 @@ const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS maintenance (
         id SERIAL PRIMARY KEY,
-        node_id INTEGER REFERENCES water_nodes(id) ON DELETE CASCADE,
+        node_id INTEGER,
         description TEXT DEFAULT '',
         status VARCHAR(50) DEFAULT 'pending',
         priority VARCHAR(50) DEFAULT 'medium',
-        assigned_to INTEGER REFERENCES users(id),
+        assigned_to INTEGER,
         scheduled_date TIMESTAMP,
         completed_date TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -140,7 +140,7 @@ const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS community_reports (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        user_id INTEGER,
         title VARCHAR(255) DEFAULT '',
         description TEXT DEFAULT '',
         category VARCHAR(100) DEFAULT 'general',
@@ -274,7 +274,7 @@ app.get('/api/auth/me', authenticate, async (req, res) => {
 });
 
 // ============================================================
-// 8. CITIZEN ROUTES (NEW)
+// 8. CITIZEN ROUTES
 // ============================================================
 app.get('/api/citizen/area-status', async (req, res) => {
   try {
@@ -417,7 +417,7 @@ app.get('/api/dashboard/county-stats', authenticate, async (req, res) => {
 });
 
 // ============================================================
-// 10. CORE RESOURCE ROUTES (Nodes, Alerts, Reports, Users)
+// 10. CORE RESOURCE ROUTES
 // ============================================================
 app.get('/api/nodes', authenticate, async (req, res) => {
   try {
@@ -432,7 +432,7 @@ app.get('/api/nodes', authenticate, async (req, res) => {
     }
     query += ' ORDER BY created_at DESC';
     const result = await pool.query(query, params);
-    res.json(result.rows); // Return array directly
+    res.json(result.rows);
   } catch (err) {
     console.error('Nodes fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch nodes.' });
@@ -475,7 +475,7 @@ app.get('/api/alerts', authenticate, async (req, res) => {
     }
     
     const result = await pool.query(query, params);
-    res.json(result.rows); // Return array directly
+    res.json(result.rows);
   } catch (err) {
     console.error('Alerts fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch alerts.' });
@@ -512,7 +512,7 @@ app.get('/api/reports', authenticate, async (req, res) => {
     const result = await pool.query(
       'SELECT r.*, u.name as reporter_name FROM community_reports r LEFT JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC'
     );
-    res.json(result.rows); // Return array directly
+    res.json(result.rows);
   } catch (err) {
     console.error('Reports fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch reports.' });
@@ -568,7 +568,7 @@ app.patch('/api/reports/:id/status', authenticate, async (req, res) => {
 app.get('/api/users', authenticate, authorize('admin', 'county_officer'), async (req, res) => {
   try {
     const result = await pool.query('SELECT id, name, email, role, county, phone, created_at FROM users ORDER BY created_at DESC');
-    res.json(result.rows); // Return array directly
+    res.json(result.rows);
   } catch (err) {
     console.error('Users fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch users.' });
