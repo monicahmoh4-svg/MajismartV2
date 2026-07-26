@@ -11,7 +11,7 @@ import {
 export default function CitizenDashboard() {
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   
@@ -35,9 +35,19 @@ export default function CitizenDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  // Handle responsive sidebar
   useEffect(() => {
-    const handleResize = () => setSidebarOpen(window.innerWidth > 768);
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    
+    // Set initial state
     handleResize();
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -100,7 +110,6 @@ export default function CitizenDashboard() {
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
-  // Page transition variants
   const pageVariants = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
@@ -121,26 +130,47 @@ export default function CitizenDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex' }}>
+      {/* Mobile Overlay */}
+      {sidebarOpen && window.innerWidth <= 768 && (
+        <div 
+          style={{ 
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            background: 'rgba(0,0,0,0.5)', zIndex: 999 
+          }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <motion.aside 
-        initial={{ x: -260 }}
-        animate={{ x: sidebarOpen ? 0 : -260 }}
+        initial={false}
+        animate={{ x: sidebarOpen ? 0 : -280 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         style={{
-          width: '260px', background: 'white', borderRight: '1px solid #f1f5f9',
+          width: '280px', background: 'white', borderRight: '1px solid #f1f5f9',
           position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 1000,
-          boxShadow: '4px 0 24px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column'
+          boxShadow: '4px 0 24px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column'
         }}
       >
         <div style={{ padding: '24px 20px', borderBottom: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(8, 145, 178, 0.2)' }}>
-              <Droplets style={{ color: 'white', width: '20px', height: '20px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(8, 145, 178, 0.2)' }}>
+                <Droplets style={{ color: 'white', width: '20px', height: '20px' }} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>MajiSmart</h2>
+                <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Citizen Portal</p>
+              </div>
             </div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>MajiSmart</h2>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Citizen Portal</p>
-            </div>
+            {/* Close button for mobile */}
+            <button 
+              onClick={() => setSidebarOpen(false)}
+              className="show-mobile"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}
+            >
+              <X style={{ width: '20px', height: '20px', color: '#64748b' }} />
+            </button>
           </div>
         </div>
 
@@ -150,7 +180,10 @@ export default function CitizenDashboard() {
               key={item.id} 
               whileHover={{ x: 4 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                setActiveSection(item.id);
+                if (window.innerWidth <= 768) setSidebarOpen(false);
+              }}
               style={{ 
                 width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', marginBottom: '4px', border: 'none',
                 background: activeSection === item.id ? '#eff6ff' : 'transparent', 
@@ -185,14 +218,24 @@ export default function CitizenDashboard() {
       </motion.aside>
 
       {/* Main Content */}
-      <div style={{ flex: 1, marginLeft: sidebarOpen ? '260px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh', width: '100%' }}>
-        <header style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #f1f5f9', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>{navItems.find(n => n.id === activeSection)?.label}</h1>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-          </div>
+      <div style={{ flex: 1, marginLeft: sidebarOpen && window.innerWidth > 768 ? '280px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh', width: '100%' }}>
+        <header style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #f1f5f9', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', borderRadius: '10px', padding: '10px 16px', gap: '10px' }}>
+            {/* Menu button for mobile */}
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="show-mobile"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px' }}
+            >
+              <Menu style={{ width: '24px', height: '24px', color: '#0f172a' }} />
+            </button>
+            <div>
+              <h1 style={{ margin: 0, fontSize: 'clamp(18px, 3vw, 24px)', fontWeight: '800', color: '#0f172a' }}>{navItems.find(n => n.id === activeSection)?.label}</h1>
+              <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>{currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', borderRadius: '10px', padding: '10px 16px', gap: '10px' }}>
               <Search style={{ width: '18px', height: '18px', color: '#64748b' }} />
               <input type="text" placeholder="Search..." style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', width: '200px' }} />
             </div>
@@ -203,7 +246,7 @@ export default function CitizenDashboard() {
           </div>
         </header>
 
-        <main style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
+        <main style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}
@@ -263,6 +306,16 @@ export default function CitizenDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .hide-mobile { display: none !important; }
+          .show-mobile { display: block !important; }
+        }
+        @media (min-width: 769px) {
+          .show-mobile { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -291,7 +344,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
         <div style={{ position: 'relative', zIndex: 1 }}>
           <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800' }}>{getGreeting()}, {user?.name || 'User'}!</h2>
           <p style={{ margin: '0 0 24px 0', fontSize: '16px', opacity: 0.9 }}>Here's your water network update for today.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
             {[
               { icon: MapPin, label: 'County', value: user?.county || 'Not set' },
               { icon: Clock, label: 'Time', value: formatTime(currentTime) },
@@ -306,7 +359,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
         </div>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
         {stats.map((stat, i) => (
           <motion.div 
             key={i} custom={i} variants={cardVariants} initial="hidden" animate="visible"
@@ -321,7 +374,7 @@ function OverviewSection({ user, areaStatus, waterPoints, mySpending, alerts, cu
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} style={{ background: 'white', borderRadius: '20px', padding: '24px', border: '1px solid #f1f5f9', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Nearby Water Points</h3>
@@ -382,7 +435,7 @@ function WaterPointsSection({ waterPoints }) {
           <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search water points by name or location..." style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '15px', flex: 1 }} />
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
         {filtered.map((point, i) => (
           <motion.div 
             key={i} 
