@@ -161,29 +161,52 @@ export default function Home() {
         )}
       </motion.nav>
 
-      {/* Hero Section */}
+      {/* Hero Section with HD Kenya Background */}
       <section style={{
         position: 'relative',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%)',
         paddingTop: '80px'
       }}>
-        {/* Animated Background */}
+        {/* HD Background Image from Kenya */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: 'url("https://images.unsplash.com/photo-1516026672771-29f0a8008ac6?w=1920&q=80")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+          zIndex: 0
+        }}>
+          {/* Gradient Overlay for text readability */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(135deg, rgba(8, 145, 178, 0.85) 0%, rgba(6, 182, 212, 0.75) 50%, rgba(186, 230, 253, 0.85) 100%)'
+          }}></div>
+        </div>
+
+        {/* Animated Background Blobs */}
         <motion.div 
           animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          style={{ position: 'absolute', top: '10%', right: '10%', width: '400px', height: '400px', background: 'rgba(8, 145, 178, 0.1)', borderRadius: '50%', filter: 'blur(60px)' }} 
+          style={{ position: 'absolute', top: '10%', right: '10%', width: '400px', height: '400px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '50%', filter: 'blur(60px)', zIndex: 1 }} 
         />
         <motion.div 
           animate={{ x: [0, -30, 0], y: [0, 50, 0] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          style={{ position: 'absolute', bottom: '10%', left: '5%', width: '300px', height: '300px', background: 'rgba(6, 182, 212, 0.15)', borderRadius: '50%', filter: 'blur(60px)' }} 
+          style={{ position: 'absolute', bottom: '10%', left: '5%', width: '300px', height: '300px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '50%', filter: 'blur(60px)', zIndex: 1 }} 
         />
 
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', position: 'relative', zIndex: 1, width: '100%' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', position: 'relative', zIndex: 2, width: '100%' }}>
           <motion.div 
             variants={staggerContainer}
             initial="hidden"
@@ -192,39 +215,41 @@ export default function Home() {
           >
             <motion.div variants={fadeInUp} style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
-              background: 'rgba(255,255,255,0.9)', padding: '8px 16px', borderRadius: '50px',
-              marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+              background: 'rgba(255,255,255,0.95)', padding: '8px 16px', borderRadius: '50px',
+              marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
             }}>
               <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
               <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: '600' }}>Trusted by 10M+ Kenyans</span>
             </motion.div>
             
             <motion.h1 variants={fadeInUp} style={{
-              margin: '0 0 24px 0', fontSize: 'clamp(32px, 6vw, 64px)', fontWeight: '800', lineHeight: '1.1', color: '#0f172a'
+              margin: '0 0 24px 0', fontSize: 'clamp(32px, 6vw, 64px)', fontWeight: '800', lineHeight: '1.1', color: 'white',
+              textShadow: '0 2px 20px rgba(0,0,0,0.2)'
             }}>
               Smart Water Intelligence for{' '}
-              <span style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Kenya</span>
+              <span style={{ display: 'inline-block', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Kenya</span>
             </motion.h1>
             
             <motion.p variants={fadeInUp} style={{
-              margin: '0 0 40px 0', fontSize: 'clamp(16px, 2.5vw, 20px)', color: '#475569', lineHeight: '1.6', maxWidth: '600px'
+              margin: '0 0 40px 0', fontSize: 'clamp(16px, 2.5vw, 20px)', color: 'rgba(255,255,255,0.95)', lineHeight: '1.6', maxWidth: '600px',
+              textShadow: '0 1px 10px rgba(0,0,0,0.1)'
             }}>
               Real-time monitoring, transparent data, and community-driven water management. Access clean water information from any device — smartphone or feature phone via USSD.
             </motion.p>
             
             <motion.div variants={fadeInUp} style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               <motion.button 
-                whileHover={{ scale: 1.05, boxShadow: "0 15px 30px rgba(8, 145, 178, 0.4)" }} 
+                whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }} 
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/register')} 
-                style={{ padding: '16px 32px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 20px rgba(8, 145, 178, 0.3)' }}
+                style={{ padding: '18px 36px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 30px rgba(251, 191, 36, 0.4)' }}
               >
                 Get Started Free <ArrowRight style={{ width: '20px', height: '20px' }} />
               </motion.button>
               <motion.button 
-                whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.9)" }} 
+                whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.95)" }} 
                 whileTap={{ scale: 0.95 }}
-                style={{ padding: '16px 32px', background: 'rgba(255,255,255,0.7)', color: '#0f172a', border: '1px solid rgba(255,255,255,0.9)', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(10px)' }}
+                style={{ padding: '18px 36px', background: 'rgba(255,255,255,0.2)', color: 'white', border: '2px solid rgba(255,255,255,0.5)', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(10px)' }}
               >
                 Explore Features
               </motion.button>
@@ -237,14 +262,40 @@ export default function Home() {
                 { icon: CheckCircle, text: "No credit card" },
                 { icon: CheckCircle, text: "Works on any phone" }
               ].map((badge, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(15, 23, 42, 0.8)' }}>
-                  <badge.icon style={{ width: '20px', height: '20px', color: '#10b981' }} />
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.95)' }}>
+                  <badge.icon style={{ width: '20px', height: '20px', color: '#4ade80' }} />
                   <span style={{ fontSize: '14px', fontWeight: '600' }}>{badge.text}</span>
                 </div>
               ))}
             </motion.div>
           </motion.div>
         </div>
+
+        {/* Scroll Indicator */}
+        <motion.div 
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: 'absolute',
+            bottom: '40px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            opacity: 0.8,
+            zIndex: 2,
+            cursor: 'pointer'
+          }}
+          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+        >
+          <span style={{ fontSize: '14px', fontWeight: '600' }}>Scroll to explore</span>
+          <div style={{ width: '24px', height: '40px', border: '2px solid white', borderRadius: '12px', display: 'flex', justifyContent: 'center', paddingTop: '8px' }}>
+            <div style={{ width: '4px', height: '8px', background: 'white', borderRadius: '2px' }}></div>
+          </div>
+        </motion.div>
       </section>
 
       {/* Stats Section */}
