@@ -1,34 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
-import CitizenDashboard from './pages/CitizenDashboard.jsx';
-import AdminDashboard from './pages/AdminDashboard.jsx';
-import CountyOfficerDashboard from './pages/CountyOfficerDashboard.jsx';
-import OperatorDashboard from './pages/OperatorDashboard.jsx';
-
-function DashboardRouter() {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-        <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #0891b2', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-      </div>
-    );
-  }
-  
-  if (!user) return <Navigate to="/login" />;
-  
-  // Route to the correct dashboard based on role
-  switch(user.role) {
-    case 'admin': return <AdminDashboard />;
-    case 'county_officer': return <CountyOfficerDashboard />;
-    case 'operator': return <OperatorDashboard />;
-    default: return <CitizenDashboard />; // 'citizen' is the default
-  }
-}
+import Dashboard from './pages/Dashboard.jsx';
 
 function AppRoutes() {
   return (
@@ -36,7 +11,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/app/*" element={<DashboardRouter />} />
+      <Route path="/app/*" element={<Dashboard />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
