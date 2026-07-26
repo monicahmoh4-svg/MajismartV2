@@ -7,10 +7,17 @@ export default function Home() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Preload background image
+    const img = new Image();
+    img.src = 'https://images.unsplash.com/photo-1516026672771-29f0a8008ac6?w=1920&q=80';
+    img.onload = () => setImageLoaded(true);
+    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -28,42 +35,42 @@ export default function Home() {
     {
       icon: Activity,
       title: "Real-Time Water Monitoring",
-      description: "Access live water quality data, pressure levels, and flow rates from IoT sensors deployed across Kenya. Make informed decisions with up-to-the-minute information.",
+      description: "Access live water quality data, pressure levels, and flow rates from IoT sensors deployed across Kenya.",
       color: "#0891b2",
       image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=800&q=80"
     },
     {
       icon: MapPin,
       title: "Find Nearest Water Points",
-      description: "Locate functional water points near you with real-time availability status. Get directions and check water quality before you go.",
+      description: "Locate functional water points near you with real-time availability status and directions.",
       color: "#06b6d4",
       image: "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=80"
     },
     {
       icon: Smartphone,
-      title: "USSD Access - No Internet Needed",
-      description: "Dial *384*99# from any phone to check water status, report issues, and manage your account. Perfect for areas with limited internet connectivity.",
+      title: "USSD Access - No Internet",
+      description: "Dial *384*99# from any phone to check water status. Perfect for areas with limited connectivity.",
       color: "#22d3ee",
       image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80"
     },
     {
       icon: Users,
       title: "Community Reporting",
-      description: "Report water leaks, contamination, or infrastructure issues. Track resolution progress and upvote critical issues in your community.",
+      description: "Report water leaks, contamination, or infrastructure issues. Track resolution progress.",
       color: "#3b82f6",
       image: "https://images.unsplash.com/photo-1573167243872-43c6433b9d40?w=800&q=80"
     },
     {
       icon: Shield,
-      title: "Transparent & Verified Data",
-      description: "Blockchain-verified water usage records ensure no falsified readings or inflated bills. Trust every drop you pay for.",
+      title: "Transparent & Verified",
+      description: "Blockchain-verified water usage records ensure no falsified readings or inflated bills.",
       color: "#8b5cf6",
       image: "https://images.unsplash.com/photo-1639762681485-074b7f413757?w=800&q=80"
     },
     {
       icon: BarChart3,
-      title: "Smart Analytics & Insights",
-      description: "Track your water consumption patterns, spending history, and conservation goals. Get AI-powered recommendations to reduce waste.",
+      title: "Smart Analytics",
+      description: "Track consumption patterns, spending history, and get AI-powered recommendations.",
       color: "#10b981",
       image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80"
     }
@@ -84,7 +91,7 @@ export default function Home() {
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         style={{
-          background: scrollY > 50 ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.85)',
+          background: scrollY > 50 ? 'rgba(255, 255, 255, 0.98)' : 'rgba(255, 255, 255, 0.9)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
           padding: '16px 0',
@@ -107,7 +114,6 @@ export default function Home() {
             <span style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>MajiSmart</span>
           </motion.div>
           
-          {/* Desktop Navigation */}
           <div className="hide-mobile" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <motion.button 
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -121,7 +127,6 @@ export default function Home() {
             >Get Started</motion.button>
           </div>
 
-          {/* Mobile Menu Button */}
           <button 
             className="show-mobile"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -131,7 +136,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="show-mobile" style={{
             position: 'absolute',
@@ -168,33 +172,15 @@ export default function Home() {
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
-        paddingTop: '80px'
+        paddingTop: '80px',
+        background: imageLoaded 
+          ? `linear-gradient(135deg, rgba(8, 145, 178, 0.85) 0%, rgba(6, 182, 212, 0.80) 50%, rgba(186, 230, 253, 0.85) 100%), url('https://images.unsplash.com/photo-1516026672771-29f0a8008ac6?w=1920&q=80')`
+          : 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #bae6fd 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
       }}>
-        {/* HD Background Image from Kenya */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: 'url("https://images.unsplash.com/photo-1516026672771-29f0a8008ac6?w=1920&q=80")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
-          zIndex: 0
-        }}>
-          {/* Gradient Overlay for text readability */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(135deg, rgba(8, 145, 178, 0.85) 0%, rgba(6, 182, 212, 0.75) 50%, rgba(186, 230, 253, 0.85) 100%)'
-          }}></div>
-        </div>
-
-        {/* Animated Background Blobs */}
+        {/* Animated Blobs */}
         <motion.div 
           animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
@@ -234,7 +220,7 @@ export default function Home() {
               margin: '0 0 40px 0', fontSize: 'clamp(16px, 2.5vw, 20px)', color: 'rgba(255,255,255,0.95)', lineHeight: '1.6', maxWidth: '600px',
               textShadow: '0 1px 10px rgba(0,0,0,0.1)'
             }}>
-              Real-time monitoring, transparent data, and community-driven water management. Access clean water information from any device — smartphone or feature phone via USSD.
+              Real-time monitoring, transparent data, and community-driven water management. Access clean water information from any device.
             </motion.p>
             
             <motion.div variants={fadeInUp} style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -255,7 +241,6 @@ export default function Home() {
               </motion.button>
             </motion.div>
 
-            {/* Trust Badges */}
             <motion.div variants={fadeInUp} style={{ marginTop: '48px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
               {[
                 { icon: CheckCircle, text: "Free to use" },
@@ -271,7 +256,6 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* Scroll Indicator */}
         <motion.div 
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -346,19 +330,19 @@ export default function Home() {
               </h2>
               
               <p style={{ margin: '0 0 32px 0', fontSize: '16px', color: '#475569', lineHeight: '1.6' }}>
-                Access MajiSmart via basic feature phones using USSD. Check water levels, report issues, and manage your account from any phone — no internet required.
+                Dial *384*99# from any phone to check water status, report issues, and manage your account.
               </p>
               
               <div style={{
                 background: 'white', borderRadius: '16px', padding: '32px 24px',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.1)', marginBottom: '24px'
               }}>
-                <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>How to Use MajiSmart on Any Phone</h3>
+                <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>How to Use</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {[
                     { step: '1', text: 'Dial *384*99# on your phone' },
                     { step: '2', text: 'Select Check Water Status or Report Issue' },
-                    { step: '3', text: 'Get instant information or submit your report' }
+                    { step: '3', text: 'Get instant information or submit report' }
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                       <div style={{
@@ -420,7 +404,7 @@ export default function Home() {
           >
             <span style={{ display: 'inline-block', padding: '6px 16px', background: '#eff6ff', color: '#0891b2', borderRadius: '50px', fontSize: '13px', fontWeight: '700', marginBottom: '16px' }}>POWERFUL FEATURES</span>
             <h2 style={{ margin: '0 0 16px 0', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '800', color: '#0f172a' }}>The Complete Water Ecosystem</h2>
-            <p style={{ margin: '0 auto', fontSize: '18px', color: '#64748b', maxWidth: '600px' }}>Everything you need to monitor, manage, and conserve water in a smart world.</p>
+            <p style={{ margin: '0 auto', fontSize: '18px', color: '#64748b', maxWidth: '600px' }}>Everything you need to monitor, manage, and conserve water.</p>
           </motion.div>
           
           <motion.div 
@@ -485,7 +469,7 @@ export default function Home() {
           style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}
         >
           <h2 style={{ margin: '0 0 20px 0', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '800', color: 'white', lineHeight: '1.2' }}>Ready to transform water access?</h2>
-          <p style={{ margin: '0 0 40px 0', fontSize: '18px', color: '#94a3b8' }}>Join thousands of Kenyans already using MajiSmart for reliable water information.</p>
+          <p style={{ margin: '0 0 40px 0', fontSize: '18px', color: '#94a3b8' }}>Join thousands of Kenyans already using MajiSmart.</p>
           <motion.button 
             whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(8, 145, 178, 0.4)" }} 
             whileTap={{ scale: 0.95 }}
@@ -494,7 +478,7 @@ export default function Home() {
           >
             Create Free Account
           </motion.button>
-          <p style={{ margin: '24px 0 0 0', fontSize: '14px', color: '#64748b' }}>✓ Free forever for citizens ✓ No credit card required ✓ Cancel anytime</p>
+          <p style={{ margin: '24px 0 0 0', fontSize: '14px', color: '#64748b' }}>✓ Free forever ✓ No credit card ✓ Cancel anytime</p>
         </motion.div>
       </section>
 
