@@ -69,7 +69,7 @@ const initDB = async () => {
         [node.id, node.name, node.type, node.location, node.county, node.latitude, node.longitude, node.status, node.water_level, node.flow_rate, node.quality_index, node.pressure]);
     }
     for (const report of KENYA_WATER_DATA.communityReports) {
-      await pool.query(`INSERT INTO community_reports (id, user_id, title, description, county, status, created_at) VALUES ($1, 1, $2, $3, $4, $5, $6)`, 
+      await pool.query(`INSERT INTO community_reports (id, user_id, title, description, county, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
         [report.id, report.user_id, report.title, report.description, report.county, report.status, report.created_at]);
     }
     for (const alert of KENYA_WATER_DATA.alerts) {
@@ -78,7 +78,7 @@ const initDB = async () => {
     }
     console.log('✅ Water data seeded successfully');
 
-    // 2. SEED DEFAULT USER CREDENTIALS FOR ALL ROLES
+    // 2. FORCE SEED DEFAULT USER CREDENTIALS (Overwrites if they already exist)
     console.log('🔄 Seeding default user credentials...');
     const defaultUsers = [
       { name: 'System Admin', email: 'admin@majismart.co.ke', password: 'admin123', role: 'admin', county: 'Nairobi', phone: '+254700000001' },
@@ -89,12 +89,18 @@ const initDB = async () => {
 
     for (const u of defaultUsers) {
       const hashed = await bcrypt.hash(u.password, 10);
-      await pool.query(
+      const result = await pool.query(
         `INSERT INTO users (name, email, password, role, county, phone) 
          VALUES ($1, $2, $3, $4, $5, $6) 
-         ON CONFLICT (email) DO NOTHING`,
+         ON CONFLICT (email) DO UPDATE SET 
+         password = EXCLUDED.password, 
+         role = EXCLUDED.role, 
+         county = EXCLUDED.county, 
+         phone = EXCLUDED.phone
+         RETURNING email, role`,
         [u.name, u.email, hashed, u.role, u.county, u.phone]
       );
+      console.log(`✅ Seeded/Updated: ${result.rows[0].email} as ${result.rows[0].role}`);
     }
     console.log('✅ Default user credentials seeded successfully');
 
@@ -155,7 +161,7 @@ app.post('/api/auth/register', async (req, res) => {
     
     const hashed = await bcrypt.hash(password, await bcrypt.genSalt(10));
     const validRoles = ['admin', 'county_officer', 'operator', 'citizen'];
-    const finalRole = validRoles.includes(role) ? role : 'citizen'; // Default to citizen
+    const finalRole = validRoles.includes(role) ? role : 'citizen';
     
     const result = await pool.query(
       `INSERT INTO users (name, email, password, role, county, phone) 
