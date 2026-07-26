@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Droplets, MapPin, Smartphone, Shield, TrendingUp, Users, Wifi, CheckCircle, ArrowRight, Activity, Globe, Zap, Menu, X, Phone, Heart, BarChart3, CloudRain, Award, Target, Clock, ThumbsUp } from 'lucide-react';
+import { Droplets, MapPin, Smartphone, Shield, TrendingUp, Users, Wifi, CheckCircle, ArrowRight, Activity, Globe, Zap, Menu, X, Phone, Award, Target, Clock, ThumbsUp, BarChart3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -8,7 +8,6 @@ export default function Home() {
   const [scrollY, setScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -16,14 +15,7 @@ export default function Home() {
     
     const img = new Image();
     img.src = 'https://images.unsplash.com/photo-1516026672771-29f0a8008ac6?w=1920&q=80';
-    img.onload = () => {
-      setImageLoaded(true);
-      setImageError(false);
-    };
-    img.onerror = () => {
-      setImageError(true);
-      setImageLoaded(true);
-    };
+    img.onload = () => setImageLoaded(true);
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -39,48 +31,12 @@ export default function Home() {
   };
 
   const features = [
-    {
-      icon: Activity,
-      title: "Real-Time Water Monitoring",
-      description: "Access live water quality data, pressure levels, and flow rates from IoT sensors deployed across Kenya.",
-      color: "#0891b2",
-      image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=800&q=80"
-    },
-    {
-      icon: MapPin,
-      title: "Find Nearest Water Points",
-      description: "Locate functional water points near you with real-time availability status.",
-      color: "#06b6d4",
-      image: "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=80"
-    },
-    {
-      icon: Smartphone,
-      title: "USSD Access - No Internet",
-      description: "Dial *384*99# from any phone to check water status. No internet required.",
-      color: "#22d3ee",
-      image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80"
-    },
-    {
-      icon: Users,
-      title: "Community Reporting",
-      description: "Report water leaks, contamination, or infrastructure issues in your community.",
-      color: "#3b82f6",
-      image: "https://images.unsplash.com/photo-1573167243872-43c6433b9d40?w=800&q=80"
-    },
-    {
-      icon: Shield,
-      title: "Transparent & Verified",
-      description: "Blockchain-verified water usage records ensure no falsified readings.",
-      color: "#8b5cf6",
-      image: "https://images.unsplash.com/photo-1639762681485-074b7f413757?w=800&q=80"
-    },
-    {
-      icon: BarChart3,
-      title: "Smart Analytics",
-      description: "Track consumption patterns and get AI-powered recommendations.",
-      color: "#10b981",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80"
-    }
+    { icon: Activity, title: "Real-Time Water Monitoring", description: "Access live water quality data, pressure levels, and flow rates from IoT sensors deployed across Kenya.", color: "#0891b2", image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=800&q=80" },
+    { icon: MapPin, title: "Find Nearest Water Points", description: "Locate functional water points near you with real-time availability status and directions.", color: "#06b6d4", image: "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=80" },
+    { icon: Smartphone, title: "USSD Access - No Internet", description: "Dial *384*99# from any phone to check water status. Perfect for areas with limited connectivity.", color: "#22d3ee", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80" },
+    { icon: Users, title: "Community Reporting", description: "Report water leaks, contamination, or infrastructure issues. Track resolution progress.", color: "#3b82f6", image: "https://images.unsplash.com/photo-1573167243872-43c6433b9d40?w=800&q=80" },
+    { icon: Shield, title: "Transparent & Verified", description: "Blockchain-verified water usage records ensure no falsified readings or inflated bills.", color: "#8b5cf6", image: "https://images.unsplash.com/photo-1639762681485-074b7f413757?w=800&q=80" },
+    { icon: BarChart3, title: "Smart Analytics", description: "Track consumption patterns, spending history, and get AI-powered recommendations.", color: "#10b981", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80" }
   ];
 
   const stats = [
@@ -98,280 +54,123 @@ export default function Home() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', overflowX: 'hidden', position: 'relative' }}>
-      {/* Background Image with Darker Overlay */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100vh',
-        zIndex: -2,
-        overflow: 'hidden'
-      }}>
+    <div style={{ minHeight: '100vh', overflowX: 'hidden', position: 'relative' }}>
+      
+      {/* 1. Background Image Layer */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: -2, overflow: 'hidden' }}>
         <img 
           src="https://images.unsplash.com/photo-1516026672771-29f0a8008ac6?w=1920&q=80"
           alt="Kenya Water Background"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-            opacity: imageLoaded && !imageError ? 1 : 0,
-            transition: 'opacity 0.5s ease'
-          }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: imageLoaded ? 1 : 0, transition: 'opacity 1s ease' }}
         />
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: imageError || !imageLoaded 
-            ? 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #bae6fd 100%)'
-            : 'none',
-          opacity: imageLoaded ? 0 : 1,
-          transition: 'opacity 0.5s ease'
-        }} />
-        {/* DARKER Gradient Overlay for better readability */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.80) 50%, rgba(15, 23, 42, 0.85) 100%)'
-        }} />
       </div>
+
+      {/* 2. Vibrant Water Theme Overlay Layer */}
+      <div style={{ 
+        position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: -1,
+        background: 'linear-gradient(135deg, rgba(8, 145, 178, 0.88) 0%, rgba(14, 165, 233, 0.82) 40%, rgba(6, 182, 212, 0.85) 100%)'
+      }} />
 
       {/* Navigation */}
       <motion.nav 
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.6 }}
         style={{
-          background: scrollY > 50 ? 'rgba(255, 255, 255, 0.98)' : 'rgba(255, 255, 255, 0.95)',
+          background: scrollY > 50 ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
-          padding: '16px 0',
-          position: 'fixed',
-          top: 0,
-          width: '100%',
-          zIndex: 1000,
-          transition: 'all 0.3s ease'
+          borderBottom: scrollY > 50 ? '1px solid rgba(226, 232, 240, 0.8)' : '1px solid rgba(255,255,255,0.1)',
+          padding: '16px 0', position: 'fixed', top: 0, width: '100%', zIndex: 1000, transition: 'all 0.3s ease'
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} 
-            onClick={() => window.scrollTo(0, 0)}
-          >
-            <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)' }}>
+          <motion.div whileHover={{ scale: 1.05 }} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => window.scrollTo(0, 0)}>
+            <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
               <Droplets style={{ color: 'white', width: '22px', height: '22px' }} />
             </div>
-            <span style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>MajiSmart</span>
+            <span style={{ fontSize: '20px', fontWeight: '800', color: scrollY > 50 ? '#0f172a' : 'white' }}>MajiSmart</span>
           </motion.div>
           
           <div className="hide-mobile" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <motion.button 
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/login')} 
-              style={{ padding: '10px 20px', background: 'transparent', border: '1.5px solid #0891b2', color: '#0891b2', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
-            >Sign In</motion.button>
-            <motion.button 
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/register')} 
-              style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)', fontSize: '14px' }}
-            >Get Started</motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/login')} 
+              style={{ padding: '10px 20px', background: 'transparent', border: `1.5px solid ${scrollY > 50 ? '#0891b2' : 'rgba(255,255,255,0.5)'}`, color: scrollY > 50 ? '#0891b2' : 'white', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>
+              Sign In
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/register')} 
+              style={{ padding: '10px 20px', background: scrollY > 50 ? 'linear-gradient(135deg, #0891b2, #06b6d4)' : 'white', color: scrollY > 50 ? 'white' : '#0891b2', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '14px' }}>
+              Get Started
+            </motion.button>
           </div>
 
-          <button 
-            className="show-mobile"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px' }}
-          >
-            {mobileMenuOpen ? <X style={{ width: '24px', height: '24px' }} /> : <Menu style={{ width: '24px', height: '24px' }} />}
+          <button className="show-mobile" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px' }}>
+            {mobileMenuOpen ? <X style={{ width: '24px', height: '24px', color: scrollY > 50 ? '#0f172a' : 'white' }} /> : <Menu style={{ width: '24px', height: '24px', color: scrollY > 50 ? '#0f172a' : 'white' }} />}
           </button>
         </div>
 
         {mobileMenuOpen && (
-          <div className="show-mobile" style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            background: 'white',
-            borderBottom: '1px solid #e2e8f0',
-            padding: '20px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            zIndex: 1000,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
-            <motion.button 
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { navigate('/login'); setMobileMenuOpen(false); }} 
-              style={{ padding: '12px', background: 'transparent', border: '2px solid #0891b2', color: '#0891b2', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '15px' }}
-            >Sign In</motion.button>
-            <motion.button 
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { navigate('/register'); setMobileMenuOpen(false); }} 
-              style={{ padding: '12px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '15px' }}
-            >Get Started</motion.button>
+          <div className="show-mobile" style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', borderBottom: '1px solid #e2e8f0', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => { navigate('/login'); setMobileMenuOpen(false); }} style={{ padding: '12px', background: 'transparent', border: '2px solid #0891b2', color: '#0891b2', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '15px' }}>Sign In</motion.button>
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => { navigate('/register'); setMobileMenuOpen(false); }} style={{ padding: '12px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '15px' }}>Get Started</motion.button>
           </div>
         )}
       </motion.nav>
 
       {/* Hero Section */}
-      <section style={{
-        position: 'relative',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        overflow: 'hidden',
-        paddingTop: '80px',
-        zIndex: 1
-      }}>
+      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden', paddingTop: '80px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', position: 'relative', zIndex: 2, width: '100%' }}>
-          <motion.div 
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            style={{ maxWidth: '800px' }}
-          >
-            {/* Badge with better contrast */}
+          <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={{ maxWidth: '800px' }}>
+            
             <motion.div variants={fadeInUp} style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
-              background: 'rgba(255,255,255,0.15)', 
-              backdropFilter: 'blur(10px)',
-              padding: '10px 20px', 
-              borderRadius: '50px',
-              marginBottom: '24px', 
-              border: '1px solid rgba(255,255,255,0.2)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+              background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)',
+              padding: '10px 20px', borderRadius: '50px', marginBottom: '24px',
+              border: '1px solid rgba(255,255,255,0.25)', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
             }}>
               <span style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
-              <span style={{ color: 'white', fontSize: '14px', fontWeight: '600', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>Trusted by 10M+ Kenyans</span>
+              <span style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>Trusted by 10M+ Kenyans</span>
             </motion.div>
             
-            {/* Main heading with STRONG text shadow */}
             <motion.h1 variants={fadeInUp} style={{
-              margin: '0 0 24px 0', 
-              fontSize: 'clamp(36px, 6vw, 64px)', 
-              fontWeight: '900', 
-              lineHeight: '1.1', 
-              color: 'white',
-              textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)'
+              margin: '0 0 24px 0', fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: '900', lineHeight: '1.1', color: 'white',
+              textShadow: '0 2px 15px rgba(0,0,0,0.15)', letterSpacing: '-0.02em'
             }}>
               Smart Water Intelligence for{' '}
-              <span style={{ 
-                display: 'inline-block', 
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', 
-                WebkitBackgroundClip: 'text', 
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.4))'
-              }}>Kenya</span>
+              <span style={{ display: 'inline-block', color: '#fbbf24', textShadow: '0 2px 10px rgba(251, 191, 36, 0.3)' }}>Kenya</span>
             </motion.h1>
             
-            {/* Description with better readability */}
             <motion.p variants={fadeInUp} style={{
-              margin: '0 0 40px 0', 
-              fontSize: 'clamp(16px, 2.5vw, 20px)', 
-              color: 'rgba(255,255,255,0.95)', 
-              lineHeight: '1.7', 
-              maxWidth: '600px',
-              textShadow: '0 2px 8px rgba(0,0,0,0.4)',
-              fontWeight: '500'
+              margin: '0 0 40px 0', fontSize: 'clamp(16px, 2.5vw, 20px)', color: 'rgba(255,255,255,0.95)', lineHeight: '1.7', maxWidth: '600px',
+              textShadow: '0 1px 5px rgba(0,0,0,0.1)', fontWeight: '400'
             }}>
               Real-time monitoring, transparent data, and community-driven water management. Access clean water information from any device.
             </motion.p>
             
-            {/* Buttons */}
             <motion.div variants={fadeInUp} style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-              <motion.button 
-                whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }} 
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/register')} 
-                style={{ 
-                  padding: '18px 36px', 
-                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', 
-                  color: '#0f172a', 
-                  border: 'none', 
-                  borderRadius: '12px', 
-                  fontSize: '16px', 
-                  fontWeight: '800', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  boxShadow: '0 10px 30px rgba(251, 191, 36, 0.4), 0 4px 12px rgba(0,0,0,0.2)',
-                  textShadow: '0 1px 2px rgba(255,255,255,0.3)'
-                }}
-              >
+              <motion.button whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/register')} 
+                style={{ padding: '18px 36px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 30px rgba(251, 191, 36, 0.3)' }}>
                 Get Started Free <ArrowRight style={{ width: '20px', height: '20px' }} />
               </motion.button>
-              <motion.button 
-                whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.2)" }} 
-                whileTap={{ scale: 0.95 }}
-                style={{ 
-                  padding: '18px 36px', 
-                  background: 'rgba(255,255,255,0.15)', 
-                  color: 'white', 
-                  border: '2px solid rgba(255,255,255,0.4)', 
-                  borderRadius: '12px', 
-                  fontSize: '16px', 
-                  fontWeight: '700', 
-                  cursor: 'pointer', 
-                  backdropFilter: 'blur(10px)',
-                  textShadow: '0 2px 8px rgba(0,0,0,0.4)'
-                }}
-              >
+              <motion.button whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.25)" }} whileTap={{ scale: 0.95 }}
+                style={{ padding: '18px 36px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(10px)' }}>
                 Explore Features
               </motion.button>
             </motion.div>
 
-            {/* Trust badges */}
             <motion.div variants={fadeInUp} style={{ marginTop: '48px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              {[
-                { icon: CheckCircle, text: "Free to use" },
-                { icon: CheckCircle, text: "No credit card" },
-                { icon: CheckCircle, text: "Works on any phone" }
-              ].map((badge, i) => (
+              {[{ icon: CheckCircle, text: "Free to use" }, { icon: CheckCircle, text: "No credit card" }, { icon: CheckCircle, text: "Works on any phone" }].map((badge, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.95)' }}>
-                  <badge.icon style={{ width: '20px', height: '20px', color: '#4ade80', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
-                  <span style={{ fontSize: '14px', fontWeight: '600', textShadow: '0 2px 6px rgba(0,0,0,0.4)' }}>{badge.text}</span>
+                  <badge.icon style={{ width: '20px', height: '20px', color: '#4ade80' }} />
+                  <span style={{ fontSize: '14px', fontWeight: '600' }}>{badge.text}</span>
                 </div>
               ))}
             </motion.div>
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div 
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            position: 'absolute',
-            bottom: '40px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            color: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px',
-            opacity: 0.8,
-            zIndex: 2,
-            cursor: 'pointer',
-            textShadow: '0 2px 8px rgba(0,0,0,0.4)'
-          }}
-          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
-        >
+        <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', opacity: 0.8, zIndex: 2, cursor: 'pointer' }}
+          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}>
           <span style={{ fontSize: '14px', fontWeight: '600' }}>Scroll to explore</span>
-          <div style={{ width: '24px', height: '40px', border: '2px solid rgba(255,255,255,0.6)', borderRadius: '12px', display: 'flex', justifyContent: 'center', paddingTop: '8px' }}>
-            <div style={{ width: '4px', height: '8px', background: 'rgba(255,255,255,0.8)', borderRadius: '2px' }}></div>
+          <div style={{ width: '24px', height: '40px', border: '2px solid rgba(255,255,255,0.5)', borderRadius: '12px', display: 'flex', justifyContent: 'center', paddingTop: '8px' }}>
+            <div style={{ width: '4px', height: '8px', background: 'white', borderRadius: '2px' }}></div>
           </div>
         </motion.div>
       </section>
@@ -379,20 +178,10 @@ export default function Home() {
       {/* Stats Section */}
       <section style={{ padding: '80px 20px', background: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <motion.div 
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}
-          >
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
             {stats.map((stat, i) => (
-              <motion.div 
-                key={i} 
-                variants={fadeInUp}
-                whileHover={{ scale: 1.03, boxShadow: "0px 15px 40px rgba(8, 145, 178, 0.15)" }}
-                style={{ textAlign: 'center', padding: '32px 20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9', transition: 'all 0.3s' }}
-              >
+              <motion.div key={i} variants={fadeInUp} whileHover={{ scale: 1.03, boxShadow: "0px 15px 40px rgba(8, 145, 178, 0.15)" }
+                } style={{ textAlign: 'center', padding: '32px 20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9', transition: 'all 0.3s' }}>
                 <div style={{ width: '56px', height: '56px', background: `${stat.color}15`, borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <stat.icon style={{ width: '28px', height: '28px', color: stat.color }} />
                 </div>
@@ -405,15 +194,9 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section style={{ padding: '80px 20px', background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)' }}>
+      <section style={{ padding: '80px 20px', background: 'linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%)' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: 'center', marginBottom: '60px' }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ textAlign: 'center', marginBottom: '60px' }}>
             <span style={{ display: 'inline-block', padding: '6px 16px', background: '#eff6ff', color: '#0891b2', borderRadius: '50px', fontSize: '13px', fontWeight: '700', marginBottom: '16px' }}>WHY CHOOSE US</span>
             <h2 style={{ margin: '0 0 16px 0', fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: '800', color: '#0f172a' }}>Trusted Across Kenya</h2>
             <p style={{ margin: '0 auto', fontSize: '18px', color: '#64748b', maxWidth: '600px' }}>Join millions of Kenyans who trust MajiSmart for their water needs</p>
@@ -421,34 +204,9 @@ export default function Home() {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
             {whyChooseUs.map((item, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                whileHover={{ y: -5 }}
-                style={{ 
-                  background: 'white', 
-                  padding: '32px 24px', 
-                  borderRadius: '16px', 
-                  textAlign: 'center',
-                  border: '1px solid #f1f5f9',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                  transition: 'all 0.3s'
-                }}
-              >
-                <div style={{ 
-                  width: '64px', 
-                  height: '64px', 
-                  background: 'linear-gradient(135deg, #0891b2, #06b6d4)', 
-                  borderRadius: '16px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  margin: '0 auto 20px',
-                  boxShadow: '0 8px 20px rgba(8, 145, 178, 0.3)'
-                }}>
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} whileHover={{ y: -5 }}
+                style={{ background: 'white', padding: '32px 24px', borderRadius: '16px', textAlign: 'center', border: '1px solid #f1f5f9', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', transition: 'all 0.3s' }}>
+                <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 8px 20px rgba(8, 145, 178, 0.3)' }}>
                   <item.icon style={{ width: '32px', height: '32px', color: 'white' }} />
                 </div>
                 <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{item.title}</h3>
@@ -464,74 +222,36 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '48px', alignItems: 'center' }}>
             <div>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                background: 'rgba(8, 145, 178, 0.1)', padding: '8px 16px', borderRadius: '50px',
-                marginBottom: '16px'
-              }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(8, 145, 178, 0.1)', padding: '8px 16px', borderRadius: '50px', marginBottom: '16px' }}>
                 <Phone style={{ width: '16px', height: '16px', color: '#0891b2' }} />
                 <span style={{ color: '#0891b2', fontSize: '13px', fontWeight: '700' }}>NO SMARTPHONE? NO PROBLEM</span>
               </div>
-              
               <h2 style={{ margin: '0 0 16px 0', fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: '800', color: '#0f172a', lineHeight: '1.2' }}>
-                Access MajiSmart on{' '}
-                <span style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Any Phone</span>
+                Access MajiSmart on <span style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Any Phone</span>
               </h2>
+              <p style={{ margin: '0 0 32px 0', fontSize: '16px', color: '#475569', lineHeight: '1.6' }}>Access MajiSmart via basic feature phones using USSD. Check water levels, report issues, and manage your account from any phone — no internet required.</p>
               
-              <p style={{ margin: '0 0 32px 0', fontSize: '16px', color: '#475569', lineHeight: '1.6' }}>
-                Access MajiSmart via basic feature phones using USSD. Check water levels, report issues, and manage your account from any phone — no internet required.
-              </p>
-              
-              <div style={{
-                background: '#f8fafc', borderRadius: '16px', padding: '32px 24px',
-                border: '2px solid #e2e8f0', marginBottom: '24px'
-              }}>
+              <div style={{ background: '#f8fafc', borderRadius: '16px', padding: '32px 24px', border: '2px solid #e2e8f0', marginBottom: '24px' }}>
                 <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>How to Use MajiSmart on Any Phone</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {[
-                    { step: '1', text: 'Dial *384*99# on your phone' },
-                    { step: '2', text: 'Select Check Water Status or Report Issue' },
-                    { step: '3', text: 'Get instant information or submit your report' }
-                  ].map((item, i) => (
+                  {[{ step: '1', text: 'Dial *384*99# on your phone' }, { step: '2', text: 'Select Check Water Status or Report Issue' }, { step: '3', text: 'Get instant information or submit your report' }].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                      <div style={{
-                        width: '40px', height: '40px',
-                        background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
-                        borderRadius: '10px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: '800', flexShrink: 0
-                      }}>{item.step}</div>
+                      <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', flexShrink: 0 }}>{item.step}</div>
                       <p style={{ margin: 0, fontSize: '15px', color: '#475569', paddingTop: '6px' }}>{item.text}</p>
                     </div>
                   ))}
                 </div>
               </div>
               
-              <div style={{
-                background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: 'white',
-                padding: '24px 32px', borderRadius: '16px', textAlign: 'center',
-                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.3)'
-              }}>
+              <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: 'white', padding: '24px 32px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 8px 24px rgba(15, 23, 42, 0.3)' }}>
                 <p style={{ margin: '0 0 8px 0', fontSize: '12px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '1px' }}>USSD Code</p>
                 <p style={{ margin: 0, fontSize: '36px', fontWeight: '900', fontFamily: 'monospace', letterSpacing: '3px' }}>*384*99#</p>
                 <p style={{ margin: '12px 0 0 0', fontSize: '13px', opacity: 0.8 }}>Available on all networks</p>
               </div>
             </div>
             
-            <div style={{
-              borderRadius: '20px', overflow: 'hidden',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-              height: '500px',
-              backgroundImage: 'url("https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80")',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              position: 'relative'
-            }}>
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%)',
-                display: 'flex', alignItems: 'flex-end', padding: '32px 24px'
-              }}>
+            <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', height: '500px', backgroundImage: 'url("https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%)', display: 'flex', alignItems: 'flex-end', padding: '32px 24px' }}>
                 <div style={{ color: 'white', textAlign: 'center', width: '100%' }}>
                   <Smartphone style={{ width: '48px', height: '48px', margin: '0 auto 12px', opacity: 0.9 }} />
                   <p style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Available on all networks</p>
@@ -544,58 +264,21 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section style={{ padding: '100px 20px', background: 'white' }}>
+      <section style={{ padding: '100px 20px', background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: 'center', marginBottom: '60px' }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ textAlign: 'center', marginBottom: '60px' }}>
             <span style={{ display: 'inline-block', padding: '6px 16px', background: '#eff6ff', color: '#0891b2', borderRadius: '50px', fontSize: '13px', fontWeight: '700', marginBottom: '16px' }}>POWERFUL FEATURES</span>
             <h2 style={{ margin: '0 0 16px 0', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '800', color: '#0f172a' }}>The Complete Water Ecosystem</h2>
             <p style={{ margin: '0 auto', fontSize: '18px', color: '#64748b', maxWidth: '600px' }}>Everything you need to monitor, manage, and conserve water in a smart world.</p>
           </motion.div>
           
-          <motion.div 
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}
-          >
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
             {features.map((feature, i) => (
-              <motion.div 
-                key={i} 
-                variants={fadeInUp}
-                whileHover={{ scale: 1.03, boxShadow: "0px 15px 40px rgba(8, 145, 178, 0.15)" }}
-                style={{ 
-                  background: 'white', borderRadius: '20px', 
-                  border: '1px solid #f1f5f9', 
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s' 
-                }}
-              >
-                <div style={{
-                  height: '200px',
-                  backgroundImage: `url("${feature.image}")`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  position: 'relative'
-                }}>
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    background: `linear-gradient(135deg, ${feature.color}dd, ${feature.color}88)`
-                  }}></div>
-                  <div style={{
-                    position: 'absolute', top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    background: 'white', padding: '16px',
-                    borderRadius: '14px',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
-                  }}>
+              <motion.div key={i} variants={fadeInUp} whileHover={{ scale: 1.03, boxShadow: "0px 15px 40px rgba(8, 145, 178, 0.15)" }}
+                style={{ background: 'white', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden', transition: 'all 0.3s' }}>
+                <div style={{ height: '200px', backgroundImage: `url("${feature.image}")`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${feature.color}dd, ${feature.color}88)` }}></div>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: '16px', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
                     <feature.icon style={{ width: '32px', height: '32px', color: feature.color }} />
                   </div>
                 </div>
@@ -610,26 +293,16 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section style={{ padding: '100px 20px', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(circle at 50% 50%, rgba(8, 145, 178, 0.2) 0%, transparent 70%)' }}></div>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}
-        >
-          <h2 style={{ margin: '0 0 20px 0', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '800', color: 'white', lineHeight: '1.2', textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}>Ready to transform water access?</h2>
-          <p style={{ margin: '0 0 40px 0', fontSize: '18px', color: '#94a3b8', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>Join thousands of Kenyans already using MajiSmart for reliable water information.</p>
-          <motion.button 
-            whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(8, 145, 178, 0.4)" }} 
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/register')} 
-            style={{ padding: '18px 40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 10px 30px rgba(8, 145, 178, 0.3)' }}
-          >
+      <section style={{ padding: '100px 20px', background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 70%)' }}></div>
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }} style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <h2 style={{ margin: '0 0 20px 0', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '800', color: 'white', lineHeight: '1.2', textShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>Ready to transform water access?</h2>
+          <p style={{ margin: '0 0 40px 0', fontSize: '18px', color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>Join thousands of Kenyans already using MajiSmart for reliable water information.</p>
+          <motion.button whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/register')} 
+            style={{ padding: '18px 40px', background: 'white', color: '#0891b2', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
             Create Free Account
           </motion.button>
-          <p style={{ margin: '24px 0 0 0', fontSize: '14px', color: '#64748b' }}>✓ Free forever for citizens ✓ No credit card required ✓ Cancel anytime</p>
+          <p style={{ margin: '24px 0 0 0', fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>✓ Free forever for citizens ✓ No credit card required ✓ Cancel anytime</p>
         </motion.div>
       </section>
 
@@ -647,10 +320,9 @@ export default function Home() {
       </footer>
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @media (max-width: 768px) { .hide-mobile { display: none !important; } .show-mobile { display: block !important; } }
+        @media (min-width: 769px) { .show-mobile { display: none !important; } }
       `}</style>
     </div>
   );
