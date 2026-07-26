@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import CitizenDashboard from './pages/CitizenDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import CountyOfficerDashboard from './pages/CountyOfficerDashboard';
-import OperatorDashboard from './pages/OperatorDashboard';
+import Home from './pages/Home.jsx';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import CitizenDashboard from './pages/CitizenDashboard.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import CountyOfficerDashboard from './pages/CountyOfficerDashboard.jsx';
+import OperatorDashboard from './pages/OperatorDashboard.jsx';
 
 function DashboardRouter() {
   const { user, loading } = useAuth();
