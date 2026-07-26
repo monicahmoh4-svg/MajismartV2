@@ -12,10 +12,14 @@ import {
 export default function CitizenDashboard() {
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  
+  // 1. SAFE RESPONSIVE STATE (Prevents mobile render crashes)
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   
-  // Safe default states to prevent blank screens
+  // 2. SAFE DEFAULT STATES (Prevents blank screens if API is slow)
   const [areaStatus, setAreaStatus] = useState({ active_nodes: 0, status: 'normal', safety: { label: 'Safe' } });
   const [waterPoints, setWaterPoints] = useState([]);
   const [mySpending, setMySpending] = useState({ this_month: { total_ksh: 0, total_litres: 0, transactions: 0 } });
@@ -30,31 +34,47 @@ export default function CitizenDashboard() {
   const [filters, setFilters] = useState({ quality: 'all', status: 'all' });
 
   useEffect(() => {
-    const handleResize = () => setSidebarOpen(window.innerWidth > 768);
-    window.addEventListener('resize', handleResize);
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    
+    // Set initial state safely
     handleResize();
+    
+    window.addEventListener('resize', handleResize);
     fetchAllData();
+    
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, []); 
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
+      // 3. PERFECT INTERCEPTOR MATCH: Your api.get already unwraps .data, so we handle the raw response directly
       const [areaData, pointsData, spendingData, reportsData, alertsData, communityData] = await Promise.all([
-        api.get(`/citizen/area-status?county=${user?.county || ''}`).catch(() => ({ data: {} })),
-        api.get(`/citizen/water-points?county=${user?.county || ''}`).catch(() => ({ data: [] })),
-        api.get('/citizen/my-spending').catch(() => ({ data: { this_month: { total_ksh: 0, total_litres: 0, transactions: 0 } } })),
-        api.get('/reports').catch(() => ({ data: [] })),
-        api.get('/alerts?resolved=false&limit=5').catch(() => ({ data: [] })),
-        api.get('/reports').catch(() => ({ data: [] }))
+        api.get(`/citizen/area-status?county=${user?.county || ''}`).catch(() => ({})),
+        api.get(`/citizen/water-points?county=${user?.county || ''}`).catch(() => []),
+        api.get('/citizen/my-spending').catch(() => ({ this_month: { total_ksh: 0, total_litres: 0, transactions: 0 } })),
+        api.get('/reports').catch(() => []),
+        api.get('/alerts?resolved=false&limit=5').catch(() => []),
+        api.get('/reports').catch(() => []) 
       ]);
       
-      setAreaStatus(areaData.data || areaData);
-      setWaterPoints(Array.isArray(pointsData.data) ? pointsData.data : (Array.isArray(pointsData) ? pointsData : []));
-      setMySpending(spendingData.data || spendingData);
-      setMyReports(Array.isArray(reportsData.data) ? reportsData.data.filter(r => r.user_id === user?.id) : []);
-      setAlerts(Array.isArray(alertsData.data) ? alertsData.data : (Array.isArray(alertsData) ? alertsData : []));
-      setCommunityReports(Array.isArray(communityData.data) ? communityData.data : (Array.isArray(communityData) ? communityData : []));
+      setAreaStatus(areaData || {});
+      setWaterPoints(Array.isArray(pointsData) ? pointsData : []);
+      setMySpending(spendingData || { this_month: { total_ksh: 0, total_litres: 0, transactions: 0 } });
+      
+      const allReports = Array.isArray(reportsData) ? reportsData : [];
+      setMyReports(allReports.filter(r => r && r.user_id === user?.id));
+      
+      setAlerts(Array.isArray(alertsData) ? alertsData : []);
+      setCommunityReports(Array.isArray(communityData) ? communityData : []);
     } catch (err) { 
       console.error('Fetch error:', err); 
     } finally { 
@@ -107,14 +127,18 @@ export default function CitizenDashboard() {
   }
 
   if (!user) {
-    return <div style={{ padding: '40px', textAlign: 'center' }}>Please log in to view your dashboard.</div>;
+    return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif' }}>Please log in to view your dashboard.</div>;
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', overflowX: 'hidden' }}>
       {/* Sidebar */}
-      <motion.aside animate={{ x: sidebarOpen ? 0 : -280 }} transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        style={{ width: '280px', background: 'white', borderRight: '1px solid #f1f5f9', position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+      <motion.aside 
+        initial={false}
+        animate={{ x: sidebarOpen ? 0 : -280 }} 
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{ width: '280px', background: 'white', borderRight: '1px solid #f1f5f9', position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 1000, display: 'flex', flexDirection: 'column' }}
+      >
         <div style={{ padding: '24px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -142,7 +166,7 @@ export default function CitizenDashboard() {
             <motion.button 
               key={item.id} 
               whileHover={{ x: 4 }} 
-              onClick={() => { setActiveSection(item.id); if (window.innerWidth <= 768) setSidebarOpen(false); }}
+              onClick={() => { setActiveSection(item.id); if (isMobile) setSidebarOpen(false); }}
               aria-current={activeSection === item.id ? 'page' : undefined}
               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', marginBottom: '4px', border: 'none',
                 background: activeSection === item.id ? '#eff6ff' : 'transparent', color: activeSection === item.id ? '#0891b2' : '#475569',
@@ -168,9 +192,9 @@ export default function CitizenDashboard() {
         </div>
       </motion.aside>
 
-      {/* Main Content */}
-      <div style={{ flex: 1, marginLeft: sidebarOpen && window.innerWidth > 768 ? '280px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh', width: '100%' }}>
-        <header style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #f1f5f9', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
+      {/* Main Content - 4. SAFE MARGIN CALCULATION */}
+      <div style={{ flex: 1, marginLeft: !isMobile && sidebarOpen ? '280px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh', width: '100%' }}>
+        <header style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #f1f5f9', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button className="show-mobile" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px' }} aria-label="Open sidebar">
               <Menu style={{ width: '24px', height: '24px', color: '#0f172a' }} />
