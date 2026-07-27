@@ -1,78 +1,93 @@
-const CACHE_NAME = 'majismart-v1';
-const urlsToCache = [
+const CACHE_NAME = 'majismart-v2';
+const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/manifest.json'
 ];
 
-// Install event - cache essential files
+// Install - cache only what exists
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        console.log('[SW] Caching static assets');
+        // Cache with error handling for each asset
+        return Promise.allSettled(
+          STATIC_ASSETS.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`[SW] Failed to cache ${url}:`, err);
+            })
+          )
+        );
       })
-      .catch((err) => {
-        console.log('Cache failed:', err);
+      .then(() => {
+        console.log('[SW] Installation complete');
+        return self.skipWaiting();
       })
   );
-  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate - clean old caches
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          })
       );
+    }).then(() => {
+      console.log('[SW] Activation complete');
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch - Network first, fallback to cache
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip chrome-extension and other non-http requests
+  if (!event.request.url.startsWith('http')) return;
+
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - return response
-        if (response) {
+        // Don't cache non-successful responses
+        if (!response || response.status !== 200) {
           return response;
         }
-        return fetch(event.request).then(
-          (response) => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
 
-            // Clone the response
-            const responseToCache = response.clone();
+        // Clone and cache successful responses
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME)
+          .then((cache) => {
+            cache.put(event.request, responseToCache).catch(err => {
+              console.warn('[SW] Failed to cache response:', err);
+            });
+          });
 
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                // Only cache GET requests
-                if (event.request.method === 'GET') {
-                  cache.put(event.request, responseToCache);
-                }
-              });
-
-            return response;
-          }
-        );
+        return response;
       })
       .catch(() => {
-        // If both cache and network fail, return offline page
-        return caches.match('/');
+        // Network failed, try cache
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // If it's a navigation request, return the cached index
+            if (event.request.mode === 'navigate') {
+              return caches.match('/');
+            }
+            return new Response('Offline', { status: 503 });
+          });
       })
   );
 });
