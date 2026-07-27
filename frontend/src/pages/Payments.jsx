@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CreditCard, Search, Plus, X, CheckCircle, Clock, XCircle } from 'lucide-react'
 import api from '../api'
-
 export default function Payments() {
   const [payments, setPayments] = useState([])
   const [nodes, setNodes] = useState([])
@@ -13,7 +12,6 @@ export default function Payments() {
   const [form, setForm] = useState({ node_id:'', phone:'', litres:20 })
   const [submitting, setSubmitting] = useState(false)
   const [payResult, setPayResult] = useState(null)
-
   const load = () => {
     Promise.all([
       api.get('/payments?limit=100'),
@@ -23,19 +21,16 @@ export default function Payments() {
       .finally(() => setLoading(false))
   }
   useEffect(load, [])
-
   const filtered = payments.filter(p => {
     const q = search.toLowerCase()
     const match = !q || p.phone.includes(q) || p.node_name?.toLowerCase().includes(q) || (p.mpesa_code||'').toLowerCase().includes(q)
     return match && (!filterStatus || p.status === filterStatus)
   })
-
   const initiate = async e => {
     e.preventDefault(); setSubmitting(true); setPayResult(null)
     try {
       const res = await api.post('/payments/initiate', form)
       setPayResult({ success: true, msg: res.message, id: res.payment_id })
-      // Poll for completion
       let attempts = 0
       const poll = setInterval(async () => {
         attempts++
@@ -50,11 +45,8 @@ export default function Payments() {
     } catch (err) { setPayResult({ success: false, msg: err.error || 'Failed' }) }
     finally { setSubmitting(false) }
   }
-
   const statusIcon = s => s==='completed' ? <CheckCircle size={14} color="#0d9e75" /> : s==='pending' ? <Clock size={14} color="#e8a020" /> : <XCircle size={14} color="#d93025" />
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
@@ -68,8 +60,6 @@ export default function Payments() {
           <Plus size={16} /> Initiate Payment
         </button>
       </div>
-
-      {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 24 }}>
         {[
           { label: 'Total Revenue',    val: `Ksh ${Number(stats?.total_revenue||0).toLocaleString()}`, color: '#0d9e75' },
@@ -83,8 +73,6 @@ export default function Payments() {
           </div>
         ))}
       </div>
-
-      {/* Payment form */}
       {showForm && (
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -126,8 +114,6 @@ export default function Payments() {
           </form>
         </div>
       )}
-
-      {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a6' }} />
@@ -141,8 +127,6 @@ export default function Payments() {
           <option value="failed">Failed</option>
         </select>
       </div>
-
-      {/* Table */}
       <div className="card" style={{ overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
