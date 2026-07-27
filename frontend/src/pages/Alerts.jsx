@@ -1,40 +1,32 @@
 import { useState, useEffect } from 'react'
 import { Bell, AlertTriangle, CheckCircle, Info, Filter } from 'lucide-react'
 import api from '../api'
-
 export default function Alerts() {
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('open')
   const [severity, setSeverity] = useState('')
   const [resolving, setResolving] = useState(null)
-
   const load = () => {
     const q = filter === 'open' ? 'resolved=false' : filter === 'resolved' ? 'resolved=true' : ''
     api.get(`/alerts?${q}&limit=100${severity?'&severity='+severity:''}`)
       .then(setAlerts).finally(() => setLoading(false))
   }
   useEffect(load, [filter, severity])
-
   const resolve = async (id) => {
     setResolving(id)
     await api.patch(`/alerts/${id}/resolve`, {})
     setResolving(null)
     load()
   }
-
   const sevIcon = s => s === 'critical' ? <AlertTriangle size={16} color="#d93025" />
     : s === 'warning' ? <AlertTriangle size={16} color="#e8a020" />
     : <Info size={16} color="#1a7fd4" />
-
   const sevBg = s => s === 'critical' ? '#fce8e6' : s === 'warning' ? '#fef3d8' : '#e8f4fd'
   const sevBorder = s => s === 'critical' ? '#f5c6c3' : s === 'warning' ? '#fad99c' : '#b5d4f4'
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   const open = alerts.filter(a => !a.resolved).length
   const critical = alerts.filter(a => !a.resolved && a.severity === 'critical').length
-
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
@@ -44,8 +36,6 @@ export default function Alerts() {
         </h1>
         <p style={{ color: '#5f6368', marginTop: 4 }}>System alerts and notifications from all nodes</p>
       </div>
-
-      {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Open', val: alerts.filter(a=>!a.resolved).length, color: '#d93025', bg: '#fce8e6' },
@@ -59,8 +49,6 @@ export default function Alerts() {
           </div>
         ))}
       </div>
-
-      {/* Filters */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
         {[['open','Open'],['resolved','Resolved'],['all','All']].map(([val,label]) => (
           <button key={val} onClick={() => setFilter(val)}
@@ -75,8 +63,6 @@ export default function Alerts() {
           <option value="info">Info</option>
         </select>
       </div>
-
-      {/* Alert list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {alerts.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
