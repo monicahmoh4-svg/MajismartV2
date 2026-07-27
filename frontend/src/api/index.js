@@ -1,48 +1,59 @@
-import axios from 'axios'
+import axios from 'axios';
 
-// Get API URL from env, with fallback
-const API_URL = import.meta.env.VITE_API_URL || 'https://majismartv2.onrender.com'
+// 1. Get URL from env, or fallback to your actual Render backend URL
+const RAW_URL = import.meta.env.VITE_API_URL || 'https://majismartv2.onrender.com';
 
+// 2. Clean the URL (remove any trailing slashes)
+const CLEAN_URL = RAW_URL.replace(/\/+$/, '');
+
+// 3. Create Axios instance
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: `${CLEAN_URL}/api`,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
   }
-})
+});
 
-// Add token to requests
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('ms_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+// DEBUG: Check your browser console (F12) to see this message
+console.log(' MajiSmart API connecting to:', `${CLEAN_URL}/api`);
 
-// Handle responses and errors
+// Request Interceptor: Attach JWT Token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('ms_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Handle Errors
 api.interceptors.response.use(
-  res => res.data,
-  err => {
-    // Log detailed error for debugging
-    console.error('API Error:', {
-      url: err.config?.url,
-      method: err.config?.method,
-      status: err.response?.status,
-      message: err.response?.data?.error || err.message
-    })
+  (response) => response.data,
+  (error) => {
+    // Distinguish between "Server Unreachable" and "Server Error"
+    if (error.code === 'ERR_NETWORK' || !error.response) {
+      console.error(' NETWORK ERROR: Cannot reach backend server.');
+      console.error('Target URL:', error.config?.url);
+      console.error('Check if backend is running and VITE_API_URL is correct.');
+    } else {
+      console.error(' API Error:', error.response.status, error.response.data);
+    }
 
-    // Clear auth on 401
-    if (err.response?.status === 401) {
-      localStorage.removeItem('ms_token')
-      localStorage.removeItem('ms_user')
+    // Handle Session Expiry
+    if (error.response?.status === 401) {
+      localStorage.removeItem('ms_token');
+      localStorage.removeItem('ms_user');
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+        window.location.href = '/login';
       }
     }
 
-    return Promise.reject(err.response?.data || { error: err.message || 'Network error' })
+    return Promise.reject(error.response?.data || { error: 'Network error. Please check your connection.' });
   }
-)
+);
 
-export default api
+export default api;
