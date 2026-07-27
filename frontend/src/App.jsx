@@ -1,53 +1,62 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
-import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import PWAInstallBanner from './components/PWAInstallBanner'
+import axios from 'axios'
 
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
-  
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #0891b2', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-      </div>
-    )
+// Determine the correct API URL based on environment
+const API_URL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api' 
+    : 'https://majismartv2.onrender.com/api')
+
+console.log('🌐 MajiSmart API connecting to:', API_URL)
+
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 30000, // 30 second timeout
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// Request interceptor - attach auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
   }
-  
-  return user ? children : <Navigate to="/login" />
-}
+)
 
-function AppRoutes() {
-  return (
-    <>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-      <PWAInstallBanner />
-    </>
-  )
-}
+// Response interceptor - handle errors gracefully
+api.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    // Provide meaningful error messages
+    if (error.code === 'ECONNABORTED') {
+      console.error('⏱️ Request timeout - server took too long to respond')
+      return Promise.reject(new Error('Request timed out. Please try again.'))
+    }
+    
+    if (!error.response) {
+      console.error('🌐 Network error - cannot reach server at', API_URL)
+      return Promise.reject(new Error('Network error. Please check your internet connection or try again later.'))
+    }
+    
+    // Handle 401 Unauthorized - token expired
+    if (error.response.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      // Only redirect if not already on login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    
+    return Promise.reject(error.response.data || error.response)
+  }
+)
 
-export default function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
-  )
-}
+export default api
