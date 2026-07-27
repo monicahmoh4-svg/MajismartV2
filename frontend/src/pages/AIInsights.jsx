@@ -7,7 +7,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import api from '../api'
 import { useApiData } from '../hooks/useApiData'
 import { Loading, ErrorState, EmptyState, LiveBadge } from '../components/ui/StateViews'
-
 function PriorityBadge({ priority }) {
   const map = {
     critical: { cls: 'badge-critical', label: 'Critical' },
@@ -17,14 +16,12 @@ function PriorityBadge({ priority }) {
   const m = map[priority] || map.info
   return <span className={`badge ${m.cls}`}>{m.label}</span>
 }
-
 function ChatPanel() {
   const [messages, setMessages] = useState([
     { role: 'assistant', text: "Hi, I'm the MajiSmart AI assistant. Ask me about leaks, offline nodes, revenue, or alerts." }
   ])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
-
   const send = async () => {
     const text = input.trim()
     if (!text || sending) return
@@ -40,7 +37,6 @@ function ChatPanel() {
       setSending(false)
     }
   }
-
   return (
     <div className="card fade-in" style={{ display: 'flex', flexDirection: 'column', height: 380 }}>
       <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--gray-200)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -83,16 +79,13 @@ function ChatPanel() {
     </div>
   )
 }
-
 export default function AIInsights() {
   const { data: nodesData } = useApiData(() => api.get('/nodes'), { isEmpty: d => !d?.length })
   const [selectedNode, setSelectedNode] = useState('')
-
   const { data, loading, error, empty, lastUpdated, refetch } = useApiData(
     () => api.get('/ai/insights'),
     { pollMs: 60000, isEmpty: d => !d }
   )
-
   const forecastQuery = useApiData(
     () => selectedNode ? api.get(`/ai/forecast/${selectedNode}?days=7`) : Promise.resolve(null),
     { deps: [selectedNode], isEmpty: d => !d?.forecast?.length }
@@ -101,10 +94,8 @@ export default function AIInsights() {
     () => selectedNode ? api.get(`/ai/recommendations/${selectedNode}`) : Promise.resolve(null),
     { deps: [selectedNode], isEmpty: d => !d?.recommendations?.length }
   )
-
   if (loading) return <Loading rows={4} />
   if (error) return <ErrorState message={error} onRetry={refetch} />
-
   return (
     <div>
       <div style={{ marginBottom: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 8 }}>
@@ -117,12 +108,10 @@ export default function AIInsights() {
         </div>
         <LiveBadge lastUpdated={lastUpdated} />
       </div>
-
       {empty ? (
         <EmptyState title="No AI insights yet" subtitle="Data will appear once nodes start reporting" />
       ) : (
         <>
-          {/* System overview */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16, marginBottom: 20 }}>
             <div className="card fade-in" style={{ padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -136,7 +125,6 @@ export default function AIInsights() {
                 </div>
               )) : <EmptyState title="No leak risks detected" />}
             </div>
-
             <div className="card fade-in" style={{ padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <Activity size={16} color="#1a7fd4" />
@@ -145,7 +133,6 @@ export default function AIInsights() {
               <div style={{ fontSize: 28, fontWeight: 800, color: '#1a7fd4' }}>{data.total_nodes - data.total_nodes_at_risk}/{data.total_nodes}</div>
               <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>nodes with no detected issues</div>
             </div>
-
             <div className="card fade-in" style={{ padding: 20, gridColumn: 'span 1' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <TrendingUp size={16} color="#0d9e75" />
@@ -161,8 +148,6 @@ export default function AIInsights() {
               ) : <EmptyState title="Not enough data to forecast" />}
             </div>
           </div>
-
-          {/* Per-node deep dive */}
           <div className="card fade-in" style={{ padding: 20, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
               <Droplets size={16} color="#6f42c1" />
@@ -172,7 +157,6 @@ export default function AIInsights() {
                 {(nodesData || []).map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
               </select>
             </div>
-
             {!selectedNode ? (
               <EmptyState title="Select a node above" subtitle="View its consumption forecast and AI recommendations" />
             ) : (
@@ -198,7 +182,6 @@ export default function AIInsights() {
                     </div>
                   )}
                 </div>
-
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Lightbulb size={14} color="#e8a020" /> AI Recommendations
@@ -224,7 +207,6 @@ export default function AIInsights() {
           </div>
         </>
       )}
-
       <ChatPanel />
     </div>
   )
