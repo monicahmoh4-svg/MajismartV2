@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Wifi, Droplets, Thermometer, Eye, Activity, AlertTriangle, Save } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import api from '../api'
-
 export default function NodeDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -16,7 +15,6 @@ export default function NodeDetail() {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [msg, setMsg] = useState('')
-
   const load = async () => {
     try {
       const [n, hist, lat, pay, alrt] = await Promise.all([
@@ -32,9 +30,7 @@ export default function NodeDetail() {
     } catch { navigate('/app/nodes') }
     finally { setLoading(false) }
   }
-
   useEffect(() => { load() }, [id])
-
   const saveEdit = async () => {
     try {
       await api.patch(`/nodes/${id}`, editForm)
@@ -42,30 +38,23 @@ export default function NodeDetail() {
     } catch { setMsg('Save failed') }
     setTimeout(() => setMsg(''), 3000)
   }
-
   const resolveAlert = async (alertId) => {
     await api.patch(`/alerts/${alertId}/resolve`, {})
     setAlerts(a => a.filter(x => x.id !== alertId))
   }
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   const chartData = history.map(r => ({
     time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     level: r.water_level,
     flow: r.flow_rate,
     turbidity: r.turbidity,
   }))
-
   return (
     <div>
       <button onClick={() => navigate('/app/nodes')} className="btn btn-ghost" style={{ marginBottom: 20, padding: '8px 14px' }}>
         <ArrowLeft size={16} /> Back to Nodes
       </button>
-
       {msg && <div className={`alert-bar ${msg.includes('!') ? 'alert-bar-success' : 'alert-bar-error'}`}>{msg}</div>}
-
-      {/* Header */}
       <div className="card" style={{ padding: 24, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
@@ -93,8 +82,6 @@ export default function NodeDetail() {
             }
           </div>
         </div>
-
-        {/* Metrics */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginTop: 20 }}>
           {[
             { icon: Droplets, label: 'Water Level', val: `${latest?.water_level ?? '--'}%`, color: '#1a7fd4' },
@@ -114,8 +101,6 @@ export default function NodeDetail() {
           ))}
         </div>
       </div>
-
-      {/* Chart */}
       <div className="card" style={{ padding: 20, marginBottom: 20 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>24-hour Water Level History</h3>
         <ResponsiveContainer width="100%" height={200}>
@@ -129,8 +114,6 @@ export default function NodeDetail() {
           </LineChart>
         </ResponsiveContainer>
       </div>
-
-      {/* Alerts + Payments */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Active Alerts</h3>
@@ -147,7 +130,6 @@ export default function NodeDetail() {
               </div>
             ))}
         </div>
-
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Recent Payments</h3>
           {payments.length === 0
