@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Users as UsersIcon, Search, Plus, X, Shield, MapPin } from 'lucide-react'
 import api from '../api'
-
 const ROLES = ['admin','county_officer','operator','community']
 const COUNTIES = ['Nairobi','Mombasa','Kisumu','Nakuru','Kiambu','Machakos','Kakamega','Meru','Kilifi','Uasin Gishu','Other']
 const ROLE_COLOR = { admin: 'critical', county_officer: 'active', operator: 'info', community: 'warning' }
-
 export default function Users() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -15,16 +13,13 @@ export default function Users() {
   const [form, setForm] = useState({ name:'', email:'', password:'', role:'operator', county:'', phone:'' })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
-
   const load = () => api.get('/users').then(setUsers).finally(() => setLoading(false))
   useEffect(load, [])
-
   const filtered = users.filter(u => {
     const q = search.toLowerCase()
     return (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
       && (!filterRole || u.role === filterRole)
   })
-
   const save = async e => {
     e.preventDefault(); setSaving(true)
     try {
@@ -35,9 +30,7 @@ export default function Users() {
     } catch (err) { setMsg(err.error || 'Failed') }
     finally { setSaving(false); setTimeout(() => setMsg(''), 4000) }
   }
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
@@ -49,10 +42,7 @@ export default function Users() {
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={16} /> Add User</button>
       </div>
-
       {msg && <div className={`alert-bar ${msg.includes('!') ? 'alert-bar-success' : 'alert-bar-error'}`}>{msg}</div>}
-
-      {/* Role summary badges */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
         {ROLES.map(r => {
           const count = users.filter(u => u.role === r).length
@@ -66,8 +56,6 @@ export default function Users() {
           )
         })}
       </div>
-
-      {/* Add user form */}
       {showForm && (
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -110,14 +98,10 @@ export default function Users() {
           </form>
         </div>
       )}
-
-      {/* Search */}
       <div style={{ position: 'relative', marginBottom: 16 }}>
         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a6' }} />
         <input placeholder="Search by name or email…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 38 }} />
       </div>
-
-      {/* Users table */}
       <div className="card" style={{ overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
