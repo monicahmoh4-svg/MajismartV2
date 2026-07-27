@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 // Dashboard Components
@@ -6,12 +6,14 @@ import AdminDashboard from '../components/dashboards/AdminDashboard'
 import CountyDashboard from '../components/dashboards/CountyDashboard'
 import OperatorDashboard from '../components/dashboards/OperatorDashboard'
 import CommunityDashboard from '../components/dashboards/CommunityDashboard'
-
-// The new, fully animated Citizen Dashboard
 import CitizenDashboard from './CitizenDashboard'
+
+// Enterprise GIS Dashboard (New)
+import GISDashboard from './GISDashboard'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
+  const [searchParams] = useSearchParams()
   
   // Show loading state while checking auth
   if (loading) {
@@ -35,6 +37,16 @@ export default function Dashboard() {
     operator: <OperatorDashboard />,
     community: <CitizenDashboard />,       // Community Members get the Citizen Dashboard
     community_manager: <CommunityDashboard />, // Separate role for managers, if needed
+  }
+  
+  // Enterprise GIS Override
+  // Allow admin, county_officer, and operator roles to access the GIS dashboard
+  // via URL parameter: /dashboard?view=gis
+  const viewMode = searchParams.get('view')
+  const gisAuthorizedRoles = ['admin', 'county_officer', 'operator']
+  
+  if (viewMode === 'gis' && gisAuthorizedRoles.includes(user?.role)) {
+    return <GISDashboard />
   }
   
   return dashboards[user?.role] || <CitizenDashboard />
