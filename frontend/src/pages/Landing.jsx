@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { 
   Droplets, ArrowRight, CheckCircle, MapPin, ShieldCheck, Wallet, Bell, 
   Smartphone, Waves, TrendingUp, Users, Clock, AlertCircle, Heart,
   Phone, BarChart3, Zap, Globe, Award, Activity, Thermometer, 
   Droplet, Gauge, Server, Database, Lock, CreditCard, MessageSquare,
-  Wifi, ChevronRight, Play, Shield
+  Wifi, ChevronRight, Play, Shield, Star, Quote, Video, FileText,
+  Calendar, Target, Users2, Building2, Leaf, HandHeart, ShieldAlert
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -32,8 +33,6 @@ export default function Landing() {
   const [scrollY, setScrollY] = useState(0)
   const [isVisible, setIsVisible] = useState({})
   const { scrollYProgress } = useScroll()
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0])
-  const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.95])
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -167,21 +166,19 @@ export default function Landing() {
         overflow: 'hidden',
         background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)'
       }}>
-        {/* Background Image */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: 'url("https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=1920&q=80")',
+          backgroundImage: 'url("https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=2574&auto=format&fit=crop")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           opacity: 0.2,
           filter: 'blur(2px)'
         }}></div>
         
-        {/* Animated Circles */}
         <div style={{
           position: 'absolute',
           top: '10%',
@@ -290,7 +287,6 @@ export default function Landing() {
               </button>
             </div>
 
-            {/* Trust Badges */}
             <div style={{ marginTop: '60px', display: 'flex', gap: '40px', flexWrap: 'wrap', animation: 'fadeInUp 0.8s ease 0.8s both' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'rgba(255,255,255,0.9)' }}>
                 <CheckCircle style={{ width: '24px', height: '24px', color: '#4ade80' }} />
@@ -308,7 +304,6 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
         <div style={{
           position: 'absolute',
           bottom: '40px',
@@ -368,7 +363,6 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Image Showcase */}
           <div style={{
             borderRadius: '24px',
             overflow: 'hidden',
@@ -396,10 +390,118 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Impact Stories Section - NEW */}
+      <section className="animate-on-scroll" id="impact" style={{
+        padding: '100px 24px',
+        background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+        position: 'relative',
+        transform: `translateY(${isVisible['impact'] ? 0 : '50px'})`,
+        opacity: isVisible['impact'] ? 1 : 0,
+        transition: 'all 0.8s ease'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(8, 145, 178, 0.1)',
+              padding: '8px 16px',
+              borderRadius: '50px',
+              marginBottom: '20px'
+            }}>
+              <Heart style={{ width: '18px', height: '18px', color: '#0891b2' }} />
+              <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>REAL IMPACT</span>
+            </div>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>Transforming Lives Across Kenya</h2>
+            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>See how MajiSmart is making a difference in communities nationwide</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
+            {[
+              {
+                image: 'https://images.unsplash.com/photo-1594708723806-f5e7d4e04e7b?q=80&w=2574&auto=format&fit=crop',
+                name: 'Mary Wanjiku',
+                location: 'Kibera, Nairobi',
+                quote: 'Before MajiSmart, I woke up at 3am daily to fetch water. Now I get alerts and sleep peacefully. It has changed my life.',
+                role: 'Mother of 3'
+              },
+              {
+                image: 'https://images.unsplash.com/photo-1531384441850-786b2da70a3c?q=80&w=2574&auto=format&fit=crop',
+                name: 'James Ochieng',
+                location: 'Kisumu County',
+                quote: 'As a water vendor, MajiSmart helps me know when water is available. I save time and serve more customers efficiently.',
+                role: 'Water Vendor'
+              },
+              {
+                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2574&auto=format&fit=crop',
+                name: 'Grace Muthoni',
+                location: 'Machakos',
+                quote: 'The USSD service is a lifesaver. I dont need internet to check water status. Every Kenyan should use this.',
+                role: 'Farmer'
+              }
+            ].map((story, i) => (
+              <div key={i} style={{
+                background: 'white',
+                borderRadius: '24px',
+                overflow: 'hidden',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                transition: 'all 0.3s'
+              }} className="card-hover" onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.15)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
+                <div style={{
+                  height: '280px',
+                  backgroundImage: `url("${story.image}")`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '20px',
+                    background: 'white',
+                    padding: '8px 16px',
+                    borderRadius: '50px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <Quote style={{ width: '16px', height: '16px', color: '#0891b2' }} />
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#0891b2' }}>Testimonial</span>
+                  </div>
+                </div>
+                <div style={{ padding: '32px' }}>
+                  <p style={{ margin: '0 0 24px 0', fontSize: '16px', color: '#475569', lineHeight: '1.7', fontStyle: 'italic' }}>"{story.quote}"</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: '800',
+                      fontSize: '20px'
+                    }}>{story.name.charAt(0)}</div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{story.name}</p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#64748b' }}>{story.role} • {story.location}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* USSD Section */}
       <section className="animate-on-scroll" id="ussd" style={{
         padding: '100px 24px',
-        background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+        background: 'white',
         position: 'relative',
         overflow: 'hidden',
         transform: `translateY(${isVisible['ussd'] ? 0 : '50px'})`,
@@ -436,7 +538,8 @@ export default function Landing() {
                 borderRadius: '20px',
                 padding: '40px',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-                marginBottom: '30px'
+                marginBottom: '30px',
+                border: '2px solid #e2e8f0'
               }}>
                 <h3 style={{ margin: '0 0 30px 0', fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>How to Use MajiSmart on Any Phone</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -506,6 +609,85 @@ export default function Landing() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Technology Features */}
+      <section className="animate-on-scroll" id="tech" style={{
+        padding: '100px 24px',
+        background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+        transform: `translateY(${isVisible['tech'] ? 0 : '50px'})`,
+        opacity: isVisible['tech'] ? 1 : 0,
+        transition: 'all 0.8s ease'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(8, 145, 178, 0.1)',
+              padding: '8px 16px',
+              borderRadius: '50px',
+              marginBottom: '20px'
+            }}>
+              <Zap style={{ width: '18px', height: '18px', color: '#0891b2' }} />
+              <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>ADVANCED TECHNOLOGY</span>
+            </div>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>Powered by Cutting-Edge Tech</h2>
+            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>IoT, AI, and blockchain working together for water security</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+            {[
+              { icon: Wifi, title: 'IoT Sensors', desc: 'Real-time water quality, pressure, and flow monitoring across the network', color: '#0891b2', image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=600&q=80' },
+              { icon: Activity, title: 'AI Analytics', desc: 'Machine learning predicts demand, detects leaks, and optimizes distribution', color: '#06b6d4', image: 'https://images.unsplash.com/photo-1655720828006-7ae6b841fa0d?q=80&w=2574&auto=format&fit=crop' },
+              { icon: Database, title: 'Blockchain', desc: 'Immutable records ensure transparency and prevent data manipulation', color: '#22d3ee', image: 'https://images.unsplash.com/photo-1639762681485-074b7f413757?w=600&q=80' },
+              { icon: Shield, title: 'Bank-Grade Security', desc: 'End-to-end encryption protects your data and transactions', color: '#3b82f6', image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&q=80' }
+            ].map((tech, i) => (
+              <div key={i} style={{
+                background: 'white',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                transition: 'all 0.3s',
+                transform: `translateY(${isVisible['tech'] ? 0 : '30px'})`,
+                opacity: isVisible['tech'] ? 1 : 0,
+                transitionDelay: `${i * 0.1}s`
+              }} className="card-hover" onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.12)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
+                <div style={{
+                  height: '220px',
+                  backgroundImage: `url("${tech.image}")`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: `linear-gradient(135deg, ${tech.color}cc, ${tech.color}88)`
+                  }}></div>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    background: 'white',
+                    padding: '20px',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                  }}>
+                    <tech.icon style={{ width: '40px', height: '40px', color: tech.color }} />
+                  </div>
+                </div>
+                <div style={{ padding: '32px' }}>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>{tech.title}</h3>
+                  <p style={{ margin: 0, fontSize: '16px', color: '#64748b', lineHeight: '1.6' }}>{tech.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -592,15 +774,15 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Trust Section */}
-      <section className="animate-on-scroll" id="trust" style={{
+      {/* Partners Section - NEW */}
+      <section className="animate-on-scroll" id="partners" style={{
         padding: '100px 24px',
         background: 'linear-gradient(135deg, #0f172a, #1e293b)',
         color: 'white',
         position: 'relative',
         overflow: 'hidden',
-        transform: `translateY(${isVisible['trust'] ? 0 : '50px'})`,
-        opacity: isVisible['trust'] ? 1 : 0,
+        transform: `translateY(${isVisible['partners'] ? 0 : '50px'})`,
+        opacity: isVisible['partners'] ? 1 : 0,
         transition: 'all 0.8s ease'
       }}>
         <div style={{
@@ -626,11 +808,68 @@ export default function Landing() {
               borderRadius: '50px',
               marginBottom: '20px'
             }}>
-              <Award style={{ width: '18px', height: '18px', color: '#22d3ee' }} />
-              <span style={{ color: '#22d3ee', fontSize: '14px', fontWeight: '700' }}>WHY CHOOSE US</span>
+              <Building2 style={{ width: '18px', height: '18px', color: '#22d3ee' }} />
+              <span style={{ color: '#22d3ee', fontSize: '14px', fontWeight: '700' }}>TRUSTED PARTNERS</span>
             </div>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900' }}>Trustless Water Management</h2>
-            <p style={{ margin: 0, fontSize: '20px', opacity: '0.9', maxWidth: '700px', margin: '0 auto' }}>Every feature is anchored in transparency and accountability because water is a fundamental right.</p>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900' }}>Working With Leading Organizations</h2>
+            <p style={{ margin: 0, fontSize: '20px', opacity: '0.9', maxWidth: '700px', margin: '0 auto' }}>Collaborating with government, NGOs, and tech partners to scale water access</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
+            {['Ministry of Water', 'UNICEF Kenya', 'Safaricom', 'World Bank', 'Kenya Red Cross', 'Google.org'].map((partner, i) => (
+              <div key={i} style={{
+                padding: '32px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                textAlign: 'center',
+                transition: 'all 0.3s'
+              }} className="card-hover" onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  background: 'rgba(34, 211, 238, 0.1)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  border: '2px solid rgba(34, 211, 238, 0.3)'
+                }}>
+                  <Building2 style={{ width: '40px', height: '40px', color: '#22d3ee' }} />
+                </div>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>{partner}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Section */}
+      <section className="animate-on-scroll" id="trust" style={{
+        padding: '100px 24px',
+        background: 'white',
+        transform: `translateY(${isVisible['trust'] ? 0 : '50px'})`,
+        opacity: isVisible['trust'] ? 1 : 0,
+        transition: 'all 0.8s ease'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(8, 145, 178, 0.1)',
+              padding: '8px 16px',
+              borderRadius: '50px',
+              marginBottom: '20px'
+            }}>
+              <Award style={{ width: '18px', height: '18px', color: '#0891b2' }} />
+              <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>WHY CHOOSE US</span>
+            </div>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>Built on Trust & Transparency</h2>
+            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '700px', margin: '0 auto' }}>Every feature is anchored in accountability because water is a fundamental right.</p>
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
@@ -642,24 +881,23 @@ export default function Landing() {
             ].map((item, i) => (
               <div key={i} style={{
                 padding: '40px',
-                background: 'rgba(255,255,255,0.05)',
+                background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
                 borderRadius: '20px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
+                border: '1px solid #e2e8f0',
                 transition: 'all 0.3s'
-              }} className="card-hover" onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                <item.icon style={{ width: '48px', height: '48px', color: '#22d3ee', marginBottom: '20px' }} />
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '800' }}>{item.title}</h3>
-                <p style={{ margin: '0 0 24px 0', fontSize: '16px', opacity: '0.85', lineHeight: '1.6' }}>{item.desc}</p>
+              }} className="card-hover" onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
+                <item.icon style={{ width: '48px', height: '48px', color: '#0891b2', marginBottom: '20px' }} />
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>{item.title}</h3>
+                <p style={{ margin: '0 0 24px 0', fontSize: '16px', color: '#64748b', lineHeight: '1.6' }}>{item.desc}</p>
                 <div style={{
                   padding: '16px',
-                  background: 'rgba(34, 211, 238, 0.1)',
+                  background: 'rgba(8, 145, 178, 0.1)',
                   borderRadius: '12px',
-                  border: '1px solid rgba(34, 211, 238, 0.2)'
+                  border: '1px solid rgba(8, 145, 178, 0.2)'
                 }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '32px', fontWeight: '900', color: '#22d3ee' }}>{item.stat}</p>
-                  <p style={{ margin: 0, fontSize: '13px', opacity: '0.7' }}>{item.statLabel}</p>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '32px', fontWeight: '900', color: '#0891b2' }}>{item.stat}</p>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>{item.statLabel}</p>
                 </div>
               </div>
             ))}
