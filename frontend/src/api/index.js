@@ -1,44 +1,48 @@
-import axios from 'axios';
+import axios from 'axios'
 
-// Use the environment variable, or fallback to a default if missing.
-// IMPORTANT: You MUST set VITE_API_URL in your Vercel settings to your actual backend URL.
-const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const baseURL = rawUrl.replace(/\/+$/, '') + '/api';
-
-console.log('🚀 MajiSmart API configured for:', baseURL);
+// Get API URL from env, with fallback
+const API_URL = import.meta.env.VITE_API_URL || 'https://majismartv2.onrender.com'
 
 const api = axios.create({
-  baseURL,
-  timeout: 15000
-});
-
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('ms_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  baseURL: `${API_URL}/api`,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json'
   }
-  return config;
-});
+})
 
+// Add token to requests
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('ms_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// Handle responses and errors
 api.interceptors.response.use(
   res => res.data,
   err => {
-    // Log the exact error to the browser console for debugging
-    console.error('❌ API REQUEST FAILED:', {
+    // Log detailed error for debugging
+    console.error('API Error:', {
       url: err.config?.url,
       method: err.config?.method,
       status: err.response?.status,
-      errorMessage: err.response?.data?.error || err.message,
-      fullError: err
-    });
+      message: err.response?.data?.error || err.message
+    })
 
+    // Clear auth on 401
     if (err.response?.status === 401) {
-      localStorage.removeItem('ms_token');
-      localStorage.removeItem('ms_user');
-      window.location.href = '/login';
+      localStorage.removeItem('ms_token')
+      localStorage.removeItem('ms_user')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
-    return Promise.reject(err.response?.data || err);
-  }
-);
 
-export default api;
+    return Promise.reject(err.response?.data || { error: err.message || 'Network error' })
+  }
+)
+
+export default api
