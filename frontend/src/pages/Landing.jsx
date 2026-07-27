@@ -163,7 +163,6 @@ export default function Landing() {
             )}
           </div>
           
-          {/* Desktop Navigation */}
           <div className="hide-mobile" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button onClick={() => navigate('/login')} style={{
               padding: '12px 24px',
@@ -188,7 +187,6 @@ export default function Landing() {
             }}>Get Started</button>
           </div>
 
-          {/* Mobile Menu Button */}
           <button 
             className="show-mobile"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -204,7 +202,6 @@ export default function Landing() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -543,7 +540,7 @@ export default function Landing() {
             }}>
               <div style={{ textAlign: 'center', color: 'white' }}>
                 <h3 style={{ margin: '0 0 16px 0', fontSize: isMobile ? '28px' : '42px', fontWeight: '800' }}>Technology Meets Community</h3>
-                <p style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', opacity: 0.95, maxWidth: '600px', margin: '0 auto' }}>Bridging the gap between advanced IoT monitoring and everyday water access needs across Kenya</p>
+                <p style={{ margin: '0 auto', fontSize: isMobile ? '16px' : '20px', opacity: 0.95, maxWidth: '600px' }}>Bridging the gap between advanced IoT monitoring and everyday water access needs across Kenya</p>
               </div>
             </div>
           </motion.div>
@@ -723,7 +720,7 @@ export default function Landing() {
               <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>REAL IMPACT</span>
             </div>
             <h2 style={{ margin: '0 0 16px 0', fontSize: isMobile ? '32px' : '48px', fontWeight: '900', color: '#0f172a' }}>Transforming Lives Across Kenya</h2>
-            <p style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>See how MajiSmart is making a difference in communities nationwide</p>
+            <p style={{ margin: '0 auto', fontSize: isMobile ? '16px' : '20px', color: '#64748b', maxWidth: '600px' }}>See how MajiSmart is making a difference in communities nationwide</p>
           </motion.div>
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(350px, 1fr))', gap: isMobile ? '24px' : '32px' }}>
@@ -843,7 +840,7 @@ export default function Landing() {
               <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>POWERFUL FEATURES</span>
             </div>
             <h2 style={{ margin: '0 0 16px 0', fontSize: isMobile ? '32px' : '48px', fontWeight: '900', color: '#0f172a' }}>The Complete Water Ecosystem</h2>
-            <p style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>Everything you need to monitor, manage, and conserve water in a smart world.</p>
+            <p style={{ margin: '0 auto', fontSize: isMobile ? '16px' : '20px', color: '#64748b', maxWidth: '600px' }}>Everything you need to monitor, manage, and conserve water in a smart world.</p>
           </motion.div>
           
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(350px, 1fr))', gap: isMobile ? '24px' : '32px' }}>
@@ -941,7 +938,7 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            style={{ margin: '0 0 40px 0', fontSize: isMobile ? '16px' : '22px', opacity: '0.95', maxWidth: '600px', margin: '0 auto' }}
+            style={{ margin: '0 auto 40px', fontSize: isMobile ? '16px' : '22px', opacity: '0.95', maxWidth: '600px' }}
           >
             Join thousands of Kenyans already using MajiSmart for reliable water information.
           </motion.p>
