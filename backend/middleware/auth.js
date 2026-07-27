@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
@@ -14,7 +13,6 @@ function authMiddleware(req, res, next) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 }
-
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -23,5 +21,4 @@ function requireRole(...roles) {
     next();
   };
 }
-
 module.exports = { authMiddleware, requireRole };
