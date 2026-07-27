@@ -2,20 +2,24 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Droplets } from 'lucide-react'
+
 const COUNTIES = ['Nairobi','Mombasa','Kisumu','Nakuru','Kiambu','Machakos','Kakamega','Meru','Kilifi','Uasin Gishu','Other']
 const ROLES = [
-  { value: 'admin', label: 'System Admin' },
-  { value: 'county_officer', label: 'County Water Officer' },
+  { value: 'community', label: 'Community Member' },
   { value: 'operator', label: 'Node Operator' },
-  { value: 'community', label: 'Community Manager' },
+  { value: 'county_officer', label: 'County Water Officer' },
+  { value: 'admin', label: 'System Admin' },
 ]
+
 export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name:'', email:'', password:'', role:'operator', county:'', phone:'' })
+  const [form, setForm] = useState({ name:'', email:'', password:'', role:'community', county:'', phone:'' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
   const set = k => e => setForm(f => ({...f, [k]: e.target.value}))
+
   const submit = async e => {
     e.preventDefault()
     setError(''); setLoading(true)
@@ -23,9 +27,15 @@ export default function Register() {
       await register(form)
       navigate('/app/dashboard')
     } catch (err) {
-      setError(err.error || 'Registration failed')
-    } finally { setLoading(false) }
+      console.error('Registration error details:', err)
+      // Extract the exact error message from the backend response
+      const errorMsg = err?.error || err?.response?.data?.error || err?.message || 'Registration failed. Please check your details and try again.'
+      setError(errorMsg)
+    } finally { 
+      setLoading(false) 
+    }
   }
+
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0c1a2e,#0d3a6e)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: 'white', borderRadius: 16, padding: '40px 36px', width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
@@ -36,7 +46,9 @@ export default function Register() {
           <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Create account</h1>
           <p style={{ color: '#5f6368', fontSize: 14 }}>Join MajiSmart Kenya</p>
         </div>
+        
         {error && <div className="alert-bar alert-bar-error">{error}</div>}
+        
         <form onSubmit={submit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
@@ -50,7 +62,7 @@ export default function Register() {
           </div>
           <div className="form-group">
             <label>Email address</label>
-            <input type="email" placeholder="jane@county.go.ke" value={form.email} onChange={set('email')} required />
+            <input type="email" placeholder="jane@example.com" value={form.email} onChange={set('email')} required />
           </div>
           <div className="form-group">
             <label>Password</label>
