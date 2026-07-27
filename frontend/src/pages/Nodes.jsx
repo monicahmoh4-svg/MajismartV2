@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Wifi, Plus, Search, MapPin, Droplets, ChevronRight, X } from 'lucide-react'
 import api from '../api'
-
 const STATUS_COLOR = { active:'#0d9e75', warning:'#e8a020', offline:'#9aa0a6', maintenance:'#6f42c1' }
-const TYPE_ICON = { borehole:'🕳️', tank:'🗄️', kiosk:'🏪', river_intake:'🌊' }
-
+const TYPE_ICON = { borehole:'🕳️', tank:'🗄️', kiosk:'', river_intake:'🌊' }
 export default function Nodes() {
   const [nodes, setNodes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -15,19 +13,16 @@ export default function Nodes() {
   const [form, setForm] = useState({ name:'', location:'', county:'', latitude:'', longitude:'', type:'borehole', capacity_litres:10000 })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
-
   const load = () => {
     api.get('/nodes').then(setNodes).finally(() => setLoading(false))
   }
   useEffect(load, [])
-
   const filtered = nodes.filter(n => {
     const q = search.toLowerCase()
     const match = !q || n.name.toLowerCase().includes(q) || n.county.toLowerCase().includes(q) || n.location.toLowerCase().includes(q)
     const st = !filterStatus || n.status === filterStatus
     return match && st
   })
-
   const save = async e => {
     e.preventDefault(); setSaving(true)
     try {
@@ -38,9 +33,7 @@ export default function Nodes() {
     } catch (err) { setMsg(err.error || 'Failed') }
     finally { setSaving(false); setTimeout(() => setMsg(''), 3000) }
   }
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
@@ -54,10 +47,7 @@ export default function Nodes() {
           <Plus size={16} /> Add Node
         </button>
       </div>
-
       {msg && <div className={`alert-bar ${msg.includes('!') ? 'alert-bar-success' : 'alert-bar-error'}`}>{msg}</div>}
-
-      {/* Add node form */}
       {showForm && (
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -98,8 +88,6 @@ export default function Nodes() {
           </form>
         </div>
       )}
-
-      {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a6' }} />
@@ -113,8 +101,6 @@ export default function Nodes() {
           <option value="maintenance">Maintenance</option>
         </select>
       </div>
-
-      {/* Node cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
         {filtered.map(n => (
           <Link key={n.id} to={`/app/nodes/${n.id}`} style={{ textDecoration: 'none' }}>
@@ -133,8 +119,6 @@ export default function Nodes() {
                 </div>
                 <span className={`badge badge-${n.status}`}>{n.status}</span>
               </div>
-
-              {/* Water level bar */}
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span style={{ fontSize: 12, color: '#5f6368' }}>Water level</span>
@@ -146,7 +130,6 @@ export default function Nodes() {
                   <div style={{ height: '100%', width: (n.water_level ?? 0)+'%', borderRadius: 99, background: STATUS_COLOR[n.status], transition: 'width 1s' }} />
                 </div>
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, fontSize: 12 }}>
                 <div style={{ background: '#f8f9fa', borderRadius: 7, padding: '8px 10px', textAlign: 'center' }}>
                   <div style={{ color: '#9aa0a6' }}>Flow</div>
