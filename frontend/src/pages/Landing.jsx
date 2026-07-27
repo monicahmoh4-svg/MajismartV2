@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
-import { Droplets, Wifi, CreditCard, Bell, BarChart3, ArrowRight, CheckCircle, MapPin, Zap } from 'lucide-react'
+import { Droplets, Wifi, CreditCard, Bell, BarChart3, ArrowRight, CheckCircle, MapPin, Zap, CloudRain, Shield, Activity } from 'lucide-react'
+
 export default function Landing() {
   return (
     <div style={{ fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif', color: '#202124', overflowX: 'hidden' }}>
+      {/* NAV */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         background: 'rgba(8,17,30,.95)', backdropFilter: 'blur(12px)',
@@ -22,7 +24,10 @@ export default function Landing() {
           }}>Get Started</Link>
         </div>
       </nav>
+
+      {/* HERO */}
       <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+        {/* HD background — African community water */}
         <div style={{
           position: 'absolute', inset: 0,
           backgroundImage: `url('https://images.unsplash.com/photo-1504297050568-910d24c426d3?w=1920&q=95&auto=format&fit=crop')`,
@@ -30,15 +35,18 @@ export default function Landing() {
           backgroundPosition: 'center 50%',
           backgroundRepeat: 'no-repeat',
         }} />
+        {/* Cinematic overlay */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'linear-gradient(105deg, rgba(5,12,25,0.93) 0%, rgba(8,22,50,0.87) 38%, rgba(10,42,72,0.72) 62%, rgba(6,28,18,0.48) 100%)',
         }} />
+        {/* Bottom wave fade */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 180,
           background: 'linear-gradient(to top, #f8f9fa 0%, transparent 100%)',
           zIndex: 3,
         }} />
+        {/* Ripple rings */}
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 1 }}>
           {[1,2,3,4].map(i => (
             <div key={i} style={{
@@ -71,14 +79,17 @@ export default function Landing() {
             50%    { opacity:.45; }
           }
         `}</style>
+        {/* Floating drop icons */}
         <div style={{ position: 'absolute', top: '18%', right: '7%', animation: 'float 4s ease-in-out infinite', zIndex: 2 }}>
           <Droplets size={72} color="rgba(13,158,117,.38)" />
         </div>
         <div style={{ position: 'absolute', bottom: '28%', right: '13%', animation: 'float 5s ease-in-out infinite .6s', zIndex: 2 }}>
           <Droplets size={44} color="rgba(26,127,212,.38)" />
         </div>
+        {/* Hero content */}
         <div style={{ position: 'relative', zIndex: 2, padding: '130px 44px 110px', maxWidth: 1100, margin: '0 auto', width: '100%' }}>
           <div style={{ animation: 'fadeUp .9s ease forwards', maxWidth: 700 }}>
+            {/* Live badge */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'rgba(13,158,117,.18)', border: '1px solid rgba(13,158,117,.45)',
@@ -111,6 +122,7 @@ export default function Landing() {
               lets communities pay via M-Pesa on any basic phone, and gives county officials
               real-time data to manage every water point — ending shortages before they start.
             </p>
+            {/* CTA buttons */}
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 60 }}>
               <Link to="/register" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 9,
@@ -137,6 +149,7 @@ export default function Landing() {
                 Sign In
               </Link>
             </div>
+            {/* Impact stats bar */}
             <div style={{
               display: 'flex', flexWrap: 'wrap',
               background: 'rgba(8,17,35,.58)', backdropFilter: 'blur(14px)',
@@ -161,12 +174,15 @@ export default function Landing() {
             </div>
           </div>
         </div>
+        {/* Wave bottom */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 4 }}>
           <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
             <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8f9fa"/>
           </svg>
         </div>
       </section>
+
+      {/* HOW IT WORKS */}
       <section style={{ padding: '80px 32px', background: '#f8f9fa', textAlign: 'center' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <span style={{ color: '#1a7fd4', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>How It Works</span>
@@ -182,9 +198,9 @@ export default function Landing() {
               { icon: Bell,       color: '#d93025', title: 'Smart Alerts',     desc: 'Instant SMS when tank is low, pump fails, or water quality drops' },
               { icon: BarChart3,  color: '#6f42c1', title: 'County Dashboard', desc: 'Live map, usage data, revenue reports for all county water points' },
             ].map((s, i) => (
-              <div key={i} className="card" style={{ padding: 28, textAlign: 'left', transition: 'transform .2s,box-shadow .2s', cursor: 'default' }}
+              <div key={i} style={{ background: 'white', borderRadius: 12, padding: 28, textAlign: 'left', boxShadow: '0 1px 3px rgba(0,0,0,.08)', border: '1px solid #e8eaed', transition: 'transform .2s,box-shadow .2s', cursor: 'default' }}
                 onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,.13)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='' }}>
+                onMouseLeave={e => { e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,.08)' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: s.color+'18', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                   <s.icon size={22} color={s.color} />
                 </div>
@@ -195,6 +211,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* FEATURES */}
       <section style={{ padding: '80px 32px', background: 'white' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 48, alignItems: 'center' }}>
@@ -225,6 +243,7 @@ export default function Landing() {
                 Start Free Trial <ArrowRight size={16} />
               </Link>
             </div>
+            {/* Live demo card */}
             <div style={{ background: '#0c1a2e', borderRadius: 16, padding: 28, color: 'white' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0d9e75', boxShadow: '0 0 8px #0d9e75' }} />
@@ -261,6 +280,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* CTA */}
       <section style={{ padding: '80px 32px', background: 'linear-gradient(135deg,#0c1a2e,#0d3a6e)', textAlign: 'center' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <Droplets size={48} color="rgba(77,208,168,.6)" style={{ marginBottom: 20 }} />
@@ -291,6 +312,8 @@ export default function Landing() {
           </p>
         </div>
       </section>
+
+      {/* FOOTER */}
       <footer style={{ background: '#060e1a', padding: '32px', textAlign: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
           <Droplets size={18} color="#1a7fd4" />
