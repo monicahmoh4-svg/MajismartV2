@@ -1,285 +1,204 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { 
-  Droplets, ArrowRight, Shield, Smartphone, Globe, 
-  Users, Leaf, BarChart3, CreditCard 
-} from 'lucide-react'
+import { Droplets, ArrowRight, CheckCircle, MapPin, ShieldCheck, Wallet, Bell } from 'lucide-react'
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-}
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15 }
-  }
-}
+const PROBLEMS = [
+  {
+    emoji: '😴',
+    problem: 'Waking up at 3am to fill tanks',
+    solution: 'Get a notification the moment water comes back on — so you sleep through the night.',
+    color: '#1a7fd4',
+  },
+  {
+    emoji: '💸',
+    problem: 'Paying 5× the normal price during shortages',
+    solution: 'See every working water point near you and their prices before you leave the house.',
+    color: '#d93025',
+  },
+  {
+    emoji: '🤢',
+    problem: 'Not knowing if the water is safe to drink',
+    solution: 'Plain-language safety status for your area. "Safe to drink" or "Boil first" — nothing complicated.',
+    color: '#0d9e75',
+  },
+  {
+    emoji: '🪣',
+    problem: 'Running out of water without warning',
+    solution: 'Know your tank level and get an alert before it runs dry.',
+    color: '#7a3fb5',
+  },
+  {
+    emoji: '📄',
+    problem: 'Water bills you can\'t understand or dispute',
+    solution: 'See exactly what you\'ve spent on water this month and whether you\'re paying a fair price.',
+    color: '#e8a020',
+  },
+  {
+    emoji: '🔧',
+    problem: 'No plumber at night when a pipe bursts',
+    solution: 'Report the problem instantly and have it routed to the right county team immediately.',
+    color: '#0d6e56',
+  },
+]
 
 export default function Landing() {
   return (
-    <div className="landing-page">
-      {/* HERO SECTION */}
-      <section className="hero-section">
-        <div className="hero-bg">
-          <img 
-            src="https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=2574&auto=format&fit=crop" 
-            alt="African community water access" 
-          />
-          <div className="hero-overlay"></div>
-        </div>
-        
-        <motion.div 
-          className="hero-content container"
-          initial="hidden"
-          animate="visible"
-          variants={staggerContainer}
-        >
-          <motion.div variants={fadeInUp} className="live-badge">
-            <span className="pulse-dot"></span> Live — IoT Sensors Active Across Kenya
-          </motion.div>
-          
-          <motion.h1 variants={fadeInUp}>
-            Powering the Future of Water,<br />
-            <span className="text-gradient">One Drop at a Time</span>
-          </motion.h1>
-          
-          <motion.p variants={fadeInUp} className="hero-subtitle">
-            MajiSmart combines IoT smart water metering, blockchain transparency, and AI-driven analytics to democratize access to clean water. Transparent, tamper-proof, and built for everyone.
-          </motion.p>
-          
-          <motion.div variants={fadeInUp} className="hero-buttons">
-            <Link to="/login" className="btn btn-primary btn-lg">
-              Launch Dashboard <ArrowRight size={18} />
-            </Link>
-            <Link to="/register" className="btn btn-outline btn-lg btn-glass">
-              Explore Water Points
-            </Link>
-          </motion.div>
+    <div style={{ fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif', color: '#202124', overflowX: 'hidden' }}>
 
-          <motion.div variants={fadeInUp} className="hero-stats">
-            <div className="stat-item">
-              <span className="stat-number">600M+</span>
-              <span className="stat-label">Africans needing clean water</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">$40B</span>
-              <span className="stat-label">Market Opportunity</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">100%</span>
-              <span className="stat-label">On-Chain Transparency</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">0</span>
-              <span className="stat-label">Middlemen</span>
-            </div>
-          </motion.div>
-        </motion.div>
-        
-        <div className="hero-wave">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="#f8f9fa"/>
+      <style>{`
+        @keyframes fadeUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+        @keyframes float { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-10px); } }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+      `}</style>
+
+      {/* NAV */}
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(8,17,30,.97)', backdropFilter: 'blur(12px)', padding: '0 28px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ background: 'linear-gradient(135deg,#1a7fd4,#0d9e75)', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Droplets size={16} color="white" />
+          </div>
+          <span style={{ color: 'white', fontWeight: 700, fontSize: 17 }}>MajiSmart</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Link to="/login" style={{ color: 'rgba(255,255,255,.75)', fontSize: 14, textDecoration: 'none' }}>Sign In</Link>
+          <Link to="/register" style={{ background: 'linear-gradient(135deg,#1a7fd4,#0d9e75)', color: 'white', padding: '8px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            Get Started Free
+          </Link>
+        </div>
+      </nav>
+
+      {/* HERO — speaks to citizens, not engineers */}
+      <section style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#060e1a 0%,#0a2040 55%,#052818 100%)', display: 'flex', alignItems: 'center', paddingTop: 60, position: 'relative', overflow: 'hidden' }}>
+
+        {/* Background texture */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1504297050568-910d24c426d3?w=1400&q=80&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center', opacity: .12 }} />
+
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+            <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8f9fa" />
           </svg>
         </div>
-      </section>
 
-      {/* USSD / MARGINALIZED COMMUNITIES SECTION */}
-      <section className="section ussd-section">
-        <div className="container grid-2">
-          <motion.div 
-            className="ussd-content"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-          >
-            <motion.h2 variants={fadeInUp} className="section-title">
-              Water for Marginalized Communities
-            </motion.h2>
-            <motion.p variants={fadeInUp} className="section-subtitle" style={{ margin: '0 0 24px 0' }}>
-              No smartphone? No problem. Access MajiSmart via basic feature phones using USSD.
-            </motion.p>
-            
-            <motion.div variants={fadeInUp} className="ussd-steps">
-              <h3>How to Use MajiSmart on Any Phone</h3>
-              <ol>
-                <li>
-                  <span className="step-num">1</span>
-                  <span className="step-text">Dial <code>*384*99#</code> on your phone.</span>
-                </li>
-                <li>
-                  <span className="step-num">2</span>
-                  <span className="step-text">Select "Check Balance" or "Buy Water".</span>
-                </li>
-                <li>
-                  <span className="step-num">3</span>
-                  <span className="step-text">Pay via M-Pesa. Your meter is topped up instantly.</span>
-                </li>
-              </ol>
-            </motion.div>
-            
-            <motion.p variants={fadeInUp} className="ussd-note">
-              Available across Kenya, Tanzania, Uganda & Nigeria.
-            </motion.p>
-          </motion.div>
-          
-          <motion.div 
-            className="ussd-visual"
-            initial={{ opacity: 0, x: 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2670&auto=format&fit=crop" 
-              alt="Mobile money payment in Africa" 
-              className="rounded-shadow"
-            />
-          </motion.div>
-        </div>
-      </section>
+        <div style={{ position: 'relative', zIndex: 2, padding: '80px 28px 120px', maxWidth: 1000, margin: '0 auto', width: '100%', animation: 'fadeUp .9s ease forwards' }}>
 
-      {/* ECOSYSTEM SECTION */}
-      <section className="section ecosystem-section">
-        <div className="container">
-          <motion.div 
-            className="section-header center"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <h2 className="section-title">The Complete Water Ecosystem</h2>
-            <p className="section-subtitle">
-              Everything you need to generate, trade, and manage clean water in a decentralized world.
-            </p>
-          </motion.div>
+          {/* Live badge */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(13,158,117,.15)', border: '1px solid rgba(13,158,117,.4)', borderRadius: 99, padding: '6px 16px', marginBottom: 28 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#0d9e75', animation: 'pulse 1.8s ease-in-out infinite' }} />
+            <span style={{ color: '#4dd0a8', fontSize: 12, fontWeight: 600 }}>Available in Kenya now — free to join</span>
+          </div>
 
-          <motion.div 
-            className="grid-3"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            variants={staggerContainer}
-          >
-            {[
-              { 
-                icon: BarChart3, 
-                title: 'Personal Water Dashboard', 
-                desc: 'Real-time, blockchain-verified consumption history, live usage tracking, and a tamper-proof audit trail.' 
-              },
-              { 
-                icon: Users, 
-                title: 'P2P Water Trading', 
-                desc: 'Prosumers sell excess water credits directly to neighbors, eliminating the middleman entirely.' 
-              },
-              { 
-                icon: Droplets, 
-                title: 'Fractional Infrastructure Ownership', 
-                desc: 'Tokenized water infrastructure via Water NFTs. Own a share of a borehole and earn passive income.' 
-              },
-              { 
-                icon: Globe, 
-                title: 'Community Water DAOs', 
-                desc: 'Pool resources, collectively own infrastructure, and govern usage via decentralized voting.' 
-              },
-              { 
-                icon: CreditCard, 
-                title: 'Utility Integration', 
-                desc: 'Purchase water from providers using stablecoins (USDC, cKES) or traditional M-Pesa.' 
-              },
-              { 
-                icon: Leaf, 
-                title: 'Smart Metering & Conservation', 
-                desc: 'IoT meters record data on-chain. Generate verifiable conservation credits for clean water usage.' 
-              }
-            ].map((item, i) => (
-              <motion.div 
-                key={i} 
-                className="ecosystem-card"
-                variants={fadeInUp}
-                whileHover={{ y: -8, transition: { duration: 0.2 } }}
-              >
-                <div className="card-icon">
-                  <item.icon size={28} />
-                </div>
-                <h3>{item.title}</h3>
-                <p>{item.desc}</p>
-                <Link to="/register" className="card-link">
-                  Learn More <ArrowRight size={16} />
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+          <h1 style={{ fontSize: 'clamp(32px,5.5vw,64px)', fontWeight: 900, color: 'white', lineHeight: 1.08, marginBottom: 10, letterSpacing: -1, maxWidth: 700 }}>
+            Never wake up at 3am<br />to fill your tank again.
+          </h1>
+          <p style={{ fontSize: 'clamp(16px,2vw,20px)', color: 'rgba(255,255,255,.72)', maxWidth: 560, lineHeight: 1.75, marginBottom: 36 }}>
+            MajiSmart tells you the moment water comes back on in your area, shows you the cheapest water point nearby, and alerts you before your tank runs dry.
+          </p>
 
-      {/* TRUST / BLOCKCHAIN SECTION */}
-      <section className="section trust-section">
-        <div className="container">
-          <motion.div 
-            className="trust-content"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.h2 variants={fadeInUp} className="section-title center">
-              Trustless Water,<br />Powered by Blockchain
-            </motion.h2>
-            <motion.p variants={fadeInUp} className="section-subtitle center">
-              Every feature of MajiSmart is anchored in blockchain not for the hype — but because water demands trust. 
-              Trust that your meter is accurate. Trust that your payment went through. Trust that the water you bought is real.
-            </motion.p>
-            
-            <motion.div variants={fadeInUp} className="grid-2">
-              <div className="trust-card">
-                <Shield size={32} className="trust-icon" />
-                <h3>Tamper-Proof Audit Trail</h3>
-                <p>No falsified readings. No inflated bills. Just transparent, immutable water data.</p>
-              </div>
-              <div className="trust-card">
-                <Smartphone size={32} className="trust-icon" />
-                <h3>Borderless Stablecoin Payments</h3>
-                <p>Pay for water using USDC or cKES. Fast, accessible from any mobile device.</p>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* FINAL CTA SECTION */}
-      <section className="section cta-section">
-        <div className="container center">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <h2 className="cta-title">Ready to democratize water?</h2>
-            <p className="cta-subtitle">Join the movement. Track, trust, and trade water fairly.</p>
-            <Link to="/register" className="btn btn-primary btn-lg btn-glow">
-              Get Started Now <ArrowRight size={20} />
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 52 }}>
+            <Link to="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg,#1a7fd4,#0d9e75)', color: 'white', padding: '14px 28px', borderRadius: 10, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 6px 28px rgba(26,127,212,.4)' }}>
+              Get water alerts free <ArrowRight size={17} />
             </Link>
-          </motion.div>
-        </div>
-      </section>
+            <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.09)', color: 'white', padding: '14px 28px', borderRadius: 10, fontWeight: 500, fontSize: 16, textDecoration: 'none', border: '1px solid rgba(255,255,255,.2)' }}>
+              Sign In
+            </Link>
+          </div>
 
-      {/* FOOTER */}
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-brand">
-              <Droplets size={24} className="footer-logo" />
-              <span>MajiSmart</span>
-            </div>
-            <p className="footer-copy">© 2026 MajiSmart. Decentralizing water access across Africa.</p>
+          {/* What citizens get at a glance */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {[
+              { icon: Bell,        label: 'Water supply alerts'    },
+              { icon: MapPin,      label: 'Find water near you'    },
+              { icon: ShieldCheck, label: 'Is it safe to drink?'   },
+              { icon: Wallet,      label: 'Track your spending'    },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.08)', borderRadius: 99, padding: '7px 14px', border: '1px solid rgba(255,255,255,.12)' }}>
+                <Icon size={14} color="#4dd0a8" />
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,.8)' }}>{label}</span>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
+
+      {/* PROBLEMS WE SOLVE */}
+      <section style={{ padding: '80px 28px', background: '#f8f9fa' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <span style={{ color: '#d93025', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>Real problems. Real solutions.</span>
+            <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, margin: '12px 0 14px', lineHeight: 1.2 }}>
+              Water problems every Kenyan knows
+            </h2>
+            <p style={{ color: '#5f6368', maxWidth: 500, margin: '0 auto', lineHeight: 1.7 }}>
+              We designed MajiSmart around the six water problems that cost Kenyans money, time, and sleep every single week.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
+            {PROBLEMS.map((p, i) => (
+              <div key={i} className="card" style={{ padding: 24, borderLeft: `4px solid ${p.color}` }}>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>{p.emoji}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#202124', marginBottom: 8, lineHeight: 1.3 }}>
+                  "{p.problem}"
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <CheckCircle size={15} color={p.color} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <p style={{ fontSize: 13, color: '#5f6368', lineHeight: 1.6, margin: 0 }}>{p.solution}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SIMPLE 3-STEP */}
+      <section style={{ padding: '80px 28px', background: 'white' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, marginBottom: 14 }}>How it works</h2>
+          <p style={{ color: '#5f6368', marginBottom: 52, lineHeight: 1.7 }}>Three steps and you're done. No hardware. No technical setup.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 28 }}>
+            {[
+              { step: '1', color: '#1a7fd4', bg: '#e8f4fd', title: 'Create a free account', desc: 'Sign up with your phone number and tell us which county you live in. Takes 30 seconds.' },
+              { step: '2', color: '#0d9e75', bg: '#e1f5ee', title: 'Set your area', desc: 'Pick your county. We\'ll monitor every water point in your area and keep you updated.' },
+              { step: '3', color: '#7a3fb5', bg: '#f0e8fc', title: 'Stay informed', desc: 'Get alerts when water comes back, find the nearest working point, and track your spending.' },
+            ].map(s => (
+              <div key={s.step} style={{ textAlign: 'center' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: s.bg, color: s.color, fontWeight: 900, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `2px solid ${s.color}30` }}>
+                  {s.step}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{s.title}</div>
+                <div style={{ fontSize: 13, color: '#5f6368', lineHeight: 1.65 }}>{s.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: '80px 28px', background: 'linear-gradient(135deg,#060e1a,#0a2a50)', textAlign: 'center' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <Droplets size={44} color="rgba(77,208,168,.55)" style={{ marginBottom: 16 }} />
+          <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, color: 'white', marginBottom: 14 }}>
+            Stop guessing. Start knowing.
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,.6)', lineHeight: 1.8, marginBottom: 32, fontSize: 15 }}>
+            Join thousands of Kenyans using MajiSmart to take control of their water — for free.
+          </p>
+          <Link to="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg,#1a7fd4,#0d9e75)', color: 'white', padding: '15px 34px', borderRadius: 10, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>
+            Create Free Account <ArrowRight size={17} />
+          </Link>
+          <p style={{ color: 'rgba(255,255,255,.3)', fontSize: 12, marginTop: 16 }}>
+            Demo: admin@majismart.ke / admin123
+          </p>
+        </div>
+      </section>
+
+      <footer style={{ background: '#040a10', padding: '28px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 8 }}>
+          <Droplets size={16} color="#1a7fd4" />
+          <span style={{ color: 'rgba(255,255,255,.6)', fontWeight: 600, fontSize: 14 }}>MajiSmart</span>
+        </div>
+        <p style={{ color: 'rgba(255,255,255,.25)', fontSize: 12 }}>© 2026 MajiSmart Kenya · Water intelligence for every citizen</p>
       </footer>
     </div>
   )
