@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
-
 router.get('/', async (req, res) => {
   try {
     const { resolved, severity, limit = 50 } = req.query;
@@ -20,7 +19,6 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 router.patch('/:id/resolve', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(
@@ -32,7 +30,6 @@ router.patch('/:id/resolve', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { node_id, type, message, severity = 'warning' } = req.body;
@@ -45,5 +42,4 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 module.exports = router;
