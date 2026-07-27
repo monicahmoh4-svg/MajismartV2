@@ -5,8 +5,7 @@ import {
   Smartphone, Waves, TrendingUp, Users, Clock, AlertCircle, Heart,
   Phone, BarChart3, Zap, Globe, Award, Activity, Thermometer, 
   Droplet, Gauge, Server, Database, Lock, CreditCard, MessageSquare,
-  Wifi, ChevronRight, Play, Shield, Star, Quote, Video, FileText,
-  Calendar, Target, Users2, Building2, Leaf, HandHeart, ShieldAlert
+  Wifi, ChevronRight, Play, Shield, Star, Quote, Building2
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -383,14 +382,14 @@ export default function Landing() {
             }}>
               <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
                 <h3 style={{ margin: '0 0 16px 0', fontSize: '42px', fontWeight: '800' }}>Technology Meets Community</h3>
-                <p style={{ margin: 0, fontSize: '20px', opacity: 0.95, maxWidth: '600px', margin: '0 auto' }}>Bridging the gap between advanced IoT monitoring and everyday water access needs across Kenya</p>
+                <p style={{ margin: '0 auto', fontSize: '20px', opacity: 0.95, maxWidth: '600px' }}>Bridging the gap between advanced IoT monitoring and everyday water access needs across Kenya</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Impact Stories Section - NEW */}
+      {/* Impact Stories Section */}
       <section className="animate-on-scroll" id="impact" style={{
         padding: '100px 24px',
         background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
@@ -414,7 +413,7 @@ export default function Landing() {
               <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>REAL IMPACT</span>
             </div>
             <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>Transforming Lives Across Kenya</h2>
-            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>See how MajiSmart is making a difference in communities nationwide</p>
+            <p style={{ margin: '0 auto', fontSize: '20px', color: '#64748b', maxWidth: '600px' }}>See how MajiSmart is making a difference in communities nationwide</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
@@ -636,7 +635,7 @@ export default function Landing() {
               <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>ADVANCED TECHNOLOGY</span>
             </div>
             <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>Powered by Cutting-Edge Tech</h2>
-            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>IoT, AI, and blockchain working together for water security</p>
+            <p style={{ margin: '0 auto', fontSize: '20px', color: '#64748b', maxWidth: '600px' }}>IoT, AI, and blockchain working together for water security</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
@@ -715,7 +714,7 @@ export default function Landing() {
               <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>POWERFUL FEATURES</span>
             </div>
             <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>The Complete Water Ecosystem</h2>
-            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>Everything you need to monitor, manage, and conserve water in a smart world.</p>
+            <p style={{ margin: '0 auto', fontSize: '20px', color: '#64748b', maxWidth: '600px' }}>Everything you need to monitor, manage, and conserve water in a smart world.</p>
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
@@ -774,7 +773,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Partners Section - NEW */}
+      {/* Partners Section */}
       <section className="animate-on-scroll" id="partners" style={{
         padding: '100px 24px',
         background: 'linear-gradient(135deg, #0f172a, #1e293b)',
@@ -812,7 +811,7 @@ export default function Landing() {
               <span style={{ color: '#22d3ee', fontSize: '14px', fontWeight: '700' }}>TRUSTED PARTNERS</span>
             </div>
             <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900' }}>Working With Leading Organizations</h2>
-            <p style={{ margin: 0, fontSize: '20px', opacity: '0.9', maxWidth: '700px', margin: '0 auto' }}>Collaborating with government, NGOs, and tech partners to scale water access</p>
+            <p style={{ margin: '0 auto', fontSize: '20px', opacity: '0.9', maxWidth: '700px' }}>Collaborating with government, NGOs, and tech partners to scale water access</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
@@ -869,7 +868,7 @@ export default function Landing() {
               <span style={{ color: '#0891b2', fontSize: '14px', fontWeight: '700' }}>WHY CHOOSE US</span>
             </div>
             <h2 style={{ margin: '0 0 16px 0', fontSize: '48px', fontWeight: '900', color: '#0f172a' }}>Built on Trust & Transparency</h2>
-            <p style={{ margin: 0, fontSize: '20px', color: '#64748b', maxWidth: '700px', margin: '0 auto' }}>Every feature is anchored in accountability because water is a fundamental right.</p>
+            <p style={{ margin: '0 auto', fontSize: '20px', color: '#64748b', maxWidth: '700px' }}>Every feature is anchored in accountability because water is a fundamental right.</p>
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
@@ -926,7 +925,7 @@ export default function Landing() {
         
         <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <h2 style={{ margin: '0 0 20px 0', fontSize: '56px', fontWeight: '900', color: 'white', lineHeight: '1.1' }}>Ready to transform water access?</h2>
-          <p style={{ margin: '0 0 40px 0', fontSize: '22px', opacity: '0.95', maxWidth: '600px', margin: '0 auto' }}>Join thousands of Kenyans already using MajiSmart for reliable water information.</p>
+          <p style={{ margin: '0 auto', fontSize: '22px', opacity: '0.95', maxWidth: '600px' }}>Join thousands of Kenyans already using MajiSmart for reliable water information.</p>
           <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/register" style={{
               padding: '20px 48px',
