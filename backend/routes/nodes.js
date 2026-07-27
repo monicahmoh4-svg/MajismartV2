@@ -1,8 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
-
-// GET /api/nodes - list all nodes with latest reading
 router.get('/', async (req, res) => {
   try {
     const { county, status } = req.query;
@@ -31,8 +29,6 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/nodes/:id
 router.get('/:id', async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -50,8 +46,6 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// POST /api/nodes - create node
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { name, location, county, latitude, longitude, type, capacity_litres } = req.body;
@@ -65,8 +59,6 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// PATCH /api/nodes/:id
 router.patch('/:id', authMiddleware, async (req, res) => {
   try {
     const fields = ['name','location','county','latitude','longitude','status','type','capacity_litres'];
@@ -87,8 +79,6 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// DELETE /api/nodes/:id
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     await db.query('DELETE FROM nodes WHERE id=$1', [req.params.id]);
@@ -97,5 +87,4 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 module.exports = router;
