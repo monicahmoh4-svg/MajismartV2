@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext'
 import { Wifi, CreditCard, Bell, Wrench, AlertTriangle, CheckCircle, Activity } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import api from '../../api'
-
 export default function OperatorDashboard() {
   const { user } = useAuth()
   const [nodes, setNodes] = useState([])
@@ -13,7 +12,6 @@ export default function OperatorDashboard() {
   const [maintenance, setMaintenance] = useState([])
   const [sensorHistory, setSensorHistory] = useState([])
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     const q = user?.county ? `?county=${encodeURIComponent(user.county)}` : ''
     Promise.all([
@@ -26,7 +24,6 @@ export default function OperatorDashboard() {
       setAlerts(a)
       setPayments(p)
       setMaintenance(m)
-      // Load sensor history for first active node
       const activeNode = n.find(x => x.status === 'active')
       if (activeNode) {
         const hist = await api.get(`/sensors/${activeNode.id}/history?hours=12`)
@@ -38,16 +35,13 @@ export default function OperatorDashboard() {
       }
     }).finally(() => setLoading(false))
   }, [user])
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   const myAlerts = alerts.filter(a => user?.county ? a.county === user.county : true)
   const myPayments = payments.filter(p => user?.county ? p.county === user.county : true)
   const todayRevenue = myPayments.filter(p => {
     const today = new Date().toDateString()
     return new Date(p.created_at).toDateString() === today && p.status === 'completed'
   }).reduce((s, p) => s + Number(p.amount_ksh), 0)
-
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
@@ -59,8 +53,6 @@ export default function OperatorDashboard() {
           Field operations — {user?.county || 'all'} area nodes, maintenance and real-time monitoring
         </p>
       </div>
-
-      {/* Quick stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14, marginBottom: 22 }}>
         {[
           { label: 'My Nodes',       value: nodes.length,                   sub: `${nodes.filter(n=>n.status==='active').length} online`,    icon: Wifi,       color: '#7a3fb5', bg: '#f0e8fc' },
@@ -82,8 +74,6 @@ export default function OperatorDashboard() {
           </div>
         ))}
       </div>
-
-      {/* Sensor chart + Node list */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 18, marginBottom: 18 }}>
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: '#7a3fb5', display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -103,7 +93,6 @@ export default function OperatorDashboard() {
             : <div style={{ textAlign: 'center', color: '#9aa0a6', padding: '40px 0', fontSize: 13 }}>No sensor data yet</div>
           }
         </div>
-
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#7a3fb5' }}>My Nodes</h3>
@@ -126,8 +115,6 @@ export default function OperatorDashboard() {
           ))}
         </div>
       </div>
-
-      {/* Alerts + Recent payments */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 18 }}>
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -150,7 +137,6 @@ export default function OperatorDashboard() {
             ))
           }
         </div>
-
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7 }}><CreditCard size={14} color="#0d9e75" /> Recent Payments</h3>
