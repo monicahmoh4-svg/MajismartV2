@@ -1,7 +1,7 @@
 {
-  "name": "MajiSmart",
+  "name": "MajiSmart - Smart Water Intelligence",
   "short_name": "MajiSmart",
-  "description": "Real-time water monitoring and alerts for Kenyan communities",
+  "description": "Real-time water monitoring, alerts, and management for Kenyan communities",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f0f9ff",
@@ -9,17 +9,20 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
+  "dir": "ltr",
+  "categories": ["utilities", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063160.png",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwZWE1ZTkiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwNmI2ZDQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0idXJsKCNnKSIgcng9IjEwMCIvPjxwYXRoIGQ9Ik0yNTYgODAgQzI1NiA4MCAxMjAgMjQwIDEyMCAzMjAgQTEzNiAxMzYgMCAwIDAgMzkyIDMyMCBDMzkyIDI0MCAyNTYgODAgMjU2IDgwIFoiIGZpbGw9IiNmZmZmZmYiLz48cGF0aCBkPSJNMjU2IDE0MCBDMjU2IDE0MCAxODAgMjQwIDE4MCAzMDAgQTc2IDc2IDAgMCAwIDMzMiAzMDAgQzMzMiAyNDAgMjU2IDE0MCAyNTYgMTQwIFoiIGZpbGw9IiMwZWE1ZTkiIG9wYWNpdHk9IjAuMyIvPjwvc3ZnPg==",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063160.png",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwZWE1ZTkiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwNmI2ZDQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0idXJsKCNnKSIgcng9IjEwMCIvPjxwYXRoIGQ9Ik0yNTYgODAgQzI1NiA4MCAxMjAgMjQwIDEyMCAzMjAgQTEzNiAxMzYgMCAwIDAgMzkyIDMyMCBDMzkyIDI0MCAyNTYgODAgMjU2IDgwIFoiIGZpbGw9IiNmZmZmZmYiLz48cGF0aCBkPSJNMjU2IDE0MCBDMjU2IDE0MCAxODAgMjQwIDE4MCAzMDAgQTc2IDc2IDAgMCAwIDMzMiAzMDAgQzMzMiAyNDAgMjU2IDE0MCAyNTYgMTQwIFoiIGZpbGw9IiMwZWE1ZTkiIG9wYWNpdHk9IjAuMyIvPjwvc3ZnPg==",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]
