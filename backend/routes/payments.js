@@ -1,7 +1,5 @@
 const router = require('express').Router();
 const db = require('../db');
-
-// GET /api/payments - list payments
 router.get('/', async (req, res) => {
   try {
     const { node_id, status, limit = 50 } = req.query;
@@ -21,8 +19,6 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// POST /api/payments/initiate - initiate M-Pesa STK push (simulated)
 router.post('/initiate', async (req, res) => {
   try {
     const { node_id, phone, litres } = req.body;
@@ -33,9 +29,6 @@ router.post('/initiate', async (req, res) => {
       [node_id, phone, amount, litres]
     );
     const payment = rows[0];
-
-    // In production: call Safaricom Daraja API here
-    // Simulating successful payment after 2 seconds
     setTimeout(async () => {
       const mpesaCode = 'QK' + Math.random().toString(36).substr(2,8).toUpperCase();
       await db.query(
@@ -43,7 +36,6 @@ router.post('/initiate', async (req, res) => {
         [mpesaCode, payment.id]
       );
     }, 2000);
-
     res.json({
       payment_id: payment.id,
       amount_ksh: amount,
@@ -56,8 +48,6 @@ router.post('/initiate', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// POST /api/payments/mpesa-callback - Daraja webhook
 router.post('/mpesa-callback', async (req, res) => {
   try {
     const { Body } = req.body;
@@ -78,8 +68,6 @@ router.post('/mpesa-callback', async (req, res) => {
     res.status(500).json({ ResultCode: 1, ResultDesc: err.message });
   }
 });
-
-// GET /api/payments/:id/status
 router.get('/:id/status', async (req, res) => {
   try {
     const { rows } = await db.query('SELECT * FROM payments WHERE id=$1', [req.params.id]);
@@ -89,8 +77,6 @@ router.get('/:id/status', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/payments/stats/summary
 router.get('/stats/summary', async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -107,5 +93,4 @@ router.get('/stats/summary', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 module.exports = router;
