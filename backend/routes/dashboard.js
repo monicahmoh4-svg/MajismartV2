@@ -1,7 +1,5 @@
 const router = require('express').Router();
 const db = require('../db');
-
-// GET /api/dashboard/summary - main dashboard stats
 router.get('/summary', async (req, res) => {
   try {
     const [nodes, payments, alerts, sensor] = await Promise.all([
@@ -28,7 +26,6 @@ router.get('/summary', async (req, res) => {
         COUNT(*) FILTER (WHERE recorded_at > NOW()-interval '1h') as readings_last_hour
         FROM sensor_readings WHERE recorded_at > NOW()-interval '24h'`)
     ]);
-
     res.json({
       nodes: nodes.rows[0],
       payments: payments.rows[0],
@@ -39,8 +36,6 @@ router.get('/summary', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/dashboard/revenue-chart?days=7
 router.get('/revenue-chart', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7;
@@ -60,8 +55,6 @@ router.get('/revenue-chart', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/dashboard/water-levels - current levels for all nodes
 router.get('/water-levels', async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -77,8 +70,6 @@ router.get('/water-levels', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/dashboard/county-stats
 router.get('/county-stats', async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -97,8 +88,6 @@ router.get('/county-stats', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/dashboard/maintenance
 router.get('/maintenance', async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -113,7 +102,6 @@ router.get('/maintenance', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 router.post('/maintenance', async (req, res) => {
   try {
     const { node_id, description, type, cost_ksh, user_id } = req.body;
@@ -126,5 +114,4 @@ router.post('/maintenance', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 module.exports = router;
