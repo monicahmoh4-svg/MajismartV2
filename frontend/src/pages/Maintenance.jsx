@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react'
 import { Wrench, Plus, X, CheckCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
-
 const TYPES = ['Routine inspection','Pump repair','Sensor calibration','Pipe replacement','Solar panel maintenance','Valve service','Software update','Emergency repair','Other']
-
 export default function Maintenance() {
   const { user } = useAuth()
   const [logs, setLogs] = useState([])
@@ -14,7 +12,6 @@ export default function Maintenance() {
   const [form, setForm] = useState({ node_id:'', description:'', type:'Routine inspection', cost_ksh:'' })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
-
   const load = () => {
     const q = user?.county ? `?county=${encodeURIComponent(user.county)}` : ''
     Promise.all([
@@ -24,7 +21,6 @@ export default function Maintenance() {
       .finally(() => setLoading(false))
   }
   useEffect(load, [user])
-
   const save = async e => {
     e.preventDefault(); setSaving(true)
     try {
@@ -35,9 +31,7 @@ export default function Maintenance() {
     } catch (err) { setMsg(err.error || 'Failed') }
     finally { setSaving(false); setTimeout(() => setMsg(''), 3000) }
   }
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
@@ -49,9 +43,7 @@ export default function Maintenance() {
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={16} /> Log Maintenance</button>
       </div>
-
       {msg && <div className={`alert-bar ${msg.includes('!') ? 'alert-bar-success' : 'alert-bar-error'}`}>{msg}</div>}
-
       {showForm && (
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -91,8 +83,6 @@ export default function Maintenance() {
           </form>
         </div>
       )}
-
-      {/* Logs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {logs.length === 0 && (
           <div className="card" style={{ padding: 40, textAlign: 'center', color: '#9aa0a6' }}>
