@@ -5,16 +5,13 @@ import {
   CartesianGrid, PieChart, Pie, Cell, Legend
 } from 'recharts'
 import api from '../api'
-
 const COLORS = ['#1a7fd4','#0d9e75','#e8a020','#d93025','#6f42c1','#00bcd4']
-
 export default function Analytics() {
   const [revenue, setRevenue] = useState([])
   const [countyStats, setCountyStats] = useState([])
   const [levels, setLevels] = useState([])
   const [days, setDays] = useState(7)
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     Promise.all([
       api.get(`/dashboard/revenue-chart?days=${days}`),
@@ -23,14 +20,11 @@ export default function Analytics() {
     ]).then(([r,c,l]) => { setRevenue(r); setCountyStats(c); setLevels(l) })
       .finally(() => setLoading(false))
   }, [days])
-
   const statusDist = ['active','warning','offline','maintenance'].map(s => ({
     name: s.charAt(0).toUpperCase()+s.slice(1),
     value: levels.filter(n => n.status === s).length
   })).filter(s => s.value > 0)
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
@@ -49,8 +43,6 @@ export default function Analytics() {
           ))}
         </div>
       </div>
-
-      {/* Revenue + Litres */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 20, marginBottom: 20 }}>
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -66,7 +58,6 @@ export default function Analytics() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Daily Litres Dispensed</h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -80,8 +71,6 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
       </div>
-
-      {/* County stats + Status distribution */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 20, marginBottom: 20 }}>
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -97,7 +86,6 @@ export default function Analytics() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Node Status Distribution</h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -111,8 +99,6 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
       </div>
-
-      {/* County table */}
       <div className="card" style={{ padding: 20 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>County Performance Table</h3>
         <div style={{ overflowX: 'auto' }}>
