@@ -8,18 +8,39 @@ dotenv.config();
 const app = express();
 
 // ============================================
-// MIDDLEWARE
+// CORS CONFIGURATION (Critical for cross-origin requests)
 // ============================================
+const allowedOrigins = [
+  'http://localhost:5173',           // Vite dev server
+  'http://localhost:3000',           // Alternative local port
+  'https://majismart-v2-phi.vercel.app',  // Production Vercel
+  'https://majismart-v2.vercel.app',      // Alternative Vercel URL
+  'https://majismart-v2-git-main-monicahmoh4-svgs-projects.vercel.app', // Preview deployments
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      console.warn('⚠️ CORS blocked origin:', origin);
+      callback(null, true); // Temporarily allow all during development
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
+// Request logging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} from ${req.headers.origin || 'unknown'}`);
   next();
 });
 
@@ -28,7 +49,6 @@ app.use((req, res, next) => {
 // ============================================
 const db = require('./db');
 
-// Test database connection on startup
 db.query('SELECT NOW()')
   .then(() => console.log('✅ Database connected successfully'))
   .catch((err) => console.error('❌ Database connection failed:', err.message));
@@ -43,15 +63,11 @@ const alertRoutes = require('./routes/alerts');
 const datasetRoutes = require('./routes/datasets');
 const paymentRoutes = require('./routes/payments');
 const aiRoutes = require('./routes/ai');
-
-// Enterprise GIS Routes (New)
 const gisRoutes = require('./routes/gis');
 
 // ============================================
 // ROUTE MOUNTING
 // ============================================
-
-// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -61,49 +77,29 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Authentication routes
 app.use('/api/auth', authRoutes);
-
-// Citizen portal routes
 app.use('/api/citizen', citizenRoutes);
-
-// Community reports
 app.use('/api/reports', reportRoutes);
-
-// System alerts
 app.use('/api/alerts', alertRoutes);
-
-// Public datasets
 app.use('/api/datasets', datasetRoutes);
-
-// Payments and billing
 app.use('/api/payments', paymentRoutes);
-
-// AI and analytics
 app.use('/api/ai', aiRoutes);
-
-// Enterprise GIS Platform (New)
 app.use('/api/gis', gisRoutes);
 
 // ============================================
 // ERROR HANDLING
 // ============================================
-
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
-    message: `Route ${req.originalUrl} not found`,
-    method: req.method
+    message: `Route ${req.originalUrl} not found`
   });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled Error:', err);
   res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    error: err.message || 'Internal Server Error'
   });
 });
 
@@ -120,7 +116,6 @@ app.listen(PORT, () => {
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`✅ API Base: http://localhost:${PORT}/api`);
   console.log(`✅ Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`✅ GIS Endpoint: http://localhost:${PORT}/api/gis/assets`);
   console.log('='.repeat(60));
 });
 
