@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext'
 import { Wifi, CreditCard, Bell, Droplets, MapPin, AlertTriangle, TrendingUp } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import api from '../../api'
-
 export default function CountyDashboard() {
   const { user } = useAuth()
   const [nodes, setNodes] = useState([])
@@ -12,7 +11,6 @@ export default function CountyDashboard() {
   const [alerts, setAlerts] = useState([])
   const [countyStats, setCountyStats] = useState(null)
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     const countyQuery = user?.county ? `?county=${encodeURIComponent(user.county)}` : ''
     Promise.all([
@@ -28,13 +26,10 @@ export default function CountyDashboard() {
       setCountyStats(myStat || null)
     }).finally(() => setLoading(false))
   }, [user])
-
   if (loading) return <div className="page-loader"><div className="spinner" /></div>
-
   const activeNodes = nodes.filter(n => n.status === 'active').length
   const totalRevenue = nodes.reduce((s, n) => s + Number(n.revenue_ksh || 0), 0)
   const totalLitres = nodes.reduce((s, n) => s + Number(n.payment_count || 0) * 40, 0)
-
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
@@ -46,8 +41,6 @@ export default function CountyDashboard() {
         </div>
         <p style={{ color: '#5f6368', fontSize: 14 }}>County-level water infrastructure — monitoring, revenue and quality oversight</p>
       </div>
-
-      {/* County stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginBottom: 22 }}>
         {[
           { label: 'Nodes in County',  value: nodes.length,                                                             sub: `${activeNodes} active`,          icon: Wifi,       color: '#0d6e56', bg: '#e1f5ee' },
@@ -69,8 +62,6 @@ export default function CountyDashboard() {
           </div>
         ))}
       </div>
-
-      {/* Revenue trend */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 18, marginBottom: 20 }}>
         <div className="card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: '#0d6e56', display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -86,8 +77,6 @@ export default function CountyDashboard() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Node water levels */}
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0d6e56' }}>Node Water Levels</h3>
@@ -106,8 +95,6 @@ export default function CountyDashboard() {
           ))}
         </div>
       </div>
-
-      {/* Alerts */}
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7 }}>
