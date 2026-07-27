@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react'
 import { Settings as Gear, User, Bell, Shield, Database, Save, CheckCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
-
 export default function Settings() {
   const { user, login } = useAuth()
   const [profile, setProfile] = useState({ name: user?.name || '', phone: '', county: user?.county || '' })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [tab, setTab] = useState('profile')
-
   const saveProfile = async e => {
     e.preventDefault(); setSaving(true)
     try {
@@ -18,9 +16,7 @@ export default function Settings() {
     } catch { setMsg('Save failed') }
     finally { setSaving(false); setTimeout(() => setMsg(''), 3000) }
   }
-
   const COUNTIES = ['Nairobi','Mombasa','Kisumu','Nakuru','Kiambu','Machakos','Kakamega','Meru','Kilifi','Uasin Gishu','Other']
-
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
@@ -29,9 +25,7 @@ export default function Settings() {
         </h1>
         <p style={{ color: '#5f6368', marginTop: 4 }}>Manage your account and system preferences</p>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 20, alignItems: 'start' }}>
-        {/* Sidebar tabs */}
         <div className="card" style={{ padding: 8 }}>
           {[
             { id: 'profile', icon: User, label: 'Profile' },
@@ -51,11 +45,8 @@ export default function Settings() {
             </button>
           ))}
         </div>
-
-        {/* Content */}
         <div className="card" style={{ padding: 28 }}>
           {msg && <div className={`alert-bar ${msg.includes('!') ? 'alert-bar-success' : 'alert-bar-error'}`} style={{ marginBottom: 20 }}>{msg}</div>}
-
           {tab === 'profile' && (
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Profile Settings</h2>
@@ -102,7 +93,6 @@ export default function Settings() {
               </form>
             </div>
           )}
-
           {tab === 'notifications' && (
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Notification Preferences</h2>
@@ -133,7 +123,6 @@ export default function Settings() {
               ))}
             </div>
           )}
-
           {tab === 'security' && (
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Security</h2>
@@ -153,7 +142,6 @@ export default function Settings() {
               </div>
             </div>
           )}
-
           {tab === 'system' && (
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>System Information</h2>
