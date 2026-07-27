@@ -1,71 +1,59 @@
-import { AlertCircle, Inbox, RefreshCw } from 'lucide-react'
-export function Loading({ rows = 3 }) {
+import { Loader2, AlertCircle, Inbox } from 'lucide-react';
+
+export function Loading({ message = 'Loading...' }) {
   return (
-    <div style={{ display: 'grid', gap: 14 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 14 }}>
-        {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="card skeleton-card" style={{ padding: '18px 20px', height: 86 }} />
-        ))}
-      </div>
-      <div className="card skeleton-card" style={{ height: 200 }} />
-    </div>
-  )
-}
-export function ErrorState({ message, onRetry }) {
-  return (
-    <div className="card fade-in" style={{
-      padding: '32px 20px', textAlign: 'center', color: 'var(--gray-600)'
+    <div style={{ 
+      display: 'flex', flexDirection: 'column', alignItems: 'center', 
+      justifyContent: 'center', padding: '60px 20px', color: '#5f6368' 
     }}>
-      <AlertCircle size={28} color="var(--red)" style={{ margin: '0 auto 10px', display: 'block' }} />
-      <div style={{ fontWeight: 600, color: 'var(--gray-800)', marginBottom: 4 }}>Couldn't load this data</div>
-      <div style={{ fontSize: 13, marginBottom: 14 }}>{message || 'Something went wrong. Please try again.'}</div>
+      <Loader2 size={40} className="animate-spin" style={{ color: '#1a7fd4', marginBottom: 16 }} />
+      <p>{message}</p>
+    </div>
+  );
+}
+
+export function ErrorState({ error, onRetry }) {
+  return (
+    <div style={{ 
+      display: 'flex', flexDirection: 'column', alignItems: 'center', 
+      justifyContent: 'center', padding: '60px 20px', color: '#d93025' 
+    }}>
+      <AlertCircle size={40} style={{ marginBottom: 16 }} />
+      <h3 style={{ marginBottom: 8 }}>Something went wrong</h3>
+      <p style={{ color: '#5f6368', marginBottom: 16 }}>{error?.message || 'Failed to load data'}</p>
       {onRetry && (
-        <button className="btn btn-outline" onClick={onRetry} style={{ margin: '0 auto' }}>
-          <RefreshCw size={14} /> Retry
+        <button onClick={onRetry} className="btn btn-primary">
+          Try Again
         </button>
       )}
     </div>
-  )
+  );
 }
-export function EmptyState({ icon: Icon = Inbox, title = 'Nothing here yet', subtitle }) {
+
+export function EmptyState({ message = 'No data available', icon: Icon = Inbox }) {
   return (
-    <div className="fade-in" style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '28px 0' }}>
-      <Icon size={24} style={{ display: 'block', margin: '0 auto 8px' }} />
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-600)' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 12, marginTop: 2 }}>{subtitle}</div>}
-    </div>
-  )
-}
-export function StatCard({ label, value, sub, icon: Icon, color, bg }) {
-  return (
-    <div className="card fade-in" style={{ padding: '18px 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div style={{ fontSize: 12, color: 'var(--gray-600)', marginBottom: 4 }}>{label}</div>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>{value}</div>
-          {sub && <div style={{ fontSize: 11, color: 'var(--gray-400)', marginTop: 2 }}>{sub}</div>}
-        </div>
-        {Icon && (
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Icon size={18} color={color} />
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-export function LiveBadge({ lastUpdated }) {
-  if (!lastUpdated) return null
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 11, color: 'var(--gray-400)'
+    <div style={{ 
+      display: 'flex', flexDirection: 'column', alignItems: 'center', 
+      justifyContent: 'center', padding: '60px 20px', color: '#9aa0a6', textAlign: 'center' 
     }}>
-      <span style={{
-        width: 7, height: 7, borderRadius: '50%', background: 'var(--teal)',
-        display: 'inline-block', animation: 'pulse-dot 1.6s ease-in-out infinite'
+      <Icon size={48} style={{ marginBottom: 16, opacity: 0.5 }} />
+      <p style={{ fontSize: 16 }}>{message}</p>
+    </div>
+  );
+}
+
+export function LiveBadge() {
+  return (
+    <span style={{ 
+      display: 'inline-flex', alignItems: 'center', gap: 6, 
+      padding: '4px 12px', background: '#e1f5ee', 
+      color: '#0d6e56', borderRadius: 99, fontSize: 12, fontWeight: 600 
+    }}>
+      <span style={{ 
+        width: 6, height: 6, borderRadius: '50%', 
+        background: '#0d9e75', animation: 'pulse 2s infinite' 
       }} />
-      Live · updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      Live
     </span>
-  )
+  );
 }
