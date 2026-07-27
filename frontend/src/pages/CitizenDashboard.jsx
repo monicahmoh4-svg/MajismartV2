@@ -17,7 +17,9 @@ export default function CitizenDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('overview')
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+  const [isTablet, setIsTablet] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -67,16 +69,22 @@ export default function CitizenDashboard() {
   const [dateRange, setDateRange] = useState('7days')
   const [viewMode, setViewMode] = useState('grid')
 
+  // Responsive breakpoints
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 1024) {
-        setSidebarOpen(true)
-      } else {
+      const width = window.innerWidth
+      setIsMobile(width < 768)
+      setIsTablet(width >= 768 && width < 1024)
+      
+      if (width < 1024) {
         setSidebarOpen(false)
+      } else {
+        setSidebarOpen(true)
       }
     }
-    window.addEventListener('resize', handleResize)
+    
     handleResize()
+    window.addEventListener('resize', handleResize)
     fetchAllData()
     
     const interval = setInterval(() => fetchIoTData(), 30000)
@@ -252,8 +260,7 @@ export default function CitizenDashboard() {
                 border: 'none', 
                 cursor: 'pointer', 
                 padding: '8px',
-                borderRadius: '8px',
-                display: window.innerWidth <= 1024 ? 'block' : 'none'
+                borderRadius: '8px'
               }}
             >
               <Menu style={{ width: '24px', height: '24px', color: '#0f172a' }} />
@@ -275,51 +282,55 @@ export default function CitizenDashboard() {
               }}>
                 <Droplets style={{ color: 'white', width: '20px', height: '20px' }} />
               </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>MajiSmart</h1>
-                <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>Citizen Portal</p>
-              </div>
+              {!isMobile && (
+                <div>
+                  <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>MajiSmart</h1>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>Citizen Portal</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Center Section - Navigation Buttons */}
-          <nav style={{ 
-            display: window.innerWidth <= 768 ? 'none' : 'flex', 
-            alignItems: 'center', 
-            gap: '4px',
-            background: '#f8fafc',
-            padding: '6px',
-            borderRadius: '12px'
-          }}>
-            {[
-              { id: 'overview', label: 'Overview', icon: Home },
-              { id: 'water-points', label: 'Water Points', icon: MapPin },
-              { id: 'reports', label: 'Reports', icon: FileText },
-              { id: 'community', label: 'Community', icon: MessageSquare }
-            ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`nav-btn ${activeSection === item.id ? 'active' : ''}`}
-                style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  background: activeSection === item.id ? 'linear-gradient(135deg, #0891b2, #06b6d4)' : 'transparent',
-                  color: activeSection === item.id ? 'white' : '#475569'
-                }}
-              >
-                <item.icon style={{ width: '16px', height: '16px' }} />
-                {item.label}
-              </button>
-            ))}
-          </nav>
+          {!isMobile && (
+            <nav style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '4px',
+              background: '#f8fafc',
+              padding: '6px',
+              borderRadius: '12px'
+            }}>
+              {[
+                { id: 'overview', label: 'Overview', icon: Home },
+                { id: 'water-points', label: 'Water Points', icon: MapPin },
+                { id: 'reports', label: 'Reports', icon: FileText },
+                { id: 'community', label: 'Community', icon: MessageSquare }
+              ].map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`nav-btn ${activeSection === item.id ? 'active' : ''}`}
+                  style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    background: activeSection === item.id ? 'linear-gradient(135deg, #0891b2, #06b6d4)' : 'transparent',
+                    color: activeSection === item.id ? 'white' : '#475569'
+                  }}
+                >
+                  <item.icon style={{ width: '16px', height: '16px' }} />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          )}
 
           {/* Right Section - Actions & User */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -402,11 +413,15 @@ export default function CitizenDashboard() {
                 }}>
                   {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <div style={{ textAlign: 'left', display: window.innerWidth <= 640 ? 'none' : 'block' }}>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{user?.name || 'User'}</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>{user?.county || 'Kenya'}</p>
-                </div>
-                <ChevronDown style={{ width: '16px', height: '16px', color: '#64748b', display: window.innerWidth <= 640 ? 'none' : 'block' }} />
+                {!isMobile && (
+                  <>
+                    <div style={{ textAlign: 'left' }}>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{user?.name || 'User'}</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>{user?.county || 'Kenya'}</p>
+                    </div>
+                    <ChevronDown style={{ width: '16px', height: '16px', color: '#64748b' }} />
+                  </>
+                )}
               </button>
 
               {/* User Dropdown */}
@@ -432,24 +447,19 @@ export default function CitizenDashboard() {
                     <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>{user?.email}</p>
                   </div>
                   <div style={{ padding: '8px' }}>
-                    <button 
-                      onClick={() => { setActiveSection('overview'); setUserMenuOpen(false) }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: 'none', background: 'transparent', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#475569', textAlign: 'left' }}
-                    >
-                      <Home style={{ width: '16px', height: '16px' }} /> Dashboard
-                    </button>
-                    <button 
-                      onClick={() => { setActiveSection('reports'); setUserMenuOpen(false) }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: 'none', background: 'transparent', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#475569', textAlign: 'left' }}
-                    >
-                      <FileText style={{ width: '16px', height: '16px' }} /> My Reports
-                    </button>
-                    <button 
-                      onClick={() => { setActiveSection('spending'); setUserMenuOpen(false) }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: 'none', background: 'transparent', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#475569', textAlign: 'left' }}
-                    >
-                      <Wallet style={{ width: '16px', height: '16px' }} /> Spending
-                    </button>
+                    {[
+                      { label: 'Dashboard', icon: Home, section: 'overview' },
+                      { label: 'My Reports', icon: FileText, section: 'reports' },
+                      { label: 'Spending', icon: Wallet, section: 'spending' }
+                    ].map(item => (
+                      <button 
+                        key={item.section}
+                        onClick={() => { setActiveSection(item.section); setUserMenuOpen(false) }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: 'none', background: 'transparent', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#475569', textAlign: 'left' }}
+                      >
+                        <item.icon style={{ width: '16px', height: '16px' }} /> {item.label}
+                      </button>
+                    ))}
                   </div>
                   <div style={{ padding: '8px', borderTop: '1px solid #f1f5f9' }}>
                     <button 
@@ -471,7 +481,7 @@ export default function CitizenDashboard() {
         {sidebarOpen && (
           <>
             {/* Mobile Overlay */}
-            {window.innerWidth <= 1024 && (
+            {(isMobile || isTablet) && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -502,7 +512,7 @@ export default function CitizenDashboard() {
                 height: 'calc(100vh - 70px)',
                 zIndex: 999,
                 overflowY: 'auto',
-                boxShadow: window.innerWidth <= 1024 ? '4px 0 24px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: (isMobile || isTablet) ? '4px 0 24px rgba(0,0,0,0.1)' : 'none'
               }}
             >
               <div style={{ padding: '20px 16px' }}>
@@ -521,7 +531,7 @@ export default function CitizenDashboard() {
                     key={item.id}
                     onClick={() => { 
                       setActiveSection(item.id)
-                      if (window.innerWidth <= 1024) setSidebarOpen(false)
+                      if (isMobile || isTablet) setSidebarOpen(false)
                     }}
                     style={{
                       width: '100%',
@@ -567,10 +577,10 @@ export default function CitizenDashboard() {
       {/* MAIN CONTENT */}
       <main style={{ 
         marginTop: '70px',
-        marginLeft: sidebarOpen && window.innerWidth > 1024 ? '280px' : '0',
+        marginLeft: sidebarOpen && !isMobile && !isTablet ? '280px' : '0',
         transition: 'margin-left 0.3s ease',
         minHeight: 'calc(100vh - 70px)',
-        padding: '24px'
+        padding: isMobile ? '16px' : '24px'
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
           <AnimatePresence mode="wait">
@@ -585,7 +595,7 @@ export default function CitizenDashboard() {
                     style={{
                       background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
                       borderRadius: '20px',
-                      padding: '32px',
+                      padding: isMobile ? '24px' : '32px',
                       marginBottom: '24px',
                       color: 'white',
                       position: 'relative',
@@ -593,10 +603,10 @@ export default function CitizenDashboard() {
                     }}
                   >
                     <div style={{ position: 'relative', zIndex: 1 }}>
-                      <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800' }}>
+                      <h2 style={{ margin: '0 0 8px 0', fontSize: isMobile ? '22px' : '28px', fontWeight: '800' }}>
                         Welcome back, {user?.name?.split(' ')[0] || 'User'}! 👋
                       </h2>
-                      <p style={{ margin: 0, fontSize: '16px', opacity: 0.95 }}>
+                      <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', opacity: 0.95 }}>
                         Here's what's happening with your water supply today
                       </p>
                     </div>
@@ -612,7 +622,7 @@ export default function CitizenDashboard() {
                   </motion.div>
 
                   {/* Quick Stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
                     {[
                       { label: 'Water Quality', value: `${waterQuality.purity_level}%`, icon: Droplet, color: '#0891b2', bg: 'linear-gradient(135deg, #eff6ff, #f0f9ff)' },
                       { label: 'Active Points', value: waterPoints.filter(p => p.status === 'active').length, icon: MapPin, color: '#10b981', bg: 'linear-gradient(135deg, #d1fae5, #ecfdf5)' },
@@ -633,8 +643,8 @@ export default function CitizenDashboard() {
                     ))}
                   </div>
 
-                  {/* IoT & Water Points Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+                  {/* IoT & Alerts Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
                     {/* IoT Snapshot */}
                     <motion.div variants={fadeInUp} className="card-hover" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -683,9 +693,257 @@ export default function CitizenDashboard() {
                 </>
               )}
 
-              {/* Other sections remain the same as before... */}
-              {/* IoT MONITORING, WATER QUALITY, WATER POINTS, REPORTS, ALERTS, COMMUNITY, SPENDING sections */}
-              {/* [Include all the other sections from the previous code here] */}
+              {/* IoT MONITORING SECTION */}
+              {activeSection === 'iot-monitoring' && (
+                <motion.div variants={fadeInUp}>
+                  <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>IoT Sensor Monitoring</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    {[
+                      { label: 'pH Level', value: iotReadings.ph, unit: '', icon: Droplet, color: '#0891b2', status: iotReadings.ph >= 6.5 && iotReadings.ph <= 8.5 ? 'Optimal' : 'Alert' },
+                      { label: 'Turbidity', value: iotReadings.turbidity, unit: 'NTU', icon: Waves, color: '#06b6d4', status: iotReadings.turbidity < 5 ? 'Clear' : 'Cloudy' },
+                      { label: 'TDS', value: iotReadings.tds, unit: 'ppm', icon: Database, color: '#10b981', status: iotReadings.tds < 300 ? 'Safe' : 'Elevated' },
+                      { label: 'Dissolved Oxygen', value: iotReadings.dissolved_oxygen, unit: 'mg/L', icon: Wind, color: '#3b82f6', status: iotReadings.dissolved_oxygen >= 6 ? 'Good' : 'Low' },
+                      { label: 'Conductivity', value: iotReadings.conductivity, unit: 'μS/cm', icon: Zap, color: '#f59e0b', status: 'Normal' },
+                      { label: 'Free Chlorine', value: iotReadings.chlorine, unit: 'mg/L', icon: CloudRain, color: '#ef4444', status: iotReadings.chlorine >= 0.2 && iotReadings.chlorine <= 1.0 ? 'Treated' : 'Check' }
+                    ].map((metric, i) => (
+                      <motion.div key={i} variants={scaleIn} whileHover={{ y: -4 }} className="card-hover" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '48px', height: '48px', background: `${metric.color}15`, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <metric.icon style={{ width: '24px', height: '24px', color: metric.color }} />
+                            </div>
+                            <div>
+                              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{metric.label}</h3>
+                            </div>
+                          </div>
+                          <span style={{ padding: '6px 12px', background: metric.status === 'Optimal' || metric.status === 'Clear' || metric.status === 'Safe' || metric.status === 'Good' || metric.status === 'Normal' || metric.status === 'Treated' ? '#d1fae5' : '#fef3c7', color: metric.status === 'Optimal' || metric.status === 'Clear' || metric.status === 'Safe' || metric.status === 'Good' || metric.status === 'Normal' || metric.status === 'Treated' ? '#059669' : '#d97706', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{metric.status}</span>
+                        </div>
+                        <div style={{ fontSize: '36px', fontWeight: '800', color: '#0f172a' }}>
+                          {metric.value}<span style={{ fontSize: '14px', color: '#64748b', marginLeft: '4px' }}>{metric.unit}</span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* WATER QUALITY SECTION */}
+              {activeSection === 'water-quality' && (
+                <motion.div variants={fadeInUp}>
+                  <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>Water Quality Analysis</h2>
+                  <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
+                      <div style={{ textAlign: 'center', padding: '20px', background: '#f0f9ff', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '48px', fontWeight: '800', color: '#0891b2', marginBottom: '8px' }}>{waterQuality.purity_level}%</div>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Purity Level</p>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '20px', background: '#f0fdf4', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '48px', fontWeight: '800', color: '#10b981', marginBottom: '8px' }}>{waterQuality.safety_score}</div>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Safety Score</p>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '20px', background: '#fef3c7', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '24px', fontWeight: '800', color: '#f59e0b', marginBottom: '8px' }}>{waterQuality.treatment_status || 'Treated'}</div>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Treatment Status</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* WATER POINTS SECTION */}
+              {activeSection === 'water-points' && (
+                <motion.div variants={fadeInUp}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                    <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>Water Points</h2>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', background: 'white', cursor: 'pointer' }}>
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="warning">Low Water</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                    {filteredPoints.map((point, i) => {
+                      const status = getPointStatus(point.status)
+                      const StatusIcon = status.icon
+                      return (
+                        <motion.div key={i} variants={scaleIn} whileHover={{ y: -4 }} className="card-hover" style={{ background: 'white', borderRadius: '16px', padding: '20px', border: '1px solid #e2e8f0', cursor: 'pointer' }} onClick={() => setSelectedPoint(selectedPoint?.id === point.id ? null : point)}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ width: '44px', height: '44px', background: status.bg, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <StatusIcon style={{ width: '22px', height: '22px', color: status.color }} />
+                              </div>
+                              <div>
+                                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{point.name}</h4>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>{point.location}</p>
+                              </div>
+                            </div>
+                            <span style={{ padding: '6px 14px', background: status.bg, color: status.color, borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{status.label}</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                            <div style={{ textAlign: 'center', padding: '12px', background: '#f8fafc', borderRadius: '10px' }}>
+                              <p style={{ margin: 0, fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Water</p>
+                              <p style={{ margin: '2px 0 0 0', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{point.water_level || 0}%</p>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: '12px', background: '#f8fafc', borderRadius: '10px' }}>
+                              <p style={{ margin: 0, fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Quality</p>
+                              <p style={{ margin: '2px 0 0 0', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{point.quality_index || 0}%</p>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: '12px', background: '#f8fafc', borderRadius: '10px' }}>
+                              <p style={{ margin: 0, fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Flow</p>
+                              <p style={{ margin: '2px 0 0 0', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{point.flow_rate || 0} L/m</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                  {filteredPoints.length === 0 && (
+                    <div style={{ background: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', border: '1px solid #e2e8f0', marginTop: '20px' }}>
+                      <Search style={{ width: '64px', height: '64px', color: '#cbd5e1', margin: '0 auto 16px' }} />
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>No Water Points Found</h4>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Adjust your filters to see more results</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* REPORTS SECTION */}
+              {activeSection === 'reports' && (
+                <motion.div variants={fadeInUp}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>My Reports</h2>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowReportModal(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FileText style={{ width: '18px', height: '18px' }} /> New Report
+                    </motion.button>
+                  </div>
+                  <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                    {myReports.length > 0 ? myReports.map((report, i) => {
+                      const status = getReportStatus(report.status)
+                      return (
+                        <div key={i} style={{ padding: '20px', borderBottom: i === myReports.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                            <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{report.title}</h4>
+                            <span style={{ padding: '6px 16px', background: status.bg, color: status.color, borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>{status.label}</span>
+                          </div>
+                          <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>{report.description}</p>
+                          <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#64748b', flexWrap: 'wrap' }}>
+                            <span>{report.location}</span>
+                            <span>•</span>
+                            <span>{new Date(report.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      )
+                    }) : (
+                      <div style={{ padding: '80px 20px', textAlign: 'center' }}>
+                        <FileText style={{ width: '64px', height: '64px', color: '#cbd5e1', margin: '0 auto 16px' }} />
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>No Reports Yet</h4>
+                        <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#64748b' }}>You haven't submitted any reports yet.</p>
+                        <button onClick={() => setShowReportModal(true)} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Create Your First Report</button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ALERTS SECTION */}
+              {activeSection === 'alerts' && (
+                <motion.div variants={fadeInUp}>
+                  <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>System Alerts</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {alerts.length > 0 ? alerts.map((alert, i) => (
+                      <motion.div key={i} variants={scaleIn} className="card-hover" style={{ background: 'white', borderRadius: '16px', padding: '20px', border: '1px solid #fee2e2' }}>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                          <div style={{ width: '56px', height: '56px', background: '#fef2f2', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <AlertTriangle style={{ width: '28px', height: '28px', color: '#ef4444' }} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{alert.message}</h4>
+                            <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#475569' }}>Location: {alert.node_name || 'Nearby Area'}</p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#64748b' }}>
+                              <span>{new Date(alert.created_at).toLocaleString()}</span>
+                              <span style={{ color: '#ef4444', fontWeight: '600' }}>High Priority</span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )) : (
+                      <div style={{ background: 'white', borderRadius: '16px', padding: '80px 20px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                        <CheckCircle style={{ width: '64px', height: '64px', color: '#10b981', margin: '0 auto 16px' }} />
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>All Systems Normal</h4>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>No active alerts in your area at this time.</p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* COMMUNITY SECTION */}
+              {activeSection === 'community' && (
+                <motion.div variants={fadeInUp}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>Community Reports</h2>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowReportModal(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <MessageSquare style={{ width: '18px', height: '18px' }} /> Report Issue
+                    </motion.button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {communityReports.length > 0 ? communityReports.map((report, i) => {
+                      const status = getReportStatus(report.status)
+                      return (
+                        <motion.div key={i} variants={scaleIn} className="card-hover" style={{ background: 'white', borderRadius: '16px', padding: '20px', border: '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{report.title}</h4>
+                                <span style={{ padding: '4px 12px', background: status.bg, color: status.color, borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{status.label}</span>
+                              </div>
+                              <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>{report.description}</p>
+                              <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#64748b', flexWrap: 'wrap' }}>
+                                <span>{report.reporter_name || 'Anonymous'}</span>
+                                <span>•</span>
+                                <span>{report.location}</span>
+                                <span>•</span>
+                                <span>{new Date(report.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )
+                    }) : (
+                      <div style={{ background: 'white', borderRadius: '16px', padding: '80px 20px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                        <Users style={{ width: '64px', height: '64px', color: '#cbd5e1', margin: '0 auto 16px' }} />
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>No Community Reports</h4>
+                        <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#64748b' }}>Be the first to report an issue in your community.</p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* SPENDING SECTION */}
+              {activeSection === 'spending' && (
+                <motion.div variants={fadeInUp}>
+                  <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>Water Spending History</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '20px', padding: '24px', color: 'white' }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: 0.9, fontWeight: '600' }}>Total Spent (This Month)</p>
+                      <p style={{ margin: 0, fontSize: '36px', fontWeight: '800' }}>KES {mySpending?.this_month?.total_ksh || 0}</p>
+                    </div>
+                    <div style={{ background: 'white', borderRadius: '20px', padding: '24px', border: '1px solid #e2e8f0' }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Total Transactions</p>
+                      <p style={{ margin: 0, fontSize: '36px', fontWeight: '800', color: '#0f172a' }}>{(mySpending?.transactions || []).length}</p>
+                    </div>
+                  </div>
+                  <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '80px 20px', textAlign: 'center' }}>
+                    <Wallet style={{ width: '64px', height: '64px', color: '#cbd5e1', margin: '0 auto 16px' }} />
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Transaction History</h4>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Your detailed spending history will appear here.</p>
+                  </div>
+                </motion.div>
+              )}
 
             </motion.div>
           </AnimatePresence>
@@ -719,15 +977,13 @@ export default function CitizenDashboard() {
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Title <span style={{ color: '#ef4444' }}>*</span></label>
                 <input type="text" required value={reportForm.title} onChange={(e) => setReportForm({...reportForm, title: e.target.value})} style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }} placeholder="e.g., Leaking pipe at main junction" />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Category <span style={{ color: '#ef4444' }}>*</span></label>
                   <select value={reportForm.category} onChange={(e) => setReportForm({...reportForm, category: e.target.value})} style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', background: 'white' }}>
                     <option value="leak">Leak/Burst Pipe</option>
                     <option value="contamination">Water Contamination</option>
                     <option value="dry">Dry Water Point</option>
-                    <option value="pressure">Low Pressure</option>
-                    <option value="quality">Poor Water Quality</option>
                     <option value="other">Other Issue</option>
                   </select>
                 </div>
