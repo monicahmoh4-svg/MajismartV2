@@ -1,136 +1,170 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Droplets, MapPin, ShieldCheck, AlertTriangle, Wallet, Plus, Navigation, ChevronRight, Waves, ThumbsUp, ThumbsDown } from 'lucide-react'
-import api from '../../api'
 import { useAuth } from '../../context/AuthContext'
-import { useApiData } from '../../hooks/useApiData'
-import { Loading, ErrorState } from '../ui/StateViews'
-
-function BigStatusCard({ availability, safety, onReport }) {
-  const [reported, setReported] = useState(false)
-  const [reporting, setReporting] = useState(false)
-  const report = async (isAvailable) => {
-    setReporting(true)
-    try { await onReport(isAvailable); setReported(true) } catch(_) {}
-    finally { setReporting(false) }
-  }
-  return (
-    <div style={{background:`linear-gradient(135deg,${availability.color}18,${availability.color}08)`,border:`2px solid ${availability.color}30`,borderRadius:16,padding:'24px 20px',marginBottom:16}}>
-      <div style={{fontSize:32,marginBottom:6}}>{availability.emoji}</div>
-      <div style={{fontSize:22,fontWeight:900,color:availability.color,marginBottom:4}}>{availability.label}</div>
-      <div style={{fontSize:13,color:'#5f6368',marginBottom:16,lineHeight:1.5}}>{availability.detail}</div>
-      <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'6px 14px',background:`${safety.color}15`,borderRadius:99,marginBottom:16}}>
-        <ShieldCheck size={14} color={safety.color}/>
-        <span style={{fontSize:12,fontWeight:700,color:safety.color}}>Quality: {safety.label}</span>
-      </div>
-      {!reported ? (
-        <div>
-          <div style={{fontSize:12,color:'#9aa0a6',marginBottom:8}}>Is water available at your tap right now?</div>
-          <div style={{display:'flex',gap:8}}>
-            <button onClick={()=>report(true)} disabled={reporting} style={{flex:1,padding:'9px',background:'#e1f5ee',color:'#0d9e75',border:'1.5px solid #0d9e7540',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><ThumbsUp size={14}/> Yes, it's on</button>
-            <button onClick={()=>report(false)} disabled={reporting} style={{flex:1,padding:'9px',background:'#fce8e6',color:'#d93025',border:'1.5px solid #d9302540',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><ThumbsDown size={14}/> No, it's off</button>
-          </div>
-        </div>
-      ) : <div style={{fontSize:13,color:'#0d9e75',fontWeight:600}}>✓ Thanks! Your report helps your neighbours.</div>}
-    </div>
-  )
-}
-
+import { Droplets, CreditCard, Bell, MapPin, CheckCircle, AlertTriangle, X } from 'lucide-react'
+import api from '../../api'
 export default function CommunityDashboard() {
   const { user } = useAuth()
-  const county = user?.county || 'Nairobi'
-  const { data: statusData, loading: statusLoading, error: statusError, refetch: refetchStatus } =
-    useApiData(()=>api.get(`/citizen/area-status?county=${encodeURIComponent(county)}`), { pollMs:120000 })
-  const { data: points } = useApiData(()=>api.get(`/citizen/water-points?county=${encodeURIComponent(county)}`), { pollMs:120000 })
-  const { data: spending } = useApiData(()=>api.get('/citizen/my-spending'))
-  const handleReport = async (isAvailable) => {
-    await api.post('/citizen/availability-report', { county, is_available: isAvailable })
-    refetchStatus()
+  const [nodes, setNodes] = useState([])
+  const [alerts, setAlerts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showPay, setShowPay] = useState(false)
+  const [payForm, setPayForm] = useState({ node_id: '', phone: '', litres: 20 })
+  const [payResult, setPayResult] = useState(null)
+  const [paying, setPaying] = useState(false)
+  useEffect(() => {
+    const q = user?.county ? `?county=${encodeURIComponent(user.county)}` : ''
+    Promise.all([
+      api.get(`/nodes${q}`),
+      api.get('/alerts?resolved=false&limit=5'),
+    ]).then(([n, a]) => {
+      setNodes(n)
+      setAlerts(a)
+    }).finally(() => setLoading(false))
+  }, [user])
+  const pay = async e => {
+    e.preventDefault(); setPaying(true); setPayResult(null)
+    try {
+      const res = await api.post('/payments/initiate', payForm)
+      setPayResult({ ok: true, msg: res.message, id: res.payment_id })
+      let tries = 0
+      const poll = setInterval(async () => {
+        tries++
+        const s = await api.get(`/payments/${res.payment_id}/status`)
+        if (s.status === 'completed') {
+          clearInterval(poll)
+          setPayResult({ ok: true, msg: `✅ Payment complete! M-Pesa code: ${s.mpesa_code}` })
+        }
+        if (tries > 12) clearInterval(poll)
+      }, 2500)
+    } catch (err) {
+      setPayResult({ ok: false, msg: err.error || 'Payment failed. Try again.' })
+    } finally { setPaying(false) }
   }
-  const hour = new Date().getHours()
-  const greeting = hour<12?'Good morning':hour<17?'Good afternoon':'Good evening'
-  const best = points?.find(p=>p.status==='active'&&p.water_level>20)||points?.[0]
-  const tm = spending?.this_month
-
+  if (loading) return <div className="page-loader"><div className="spinner" /></div>
+  const activeNodes = nodes.filter(n => n.status === 'active')
+  const warningNodes = nodes.filter(n => n.status === 'warning')
   return (
-    <div style={{maxWidth:520,margin:'0 auto'}}>
-      <div style={{marginBottom:18}}>
-        <h1 style={{fontSize:20,fontWeight:800,marginBottom:2}}>{greeting}, {user?.name?.split(' ')[0]} 👋</h1>
-        <div style={{display:'flex',alignItems:'center',gap:4,fontSize:13,color:'#5f6368'}}><MapPin size={13}/>{county} County</div>
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <Droplets size={22} color="#b5720a" />
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#b5720a' }}>
+            {user?.county ? `${user.county} Water Points` : 'Community Water'}
+          </h1>
+        </div>
+        <p style={{ color: '#5f6368', fontSize: 14 }}>Check water availability and pay for water via M-Pesa</p>
       </div>
-      {statusLoading?<Loading rows={2}/>:statusError?<ErrorState message={statusError} onRetry={refetchStatus}/>:
-        statusData?<BigStatusCard availability={statusData.availability} safety={statusData.safety} onReport={handleReport}/>:null}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
-        {[{to:'/app/find-water',icon:Navigation,label:'Find Water',color:'#1a7fd4',bg:'#e8f4fd'},
-          {to:'/app/report',icon:Plus,label:'Report Issue',color:'#d93025',bg:'#fce8e6'},
-          {to:'/app/my-water',icon:Wallet,label:'My Spending',color:'#0d9e75',bg:'#e1f5ee'},
-          {to:'/app/community',icon:Waves,label:'Area Reports',color:'#7a3fb5',bg:'#f0e8fc'}].map(a=>(
-          <Link key={a.to} to={a.to} style={{textDecoration:'none'}}>
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,padding:'14px 8px',background:'white',borderRadius:12,border:'1px solid var(--gray-200)'}}>
-              <div style={{width:40,height:40,borderRadius:11,background:a.bg,display:'flex',alignItems:'center',justifyContent:'center'}}><a.icon size={19} color={a.color}/></div>
-              <span style={{fontSize:11,fontWeight:600,color:'#3c4043',textAlign:'center',lineHeight:1.3}}>{a.label}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 22 }}>
+        {[
+          { label: 'Water Points',  value: nodes.length,         sub: 'in your area', color: '#b5720a', bg: '#fef3d8' },
+          { label: 'Open Now',      value: activeNodes.length,   sub: 'serving water', color: '#0d9e75', bg: '#e1f5ee' },
+          { label: 'Low Water',     value: warningNodes.length,  sub: 'need attention', color: '#d93025', bg: '#fce8e6' },
+          { label: 'Price',         value: 'Ksh 2',              sub: 'per 20 litres', color: '#1a7fd4', bg: '#e8f4fd' },
+        ].map(s => (
+          <div key={s.label} className="card" style={{ padding: '16px 18px', background: s.bg, border: `1px solid ${s.color}22` }}>
+            <div style={{ fontSize: 12, color: s.color, marginBottom: 4, fontWeight: 600 }}>{s.label}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: s.color, opacity: .7, marginTop: 2 }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="card" style={{ padding: 20, marginBottom: 18, borderLeft: '4px solid #0d9e75' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0d6e56', marginBottom: 4 }}>Pay for Water — M-Pesa</h3>
+            <p style={{ fontSize: 13, color: '#5f6368' }}>Select a water point, enter your M-Pesa number and choose volume</p>
+          </div>
+          <button className="btn btn-success" onClick={() => setShowPay(!showPay)} style={{ fontSize: 14 }}>
+            <CreditCard size={16} /> {showPay ? 'Hide' : 'Pay Now'}
+          </button>
+        </div>
+        {showPay && (
+          <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid #e8eaed' }}>
+            {payResult && (
+              <div className={`alert-bar ${payResult.ok ? 'alert-bar-success' : 'alert-bar-error'}`} style={{ marginBottom: 14 }}>
+                {payResult.msg}
+              </div>
+            )}
+            <form onSubmit={pay}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Water Point</label>
+                  <select value={payForm.node_id} onChange={e => setPayForm(f => ({ ...f, node_id: e.target.value }))} required>
+                    <option value="">Select water point</option>
+                    {activeNodes.map(n => (
+                      <option key={n.id} value={n.id}>{n.name} — {n.water_level ?? '--'}% full</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Your M-Pesa Number</label>
+                  <input placeholder="e.g. 0712345678" value={payForm.phone}
+                    onChange={e => setPayForm(f => ({ ...f, phone: e.target.value }))} required />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Litres</label>
+                  <select value={payForm.litres} onChange={e => setPayForm(f => ({ ...f, litres: parseInt(e.target.value) }))}>
+                    {[20, 40, 60, 100, 200].map(l => (
+                      <option key={l} value={l}>{l}L — Ksh {(l * 0.1).toFixed(2)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 14, alignItems: 'center' }}>
+                <button type="submit" className="btn btn-success" disabled={paying}>
+                  {paying ? 'Sending M-Pesa prompt…' : `Pay Ksh ${(payForm.litres * 0.1).toFixed(2)}`}
+                </button>
+                <span style={{ fontSize: 12, color: '#9aa0a6' }}>Prompt sent to your Safaricom phone</span>
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14, marginBottom: 18 }}>
+        {nodes.map(n => (
+          <Link key={n.id} to={`/app/nodes/${n.id}`} style={{ textDecoration: 'none' }}>
+            <div className="card" style={{ padding: 18, cursor: 'pointer', transition: 'transform .15s' }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'none'}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#202124' }}>{n.name}</div>
+                  <div style={{ fontSize: 12, color: '#9aa0a6', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    <MapPin size={11} />{n.location}
+                  </div>
+                </div>
+                <span className={`badge badge-${n.status}`}>{n.status}</span>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                  <span style={{ color: '#5f6368' }}>Water available</span>
+                  <span style={{ fontWeight: 700, color: n.water_level < 20 ? '#d93025' : '#0d9e75' }}>{n.water_level ?? '--'}%</span>
+                </div>
+                <div style={{ height: 8, background: '#f1f3f4', borderRadius: 99 }}>
+                  <div style={{ height: '100%', width: `${n.water_level || 0}%`, borderRadius: 99, background: n.water_level < 20 ? '#d93025' : n.water_level < 40 ? '#e8a020' : '#0d9e75', transition: 'width 1s' }} />
+                </div>
+              </div>
+              {n.status === 'active'
+                ? <div style={{ fontSize: 12, color: '#0d9e75', display: 'flex', alignItems: 'center', gap: 5 }}><CheckCircle size={13} />Open — Ksh 2 per 20L</div>
+                : <div style={{ fontSize: 12, color: '#d93025', display: 'flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={13} />Currently {n.status}</div>
+              }
             </div>
           </Link>
         ))}
       </div>
-      {best && (
-        <div className="card fade-in" style={{padding:16,marginBottom:16}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-            <span style={{fontSize:12,fontWeight:700,color:'#5f6368',textTransform:'uppercase',letterSpacing:.4}}>Nearest Water Point</span>
-            <Link to="/app/find-water" style={{fontSize:12,color:'#1a7fd4',display:'flex',alignItems:'center',gap:3}}>See all<ChevronRight size={12}/></Link>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:12}}>
-            <div style={{width:44,height:44,borderRadius:12,background:'#e8f4fd',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Droplets size={22} color="#1a7fd4"/></div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{best.name}</div>
-              <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:'#9aa0a6',marginBottom:6}}><MapPin size={11}/>{best.location||best.county}{best.distance_km&&` · ${best.distance_km} km`}</div>
-              <div style={{height:6,background:'#f1f3f4',borderRadius:99,overflow:'hidden'}}>
-                <div style={{height:'100%',width:`${best.water_level||0}%`,borderRadius:99,background:(best.water_level||0)>50?'#0d9e75':(best.water_level||0)>20?'#e8a020':'#d93025',transition:'width 1s'}}/>
+      {alerts.length > 0 && (
+        <div className="card" style={{ padding: 20 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 7 }}>
+            <Bell size={14} color="#e8a020" /> Community Notices
+          </h3>
+          {alerts.map(a => (
+            <div key={a.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid #f1f3f4', alignItems: 'flex-start' }}>
+              <AlertTriangle size={14} color={a.severity === 'critical' ? '#d93025' : '#e8a020'} style={{ marginTop: 2, flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>{a.node_name} — {a.message}</div>
+                <div style={{ fontSize: 11, color: '#9aa0a6', marginTop: 2 }}>{new Date(a.created_at).toLocaleString()}</div>
               </div>
-              <div style={{fontSize:11,color:best.level_color||'#5f6368',marginTop:3,fontWeight:600}}>{best.level_label}</div>
-            </div>
-            {best.latitude&&best.longitude&&<a href={`https://maps.google.com/?q=${best.latitude},${best.longitude}`} target="_blank" rel="noreferrer" style={{background:'#1a7fd4',color:'white',padding:'8px 12px',borderRadius:8,fontSize:12,fontWeight:600,textDecoration:'none',flexShrink:0,display:'flex',alignItems:'center',gap:4}}><Navigation size={13}/> Go</a>}
-          </div>
-        </div>
-      )}
-      {spending && (
-        <div className="card fade-in" style={{padding:16,marginBottom:16}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-            <span style={{fontSize:12,fontWeight:700,color:'#5f6368',textTransform:'uppercase',letterSpacing:.4}}>My Water This Month</span>
-            <Link to="/app/my-water" style={{fontSize:12,color:'#1a7fd4',display:'flex',alignItems:'center',gap:3}}>Details<ChevronRight size={12}/></Link>
-          </div>
-          {!spending.has_data ? (
-            <Link to="/app/settings" style={{fontSize:13,color:'#1a7fd4',fontWeight:600}}>Add phone number to track spending →</Link>
-          ) : (
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
-              {[{label:'Spent',val:`Ksh ${Number(tm?.total_ksh||0).toLocaleString()}`,color:'#d93025'},{label:'Litres',val:`${Number(tm?.total_litres||0).toLocaleString()}L`,color:'#1a7fd4'},{label:'Cost/L',val:tm?.cost_per_litre?`Ksh ${tm.cost_per_litre}`:'—',color:'#0d9e75'}].map(s=>(
-                <div key={s.label} style={{textAlign:'center',padding:'10px 6px',background:'var(--gray-50)',borderRadius:10}}>
-                  <div style={{fontSize:17,fontWeight:800,color:s.color}}>{s.val}</div>
-                  <div style={{fontSize:10,color:'#9aa0a6',marginTop:2}}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      {statusData?.safety && (
-        <div className="card fade-in" style={{padding:14,marginBottom:16,background:`${statusData.safety.color}08`,border:`1px solid ${statusData.safety.color}25`}}>
-          <div style={{display:'flex',gap:8,alignItems:'flex-start'}}>
-            <ShieldCheck size={16} color={statusData.safety.color} style={{flexShrink:0,marginTop:1}}/>
-            <div>
-              <div style={{fontSize:12,fontWeight:700,color:statusData.safety.color,marginBottom:2}}>Water Quality Advice</div>
-              <div style={{fontSize:12,color:'#5f6368',lineHeight:1.5}}>{statusData.safety.advice}</div>
-            </div>
-          </div>
-        </div>
-      )}
-      {statusData?.alerts?.length>0 && (
-        <div className="card fade-in" style={{padding:16,marginBottom:16}}>
-          <div style={{fontSize:12,fontWeight:700,color:'#5f6368',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>⚠ Area Alerts ({statusData.alerts.length})</div>
-          {statusData.alerts.map((a,i)=>(
-            <div key={i} style={{display:'flex',gap:8,padding:'7px 0',borderBottom:i<statusData.alerts.length-1?'1px solid var(--gray-100)':'none'}}>
-              <AlertTriangle size={13} color={a.severity==='critical'?'#d93025':'#e8a020'} style={{marginTop:2,flexShrink:0}}/>
-              <div><div style={{fontSize:12,fontWeight:600}}>{a.node_name}</div><div style={{fontSize:11,color:'#5f6368'}}>{a.message}</div></div>
             </div>
           ))}
         </div>
