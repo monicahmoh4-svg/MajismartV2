@@ -22,17 +22,17 @@ export default function Register() {
 
   const submit = async e => {
     e.preventDefault()
-    setError(''); setLoading(true)
+    setError('')
+    setLoading(true)
+    
     try {
       await register(form)
       navigate('/app/dashboard')
     } catch (err) {
-      console.error('Registration error details:', err)
-      // Extract the exact error message from the backend response
-      const errorMsg = err?.error || err?.response?.data?.error || err?.message || 'Registration failed. Please check your details and try again.'
-      setError(errorMsg)
-    } finally { 
-      setLoading(false) 
+      console.error('Registration error:', err)
+      setError(err.error || err.message || 'Registration failed. Please check your details and try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -46,9 +46,13 @@ export default function Register() {
           <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Create account</h1>
           <p style={{ color: '#5f6368', fontSize: 14 }}>Join MajiSmart Kenya</p>
         </div>
-        
-        {error && <div className="alert-bar alert-bar-error">{error}</div>}
-        
+
+        {error && (
+          <div className="alert-bar alert-bar-error" style={{ marginBottom: 20 }}>
+            {error}
+          </div>
+        )}
+
         <form onSubmit={submit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
@@ -60,14 +64,17 @@ export default function Register() {
               <input placeholder="0712345678" value={form.phone} onChange={set('phone')} />
             </div>
           </div>
+
           <div className="form-group">
             <label>Email address</label>
-            <input type="email" placeholder="jane@example.com" value={form.email} onChange={set('email')} required />
+            <input type="email" placeholder="jane@county.go.ke" value={form.email} onChange={set('email')} required />
           </div>
+
           <div className="form-group">
             <label>Password</label>
             <input type="password" placeholder="Min 6 characters" value={form.password} onChange={set('password')} required minLength={6} />
           </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
               <label>Role</label>
@@ -83,10 +90,17 @@ export default function Register() {
               </select>
             </div>
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: 12, fontSize: 15 }} disabled={loading}>
+
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ width: '100%', justifyContent: 'center', padding: 12, fontSize: 15 }} 
+            disabled={loading}
+          >
             {loading ? 'Creating account…' : 'Create Account'}
           </button>
         </form>
+
         <p style={{ textAlign: 'center', fontSize: 14, color: '#5f6368', marginTop: 20 }}>
           Already registered? <Link to="/login" style={{ color: '#1a7fd4', fontWeight: 600 }}>Sign in</Link>
         </p>
