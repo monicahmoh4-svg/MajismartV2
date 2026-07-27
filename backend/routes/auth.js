@@ -2,10 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
-
 const SECRET = process.env.JWT_SECRET || 'majismart_dev_secret';
-
-// POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, role = 'operator', county, phone } = req.body;
@@ -23,8 +20,6 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -40,8 +35,6 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/auth/me
 const { authMiddleware } = require('../middleware/auth');
 router.get('/me', authMiddleware, async (req, res) => {
   try {
@@ -52,5 +45,4 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 module.exports = router;
