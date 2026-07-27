@@ -1,7 +1,5 @@
 const router = require('express').Router();
 const db = require('../db');
-
-// GET /api/sensors/:nodeId/latest
 router.get('/:nodeId/latest', async (req, res) => {
   try {
     const { rows } = await db.query(
@@ -13,8 +11,6 @@ router.get('/:nodeId/latest', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/sensors/:nodeId/history?hours=24
 router.get('/:nodeId/history', async (req, res) => {
   try {
     const hours = parseInt(req.query.hours) || 24;
@@ -29,8 +25,6 @@ router.get('/:nodeId/history', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// POST /api/sensors/:nodeId/reading - IoT device posts data
 router.post('/:nodeId/reading', async (req, res) => {
   try {
     const { water_level, flow_rate, turbidity, temperature, ph } = req.body;
@@ -40,7 +34,6 @@ router.post('/:nodeId/reading', async (req, res) => {
       [req.params.nodeId, water_level, flow_rate, turbidity, temperature, ph]
     );
     await db.query(`UPDATE nodes SET last_reading=NOW() WHERE id=$1`, [req.params.nodeId]);
-    // Auto-alert if critical
     if (water_level !== undefined && water_level < 20) {
       await db.query(
         `INSERT INTO alerts (node_id,type,message,severity) VALUES ($1,'low_water','Tank level at '||$2||'%','critical')`,
@@ -58,8 +51,6 @@ router.post('/:nodeId/reading', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET /api/sensors/all/latest - all nodes latest readings
 router.get('/all/latest', async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -73,5 +64,4 @@ router.get('/all/latest', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 module.exports = router;
