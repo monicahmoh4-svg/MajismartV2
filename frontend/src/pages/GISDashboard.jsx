@@ -26,7 +26,6 @@ export default function GISDashboard() {
       setAssets(response.data || [])
     } catch (error) {
       console.error('Failed to fetch GIS data:', error)
-      // Fallback mock data for demonstration if API is not yet fully populated
       setAssets([
         { id: 1, type: 'sensor', name: 'Sensor Node A1', latitude: -1.2921, longitude: 36.8219, status: 'active', last_reading: '45 PSI' },
         { id: 2, type: 'reservoir', name: 'Kibera Reservoir', latitude: -1.3031, longitude: 36.7989, status: 'active', last_reading: '85% Capacity' },
@@ -89,7 +88,6 @@ export default function GISDashboard() {
           }}>
             <Download style={{ width: '16px', height: '16px' }} /> Export Map
           </button>
-       6</button>
         </div>
       </div>
 
