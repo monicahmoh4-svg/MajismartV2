@@ -1,96 +1,127 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const morgan = require('morgan');
+const dotenv = require('dotenv');
+const path = require('path');
+
+dotenv.config();
 
 const app = express();
+
+// ============================================
+// MIDDLEWARE
+// ============================================
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
+// ============================================
+// DATABASE CONNECTION
+// ============================================
+const db = require('./db');
+
+// Test database connection on startup
+db.query('SELECT NOW()')
+  .then(() => console.log('✅ Database connected successfully'))
+  .catch((err) => console.error('❌ Database connection failed:', err.message));
+
+// ============================================
+// ROUTE IMPORTS
+// ============================================
+const authRoutes = require('./routes/auth');
+const citizenRoutes = require('./routes/citizen');
+const reportRoutes = require('./routes/reports');
+const alertRoutes = require('./routes/alerts');
+const datasetRoutes = require('./routes/datasets');
+const paymentRoutes = require('./routes/payments');
+const aiRoutes = require('./routes/ai');
+
+// Enterprise GIS Routes (New)
+const gisRoutes = require('./routes/gis');
+
+// ============================================
+// ROUTE MOUNTING
+// ============================================
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0',
+    service: 'MajiSmart API'
+  });
+});
+
+// Authentication routes
+app.use('/api/auth', authRoutes);
+
+// Citizen portal routes
+app.use('/api/citizen', citizenRoutes);
+
+// Community reports
+app.use('/api/reports', reportRoutes);
+
+// System alerts
+app.use('/api/alerts', alertRoutes);
+
+// Public datasets
+app.use('/api/datasets', datasetRoutes);
+
+// Payments and billing
+app.use('/api/payments', paymentRoutes);
+
+// AI and analytics
+app.use('/api/ai', aiRoutes);
+
+// Enterprise GIS Platform (New)
+app.use('/api/gis', gisRoutes);
+
+// ============================================
+// ERROR HANDLING
+// ============================================
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.originalUrl} not found`,
+    method: req.method
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('❌ Unhandled Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// ============================================
+// SERVER STARTUP
+// ============================================
 const PORT = process.env.PORT || 5000;
 
-// --- MIDDLEWARE ---
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(compression());
-app.use(morgan('combined'));
-
-// FIX: Robust CORS configuration
-// We explicitly allow your Vercel frontend and localhost
-const allowedOrigins = [
-  'https://majismart-v2-phi.vercel.app', // Your Vercel URL
-  'https://majismart-woad.vercel.app',   // Your other Vercel URL (from docs)
-  'http://localhost:5173',               // Vite default
-  'http://localhost:3000'                // React default
-];
-
-// If FRONTEND_URL is set in Render env vars, add it to the list
-if (process.env.FRONTEND_URL) {
-  process.env.FRONTEND_URL.split(',').forEach(url => allowedOrigins.push(url.trim()));
-}
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.warn('⚠️ CORS blocked origin:', origin);
-      callback(null, true); // Temporarily allow all to prevent blocking during setup
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// --- ROUTES ---
-app.get('/', (req, res) => {
-  res.status(200).json({ service: 'MajiSmart API', status: 'running' });
+app.listen(PORT, () => {
+  console.log('='.repeat(60));
+  console.log('🚀 MajiSmart Enterprise API Server');
+  console.log('='.repeat(60));
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ API Base: http://localhost:${PORT}/api`);
+  console.log(`✅ Health Check: http://localhost:${PORT}/api/health`);
+  console.log(`✅ GIS Endpoint: http://localhost:${PORT}/api/gis/assets`);
+  console.log('='.repeat(60));
 });
-
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', time: new Date().toISOString() });
-});
-
-// Mount API routes (ensure these files exist in your backend/routes folder)
-try {
-  app.use('/api/auth', require('./routes/auth'));
-  app.use('/api/nodes', require('./routes/nodes'));
-  app.use('/api/sensors', require('./routes/sensors'));
-  app.use('/api/payments', require('./routes/payments'));
-  app.use('/api/alerts', require('./routes/alerts'));
-  app.use('/api/dashboard', require('./routes/dashboard'));
-  app.use('/api/users', require('./routes/users'));
-  app.use('/api/ai', require('./routes/ai'));
-} catch (err) {
-  console.error('⚠️ Route loading error:', err.message);
-}
-
-// --- ERROR HANDLING ---
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
-});
-
-// --- START SERVER ---
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ MajiSmart API running on port ${PORT}`);
-});
-
-// --- DB INIT (Async) ---
-const db = require('./db');
-db.initSchema()
-  .then(() => {
-    console.log('✅ Database ready');
-    // Start cron jobs here if needed
-  })
-  .catch(err => {
-    console.error('⚠️ DB init failed:', err.message);
-  });
 
 module.exports = app;
