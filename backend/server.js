@@ -70,6 +70,23 @@ const assetsRoutes = require('./routes/assets');
 // ============================================
 // ROUTE MOUNTING
 // ============================================
+
+// ✅ NEW: Friendly root route for the API
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to the MajiSmart Enterprise API',
+    status: 'running',
+    version: '2.0.0',
+    note: 'This is a backend API. Please use your Vercel frontend URL to access the visual application.',
+    usefulEndpoints: {
+      healthCheck: '/api/health',
+      gisAssets: '/api/gis/assets',
+      assetManagement: '/api/assets',
+      adminStats: '/api/admin/dashboard-stats'
+    }
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -98,7 +115,7 @@ app.use('/api/assets', assetsRoutes);
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
-    message: `Route ${req.originalUrl} not found`
+    message: `Route ${req.originalUrl} not found. Did you mean to prefix with /api/ ?`
   });
 });
 
@@ -120,13 +137,10 @@ app.listen(PORT, () => {
   console.log('='.repeat(60));
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ API Base: http://localhost:${PORT}/api`);
+  console.log(`✅ API Base: http://localhost:${PORT}`);
   console.log(`✅ Health: http://localhost:${PORT}/api/health`);
   console.log(`✅ GIS: http://localhost:${PORT}/api/gis/assets`);
   console.log(`✅ Assets: http://localhost:${PORT}/api/assets`);
-  console.log(`✅ Admin: http://localhost:${PORT}/api/admin/dashboard-stats`);
-  console.log(`✅ County: http://localhost:${PORT}/api/county/dashboard-stats`);
-  console.log(`✅ Operator: http://localhost:${PORT}/api/operator/dashboard-stats`);
   console.log('='.repeat(60));
 });
 
