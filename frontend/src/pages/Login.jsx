@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -10,7 +10,6 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
-  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -23,7 +22,7 @@ export default function Login() {
       setError(result.error)
       setLoading(false)
     }
-    // ✅ Successful login redirects to /dashboard inside AuthContext
+    // ✅ Do NOT navigate here - AuthContext handles the redirect
   }
 
   return (
@@ -37,7 +36,6 @@ export default function Login() {
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Decorative circles */}
       <div style={{
         position: 'absolute',
         top: '-100px',
@@ -72,7 +70,6 @@ export default function Login() {
           zIndex: 1
         }}
       >
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
             width: '64px',
@@ -95,7 +92,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Error Message */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -119,7 +115,6 @@ export default function Login() {
           </motion.div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' }}>
@@ -140,11 +135,8 @@ export default function Login() {
                   border: '1.5px solid #e2e8f0',
                   fontSize: '15px',
                   outline: 'none',
-                  transition: 'border-color 0.2s',
                   boxSizing: 'border-box'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#0891b2'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               />
             </div>
           </div>
@@ -168,11 +160,8 @@ export default function Login() {
                   border: '1.5px solid #e2e8f0',
                   fontSize: '15px',
                   outline: 'none',
-                  transition: 'border-color 0.2s',
                   boxSizing: 'border-box'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#0891b2'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               />
               <button
                 type="button"
@@ -185,10 +174,7 @@ export default function Login() {
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  padding: '4px'
                 }}
               >
                 {showPassword 
@@ -219,13 +205,10 @@ export default function Login() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s'
+              gap: '8px'
             }}
           >
-            {loading ? (
-              <>Signing in...</>
-            ) : (
+            {loading ? 'Signing in...' : (
               <>
                 <LogIn style={{ width: '18px', height: '18px' }} />
                 Sign In
@@ -234,7 +217,6 @@ export default function Login() {
           </motion.button>
         </form>
 
-        {/* Demo Credentials */}
         <div style={{
           marginTop: '20px',
           padding: '12px',
@@ -248,40 +230,10 @@ export default function Login() {
           <strong>Demo:</strong> admin@majismart.ke / admin123
         </div>
 
-        {/* Sign Up Link */}
-        <p style={{ 
-          textAlign: 'center', 
-          marginTop: '24px', 
-          fontSize: '14px', 
-          color: '#64748b' 
-        }}>
+        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#64748b' }}>
           Don't have an account?{' '}
-          <Link 
-            to="/register" 
-            style={{ 
-              color: '#0891b2', 
-              fontWeight: '700', 
-              textDecoration: 'none' 
-            }}
-          >
+          <Link to="/register" style={{ color: '#0891b2', fontWeight: '700', textDecoration: 'none' }}>
             Sign up free
-          </Link>
-        </p>
-
-        {/* Back to Home */}
-        <p style={{ 
-          textAlign: 'center', 
-          marginTop: '12px', 
-          fontSize: '13px' 
-        }}>
-          <Link 
-            to="/" 
-            style={{ 
-              color: '#94a3b8', 
-              textDecoration: 'none' 
-            }}
-          >
-            ← Back to home
           </Link>
         </p>
       </motion.div>
