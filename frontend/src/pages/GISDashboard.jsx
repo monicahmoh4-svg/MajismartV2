@@ -1,26 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  MapPin, Layers, Search, Download, Plus, X, Save, Trash2, 
-  RefreshCw, FileText, Activity, Filter
+  Layers, Search, Plus, X, Save, Trash2, 
+  RefreshCw, FileText, Activity, Filter, MapPin
 } from 'lucide-react'
 import InteractiveMap from '../components/gis/InteractiveMap'
 import api from '../api'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
-const MAJISMART_LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwZWE1ZTkiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwNmI2ZDQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0idXJsKCNnKSIgcng9IjEwMCIvPjxwYXRoIGQ9Ik0yNTYgODAgQzI1NiA4MCAxMjAgMjQwIDEyMCAzMjAgQTEzNiAxMzYgMCAwIDAgMzkyIDMyMCBDMzkyIDI0MCAyNTYgODAgMjU2IDgwIFoiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4='
-
-// All 47 Kenyan counties
 const ALL_COUNTIES = [
-  'Mombasa', 'Kwale', 'Kilifi', 'Tana River', 'Lamu', 'Taita-Taveta',
-  'Garissa', 'Wajir', 'Mandera', 'Marsabit', 'Isiolo', 'Meru',
-  'Tharaka-Nithi', 'Embu', 'Kitui', 'Machakos', 'Makueni', 'Nyandarua',
-  'Nyeri', 'Kirinyaga', 'Muranga', 'Kiambu', 'Turkana', 'West Pokot',
-  'Samburu', 'Trans-Nzoia', 'Uasin Gishu', 'Elgeyo-Marakwet', 'Nandi',
-  'Baringo', 'Laikipia', 'Nakuru', 'Narok', 'Kajiado', 'Kericho',
-  'Bomet', 'Kakamega', 'Vihiga', 'Bungoma', 'Busia', 'Siaya',
-  'Kisumu', 'Homa Bay', 'Migori', 'Kisii', 'Nyamira', 'Nairobi'
+  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu',
+  'Garissa', 'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho',
+  'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui',
+  'Kwale', 'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera',
+  'Marsabit', 'Meru', 'Migori', 'Mombasa', 'Muranga', 'Nairobi',
+  'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri',
+  'Samburu', 'Siaya', 'Taita-Taveta', 'Tana River', 'Tharaka-Nithi',
+  'Trans-Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'
 ]
 
 export default function GISDashboard() {
@@ -31,10 +26,11 @@ export default function GISDashboard() {
   const [selectedAsset, setSelectedAsset] = useState(null)
   const [stats, setStats] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [generatingPDF, setGeneratingPDF] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [newAsset, setNewAsset] = useState({
     name: '', type: 'sensor', latitude: '', longitude: '',
-    county: '', status: 'active', capacity: '', diameter_mm: '', material: ''
+    county: 'Nairobi', status: 'active', capacity: ''
   })
 
   const [activeLayers, setActiveLayers] = useState({
@@ -43,456 +39,275 @@ export default function GISDashboard() {
     hydrants: true, pipelines: true, dmas: true
   })
 
-  useEffect(() => {
-    fetchGISData()
-    fetchStats()
-    const interval = setInterval(() => {
-      fetchGISData()
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [selectedCounty])
-
-  const fetchGISData = async () => {
+  const fetchGISData = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const params = new URLSearchParams()
       if (selectedCounty) params.append('county', selectedCounty)
       const response = await api.get(`/gis/assets?${params.toString()}`)
       setAssets(Array.isArray(response) ? response : [])
-    } catch (error) {
-      console.error('Failed to fetch GIS data:', error)
+    } catch (err) {
+      console.error('GIS fetch error:', err)
+      setError('Failed to load GIS data')
       setAssets([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCounty])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await api.get('/gis/stats')
       setStats(response)
-    } catch (error) {
-      console.error('Failed to fetch GIS stats:', error)
+    } catch (err) {
+      console.error('Stats fetch error:', err)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchGISData()
+    fetchStats()
+  }, [fetchGISData, fetchStats])
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchGISData, 30000)
+    return () => clearInterval(interval)
+  }, [fetchGISData])
 
   const toggleLayer = (layer) => {
     setActiveLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
   }
 
-  const filteredAssets = assets.filter(asset => 
-    asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (asset.id && asset.id.toString().includes(searchQuery)) ||
-    (asset.county && asset.county.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
-
-  const counties = [...new Set(assets.map(a => a.county).filter(Boolean))].sort()
+  const filteredAssets = assets.filter(asset => {
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    return (
+      asset.name?.toLowerCase().includes(q) ||
+      asset.id?.toString().includes(q) ||
+      asset.county?.toLowerCase().includes(q) ||
+      asset.type?.toLowerCase().includes(q)
+    )
+  })
 
   const handleAddAsset = async (e) => {
     e.preventDefault()
     try {
-      const payload = {
+      await api.post('/gis/assets', {
         ...newAsset,
         latitude: parseFloat(newAsset.latitude),
         longitude: parseFloat(newAsset.longitude),
-        diameter_mm: newAsset.diameter_mm ? parseInt(newAsset.diameter_mm) : null,
         capacity: newAsset.capacity || null
-      }
-      await api.post('/gis/assets', payload)
+      })
       setShowAddModal(false)
-      setNewAsset({ name: '', type: 'sensor', latitude: '', longitude: '', county: '', status: 'active', capacity: '', diameter_mm: '', material: '' })
+      setNewAsset({ name: '', type: 'sensor', latitude: '', longitude: '', county: 'Nairobi', status: 'active', capacity: '' })
       fetchGISData()
       fetchStats()
-      alert('✅ Node added successfully!')
-    } catch (error) {
-      console.error('Failed to add asset:', error)
-      alert('❌ Failed to add asset. Please try again.')
+    } catch (err) {
+      alert('Failed to add asset: ' + (err?.error || err?.message || 'Unknown error'))
     }
   }
 
   const handleDeleteAsset = async (id) => {
-    if (!confirm('Are you sure you want to delete this asset?')) return
+    if (!confirm('Delete this asset permanently?')) return
     try {
       await api.delete(`/gis/assets/${id}`)
       setSelectedAsset(null)
       fetchGISData()
       fetchStats()
-      alert('✅ Asset deleted successfully!')
-    } catch (error) {
-      console.error('Failed to delete asset:', error)
-      alert('❌ Failed to delete asset.')
+    } catch (err) {
+      alert('Failed to delete asset')
     }
   }
 
-  const generatePDFReport = async () => {
-    setGeneratingPDF(true)
+  const handleExportPDF = async () => {
+    setPdfLoading(true)
     try {
+      const { jsPDF } = await import('jspdf')
+      const { default: autoTable } = await import('jspdf-autotable')
+      
       const doc = new jsPDF()
-      const pageWidth = doc.internal.pageSize.getWidth()
+      const pw = doc.internal.pageSize.getWidth()
       const now = new Date()
-      
+
+      // Header
       doc.setFillColor(8, 145, 178)
-      doc.rect(0, 0, pageWidth, 40, 'F')
-      
-      try {
-        doc.addImage(MAJISMART_LOGO, 'PNG', 15, 8, 24, 24)
-      } catch (e) {
-        console.warn('Logo embedding failed')
-      }
-      
+      doc.rect(0, 0, pw, 35, 'F')
       doc.setTextColor(255, 255, 255)
-      doc.setFontSize(22)
+      doc.setFontSize(20)
       doc.setFont('helvetica', 'bold')
-      doc.text('MajiSmart', 45, 18)
+      doc.text('MajiSmart GIS Report', 15, 16)
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      doc.text('Enterprise GIS Infrastructure Report', 45, 26)
-      
-      doc.setFontSize(9)
-      doc.text(`Generated: ${now.toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth - 15, 18, { align: 'right' })
-      doc.text(`Time: ${now.toLocaleTimeString('en-KE')}`, pageWidth - 15, 24, { align: 'right' })
-      
-      let yPos = 55
-      
+      doc.text(`Generated: ${now.toLocaleString()}`, 15, 26)
+      if (selectedCounty) doc.text(`County: ${selectedCounty}`, pw - 15, 26, { align: 'right' })
+
+      let y = 50
+
+      // Summary
       doc.setTextColor(15, 23, 42)
-      doc.setFontSize(16)
+      doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
-      doc.text('Executive Summary', 15, yPos)
-      yPos += 3
-      
-      doc.setDrawColor(8, 145, 178)
-      doc.setLineWidth(0.8)
-      doc.line(15, yPos, pageWidth - 15, yPos)
-      yPos += 10
-      
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(71, 85, 105)
-      doc.text(
-        `This report provides a comprehensive overview of MajiSmart's water infrastructure network${selectedCounty ? ` in ${selectedCounty}` : ' across Kenya'}. The system monitors ${stats?.total_assets || 0} total assets, with ${stats?.total_active || 0} currently operational.`,
-        15, yPos, { maxWidth: pageWidth - 30 }
-      )
-      yPos += 18
-      
-      const metrics = [
-        { label: 'Total Assets', value: stats?.total_assets || 0, color: [8, 145, 178] },
-        { label: 'Active', value: stats?.total_active || 0, color: [16, 185, 129] },
-        { label: 'Counties', value: counties.length || 1, color: [139, 92, 246] },
-        { label: 'Live Sensors', value: stats?.live_sensors || 0, color: [245, 158, 11] }
+      doc.text('Summary', 15, y)
+      y += 8
+
+      const summaryData = [
+        ['Total Assets', (stats?.total_assets || 0).toString()],
+        ['Active Assets', (stats?.total_active || 0).toString()],
+        ['Counties Covered', (stats?.by_county?.length || 0).toString()],
+        ['Asset Types', (stats?.by_type?.length || 0).toString()]
       ]
-      
-      const boxWidth = (pageWidth - 45) / 4
-      metrics.forEach((metric, i) => {
-        const x = 15 + (i * (boxWidth + 5))
-        doc.setFillColor(...metric.color)
-        doc.roundedRect(x, yPos, boxWidth, 25, 2, 2, 'F')
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(16)
-        doc.setFont('helvetica', 'bold')
-        doc.text(metric.value.toString(), x + boxWidth / 2, yPos + 11, { align: 'center' })
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'normal')
-        doc.text(metric.label, x + boxWidth / 2, yPos + 19, { align: 'center' })
+
+      autoTable(doc, {
+        startY: y,
+        body: summaryData,
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 40 } }
       })
-      yPos += 40
-      
-      doc.setTextColor(15, 23, 42)
+      y = doc.lastAutoTable.finalY + 12
+
+      // Asset Inventory
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
-      doc.text('Asset Breakdown by Type', 15, yPos)
-      yPos += 3
-      doc.setDrawColor(8, 145, 178)
-      doc.line(15, yPos, pageWidth - 15, yPos)
-      yPos += 8
-      
-      const typeData = (stats?.by_type || []).map(t => [
-        t.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        t.count.toString(),
-        t.active_count.toString(),
-        t.offline_count.toString()
-      ])
-      
-      if (typeData.length > 0) {
-        autoTable(doc, {
-          startY: yPos,
-          head: [['Asset Type', 'Total', 'Active', 'Offline']],
-          body: typeData,
-          theme: 'striped',
-          headStyles: { fillColor: [8, 145, 178], textColor: [255, 255, 255], fontStyle: 'bold' },
-          styles: { fontSize: 9, cellPadding: 4 },
-          alternateRowStyles: { fillColor: [240, 249, 255] }
-        })
-        yPos = doc.lastAutoTable.finalY + 15
-      }
-      
-      if (yPos > 240) {
-        doc.addPage()
-        yPos = 20
-      }
-      
-      doc.setTextColor(15, 23, 42)
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text('County Distribution', 15, yPos)
-      yPos += 3
-      doc.setDrawColor(8, 145, 178)
-      doc.line(15, yPos, pageWidth - 15, yPos)
-      yPos += 8
-      
-      const countyData = (stats?.by_county || []).map(c => [
-        c.county,
-        c.total_assets.toString()
-      ])
-      
-      if (countyData.length > 0) {
-        autoTable(doc, {
-          startY: yPos,
-          head: [['County', 'Total Assets']],
-          body: countyData,
-          theme: 'striped',
-          headStyles: { fillColor: [8, 145, 178], textColor: [255, 255, 255], fontStyle: 'bold' },
-          styles: { fontSize: 9, cellPadding: 4 },
-          alternateRowStyles: { fillColor: [240, 249, 255] }
-        })
-        yPos = doc.lastAutoTable.finalY + 15
-      }
-      
-      if (yPos > 200) {
-        doc.addPage()
-        yPos = 20
-      }
-      
-      doc.setTextColor(15, 23, 42)
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Detailed Asset Inventory', 15, yPos)
-      yPos += 3
-      doc.setDrawColor(8, 145, 178)
-      doc.line(15, yPos, pageWidth - 15, yPos)
-      yPos += 8
-      
-      const assetData = filteredAssets
+      doc.text('Asset Inventory', 15, y)
+      y += 5
+
+      const tableData = filteredAssets
         .filter(a => a.type !== 'dma' && a.type !== 'pipeline')
-        .slice(0, 100)
         .map(a => [
-          a.name || 'Unnamed',
-          (a.type || '').replace('_', ' '),
+          a.name || '-',
+          (a.type || '').replace(/_/g, ' '),
           a.county || '-',
-          (a.status || 'unknown').toUpperCase(),
-          `${(a.latitude || 0).toFixed(4)}, ${(a.longitude || 0).toFixed(4)}`
+          a.status || '-',
+          `${Number(a.latitude || 0).toFixed(4)}, ${Number(a.longitude || 0).toFixed(4)}`
         ])
-      
-      if (assetData.length > 0) {
-        autoTable(doc, {
-          startY: yPos,
-          head: [['Name', 'Type', 'County', 'Status', 'Coordinates']],
-          body: assetData,
-          theme: 'striped',
-          headStyles: { fillColor: [8, 145, 178], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-          styles: { fontSize: 7, cellPadding: 3 },
-          alternateRowStyles: { fillColor: [240, 249, 255] },
-          columnStyles: {
-            0: { cellWidth: 55 },
-            1: { cellWidth: 30 },
-            2: { cellWidth: 30 },
-            3: { cellWidth: 22 },
-            4: { cellWidth: 45, fontStyle: 'italic' }
-          },
-          didParseCell: function(data) {
-            if (data.section === 'body' && data.column.index === 3) {
-              if (data.cell.raw === 'ACTIVE') data.cell.styles.textColor = [16, 185, 129]
-              else if (data.cell.raw === 'OFFLINE') data.cell.styles.textColor = [239, 68, 68]
-              else if (data.cell.raw === 'WARNING') data.cell.styles.textColor = [245, 158, 11]
-            }
-          }
-        })
-      }
-      
-      const pageCount = doc.internal.getNumberOfPages()
-      for (let i = 1; i <= pageCount; i++) {
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Name', 'Type', 'County', 'Status', 'Coordinates']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [8, 145, 178], fontSize: 8 },
+        styles: { fontSize: 7, cellPadding: 2 },
+        alternateRowStyles: { fillColor: [240, 249, 255] }
+      })
+
+      // Footer
+      const pages = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pages; i++) {
         doc.setPage(i)
         doc.setFillColor(15, 23, 42)
-        doc.rect(0, doc.internal.pageSize.getHeight() - 15, pageWidth, 15, 'F')
+        doc.rect(0, doc.internal.pageSize.getHeight() - 12, pw, 12, 'F')
         doc.setTextColor(148, 163, 184)
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'normal')
-        doc.text('MajiSmart Kenya • Smart Water Intelligence', 15, doc.internal.pageSize.getHeight() - 6)
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - 15, doc.internal.pageSize.getHeight() - 6, { align: 'right' })
-        doc.text('Confidential • For Official Use Only', pageWidth / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' })
+        doc.setFontSize(7)
+        doc.text('MajiSmart Kenya', 15, doc.internal.pageSize.getHeight() - 4)
+        doc.text(`Page ${i}/${pages}`, pw - 15, doc.internal.pageSize.getHeight() - 4, { align: 'right' })
       }
-      
-      const filename = `MajiSmart_GIS_Report_${selectedCounty ? selectedCounty.replace(/\s+/g, '_') + '_' : ''}${now.toISOString().split('T')[0]}.pdf`
-      doc.save(filename)
-      alert(`✅ Report generated: ${filename}`)
-    } catch (error) {
-      console.error('PDF generation failed:', error)
-      alert(' Failed to generate PDF report.')
+
+      doc.save(`MajiSmart_GIS_${selectedCounty || 'All'}_${now.toISOString().split('T')[0]}.pdf`)
+    } catch (err) {
+      console.error('PDF error:', err)
+      alert('PDF export failed. Make sure jspdf is installed.')
     } finally {
-      setGeneratingPDF(false)
+      setPdfLoading(false)
     }
   }
+
+  const layerList = [
+    { key: 'sensors', label: 'IoT Sensors', icon: '📡' },
+    { key: 'reservoirs', label: 'Reservoirs', icon: '💧' },
+    { key: 'treatmentPlants', label: 'Treatment Plants', icon: '🏭' },
+    { key: 'waterTowers', label: 'Water Towers', icon: '🗼' },
+    { key: 'waterPoints', label: 'Water Points', icon: '🚰' },
+    { key: 'valves', label: 'Valves', icon: '🔧' },
+    { key: 'hydrants', label: 'Hydrants', icon: '🚒' },
+    { key: 'pipelines', label: 'Pipelines', icon: '🔵' },
+    { key: 'dmas', label: 'DMA Zones', icon: '📍' }
+  ]
 
   return (
     <div style={{ height: 'calc(100vh - 70px)', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
-      {/* GIS Toolbar */}
-      <div style={{ 
-        background: 'white', borderBottom: '1px solid #e2e8f0', padding: '16px 24px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-          <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
-            <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
-            <input 
-              type="text" 
-              placeholder="Search assets by name, ID, or county..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', padding: '10px 10px 10px 40px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
-            />
+      {/* Top Toolbar */}
+      <div style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '200px', maxWidth: '350px' }}>
+            <Search style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#94a3b8' }} />
+            <input type="text" placeholder="Search assets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '100%', padding: '8px 8px 8px 36px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
           </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Filter style={{ width: '18px', height: '18px', color: '#64748b' }} />
-            <select 
-              value={selectedCounty}
-              onChange={(e) => setSelectedCounty(e.target.value)}
-              style={{ 
-                padding: '10px 16px', 
-                borderRadius: '8px', 
-                border: '1px solid #e2e8f0', 
-                fontSize: '14px', 
-                background: 'white',
-                cursor: 'pointer',
-                minWidth: '200px',
-                fontWeight: '600',
-                color: selectedCounty ? '#0891b2' : '#475569'
-              }}
-            >
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Filter size={16} color="#64748b" />
+            <select value={selectedCounty} onChange={(e) => setSelectedCounty(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', background: 'white', cursor: 'pointer', minWidth: '180px', fontWeight: selectedCounty ? '700' : '400', color: selectedCounty ? '#0891b2' : '#475569' }}>
               <option value="">All 47 Counties</option>
-              {ALL_COUNTIES.map(county => (
-                <option key={county} value={county}>{county}</option>
-              ))}
+              {ALL_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
-          <motion.button 
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={fetchGISData} 
-            style={{ padding: '10px 16px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600', color: '#475569' }}
-          >
-            <RefreshCw style={{ width: '16px', height: '16px' }} /> Refresh
-          </motion.button>
+          <button onClick={fetchGISData} style={{ padding: '8px 14px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <RefreshCw size={14} /> Refresh
+          </button>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <motion.button 
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={generatePDFReport}
-            disabled={generatingPDF}
-            style={{ 
-              padding: '10px 16px', background: 'linear-gradient(135deg, #dc2626, #ef4444)', border: 'none', borderRadius: '8px', 
-              cursor: generatingPDF ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px', 
-              fontSize: '14px', fontWeight: '700', color: 'white', boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
-              opacity: generatingPDF ? 0.7 : 1
-            }}
-          >
-            <FileText style={{ width: '16px', height: '16px' }} /> 
-            {generatingPDF ? 'Generating...' : 'Export PDF'}
-          </motion.button>
-          
-          <motion.button 
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAddModal(true)}
-            style={{ 
-              padding: '10px 16px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', border: 'none', borderRadius: '8px', 
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '700', 
-              color: 'white', boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)'
-            }}
-          >
-            <Plus style={{ width: '16px', height: '16px' }} /> Add Node
-          </motion.button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={handleExportPDF} disabled={pdfLoading}
+            style={{ padding: '8px 14px', background: '#dc2626', border: 'none', borderRadius: '8px', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '6px', opacity: pdfLoading ? 0.6 : 1 }}>
+            <FileText size={14} /> {pdfLoading ? 'Generating...' : 'Export PDF'}
+          </button>
+          <button onClick={() => setShowAddModal(true)}
+            style={{ padding: '8px 14px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={14} /> Add Node
+          </button>
         </div>
       </div>
 
-      {/* Main GIS Area */}
+      {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Layer Control Sidebar */}
-        <motion.div 
-          initial={{ x: -300 }} animate={{ x: 0 }} 
-          style={{ width: '280px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '20px', overflowY: 'auto' }}
-        >
+        {/* Sidebar */}
+        <div style={{ width: '260px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '16px', overflowY: 'auto', flexShrink: 0 }}>
           {stats && (
-            <div style={{ 
-              background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', borderRadius: '12px', padding: '16px', 
-              marginBottom: '20px', color: 'white'
-            }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '700' }}>
-                Network Overview{selectedCounty && ` - ${selectedCounty}`}
+            <div style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '12px', padding: '14px', marginBottom: '16px', color: 'white' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700' }}>
+                {selectedCounty || 'Network Overview'}
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '24px', fontWeight: '800' }}>{stats.total_assets}</div>
-                  <div style={{ fontSize: '11px', opacity: 0.9 }}>Total Assets</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '24px', fontWeight: '800' }}>{stats.total_active}</div>
-                  <div style={{ fontSize: '11px', opacity: 0.9 }}>Active</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '24px', fontWeight: '800' }}>{counties.length || 1}</div>
-                  <div style={{ fontSize: '11px', opacity: 0.9 }}>Counties</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '24px', fontWeight: '800' }}>
-                    <Activity style={{ width: '20px', height: '20px', animation: 'pulse 2s infinite' }} />
-                  </div>
-                  <div style={{ fontSize: '11px', opacity: 0.9 }}>Live Data</div>
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div><div style={{ fontSize: '22px', fontWeight: '800' }}>{stats.total_assets || 0}</div><div style={{ fontSize: '10px', opacity: 0.9 }}>Total</div></div>
+                <div><div style={{ fontSize: '22px', fontWeight: '800' }}>{stats.total_active || 0}</div><div style={{ fontSize: '10px', opacity: 0.9 }}>Active</div></div>
               </div>
             </div>
           )}
 
-          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Layers style={{ width: '18px', height: '18px', color: '#0891b2' }} /> Map Layers
+          {error && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px', marginBottom: '16px', fontSize: '12px', color: '#dc2626' }}>
+              {error}
+            </div>
+          )}
+
+          <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Layers size={16} color="#0891b2" /> Layers
           </h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {[
-              { key: 'sensors', label: 'IoT Sensors', icon: '📡' },
-              { key: 'reservoirs', label: 'Reservoirs', icon: '💧' },
-              { key: 'treatmentPlants', label: 'Treatment Plants', icon: '🏭' },
-              { key: 'waterTowers', label: 'Water Towers', icon: '🗼' },
-              { key: 'waterPoints', label: 'Water Points', icon: '🚰' },
-              { key: 'valves', label: 'Valves', icon: '🔧' },
-              { key: 'hydrants', label: 'Hydrants', icon: '🚒' },
-              { key: 'pipelines', label: 'Pipelines', icon: '🔵' },
-              { key: 'dmas', label: 'District Metered Areas', icon: '📍' }
-            ].map(layer => (
-              <label key={layer.key} style={{ 
-                display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', 
-                background: activeLayers[layer.key] ? '#f0f9ff' : 'transparent', borderRadius: '8px', 
-                cursor: 'pointer', border: activeLayers[layer.key] ? '1px solid #bae6fd' : '1px solid transparent'
-              }}>
-                <input 
-                  type="checkbox" checked={activeLayers[layer.key]} onChange={() => toggleLayer(layer.key)}
-                  style={{ width: '18px', height: '18px', accentColor: '#0891b2', cursor: 'pointer' }}
-                />
-                <span style={{ fontSize: '18px' }}>{layer.icon}</span>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: activeLayers[layer.key] ? '#0891b2' : '#475569', flex: 1 }}>
-                  {layer.label}
-                </span>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {layerList.map(layer => (
+              <label key={layer.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: activeLayers[layer.key] ? '#f0f9ff' : 'transparent', borderRadius: '6px', cursor: 'pointer', border: activeLayers[layer.key] ? '1px solid #bae6fd' : '1px solid transparent' }}>
+                <input type="checkbox" checked={activeLayers[layer.key]} onChange={() => toggleLayer(layer.key)} style={{ accentColor: '#0891b2' }} />
+                <span>{layer.icon}</span>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: activeLayers[layer.key] ? '#0891b2' : '#475569' }}>{layer.label}</span>
               </label>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        {/* Map Container */}
-        <div style={{ flex: 1, position: 'relative', background: '#e2e8f0' }}>
+        {/* Map */}
+        <div style={{ flex: 1, position: 'relative' }}>
           {loading && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.9)', zIndex: 10 }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.85)', zIndex: 10 }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ width: '50px', height: '50px', border: '4px solid #e2e8f0', borderTop: '4px solid #0891b2', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }}></div>
-                <p style={{ fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Loading GIS data...</p>
+                <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #0891b2', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }}></div>
+                <p style={{ fontSize: '13px', color: '#64748b' }}>Loading map data...</p>
               </div>
             </div>
           )}
@@ -500,215 +315,81 @@ export default function GISDashboard() {
         </div>
       </div>
 
-      {/* Asset Details Panel */}
+      {/* Asset Detail Panel */}
       <AnimatePresence>
         {selectedAsset && (
-          <motion.div
-            initial={{ y: 300, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 300, opacity: 0 }}
-            style={{
-              position: 'fixed', bottom: '20px', right: '20px', width: '380px', background: 'white',
-              borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', padding: '24px',
-              zIndex: 1000, maxHeight: '600px', overflowY: 'auto'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
-                  {selectedAsset.name}
-                </h3>
-                <span style={{ 
-                  display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '12px', 
-                  fontSize: '11px', fontWeight: '700',
-                  background: selectedAsset.status === 'active' ? '#d1fae5' : '#fee2e2',
-                  color: selectedAsset.status === 'active' ? '#059669' : '#dc2626'
-                }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: selectedAsset.status === 'active' ? '#10b981' : '#ef4444', animation: 'pulse 2s infinite' }}></span>
-                  {selectedAsset.status.toUpperCase()}
+          <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} transition={{ type: 'spring', damping: 25 }}
+            style={{ position: 'fixed', top: '70px', right: 0, width: '360px', height: 'calc(100vh - 70px)', background: 'white', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)', zIndex: 1000, overflowY: 'auto', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '20px' }}>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{selectedAsset.name}</h3>
+                <span style={{ padding: '4px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: '700', background: selectedAsset.status === 'active' ? '#d1fae5' : '#fee2e2', color: selectedAsset.status === 'active' ? '#059669' : '#dc2626' }}>
+                  {selectedAsset.status?.toUpperCase()}
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => handleDeleteAsset(selectedAsset.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: '8px', padding: '8px', cursor: 'pointer' }}>
-                  <Trash2 size={16} color="#dc2626" />
-                </button>
-                <button onClick={() => setSelectedAsset(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '8px', padding: '8px', cursor: 'pointer' }}>
-                  <X size={16} />
-                </button>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={() => handleDeleteAsset(selectedAsset.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer' }}><Trash2 size={14} color="#dc2626" /></button>
+                <button onClick={() => setSelectedAsset(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer' }}><X size={14} /></button>
               </div>
             </div>
 
-            {(selectedAsset.water_level !== null || selectedAsset.pressure !== null || selectedAsset.flow_rate !== null) && (
-              <div style={{ 
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', 
-                borderRadius: '12px', padding: '16px', marginBottom: '16px',
-                border: '1px solid #bae6fd'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#0891b2' }}>LIVE SENSOR READINGS</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  {selectedAsset.water_level !== null && selectedAsset.water_level !== undefined && (
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Water Level</div>
-                      <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{selectedAsset.water_level}%</div>
-                    </div>
-                  )}
-                  {selectedAsset.pressure !== null && selectedAsset.pressure !== undefined && (
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Pressure</div>
-                      <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{selectedAsset.pressure} PSI</div>
-                    </div>
-                  )}
-                  {selectedAsset.flow_rate !== null && selectedAsset.flow_rate !== undefined && (
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Flow Rate</div>
-                      <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{selectedAsset.flow_rate} L/m</div>
-                    </div>
-                  )}
-                  {selectedAsset.temperature !== null && selectedAsset.temperature !== undefined && (
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Temperature</div>
-                      <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{selectedAsset.temperature}°C</div>
-                    </div>
-                  )}
-                  {selectedAsset.quality_index !== null && selectedAsset.quality_index !== undefined && (
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Quality Index</div>
-                      <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{selectedAsset.quality_index}%</div>
-                    </div>
-                  )}
-                  {selectedAsset.ph !== null && selectedAsset.ph !== undefined && (
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>pH Level</div>
-                      <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{selectedAsset.ph}</div>
-                    </div>
-                  )}
-                </div>
+            {/* Live data */}
+            <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px', marginBottom: '16px', border: '1px solid #bae6fd' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: '#0891b2', marginBottom: '10px' }}>📡 LIVE SENSOR DATA</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {selectedAsset.water_level != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Water Level</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.water_level}%</div></div>}
+                {selectedAsset.pressure != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Pressure</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.pressure} PSI</div></div>}
+                {selectedAsset.flow_rate != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Flow Rate</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.flow_rate} L/m</div></div>}
+                {selectedAsset.temperature != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Temp</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.temperature}°C</div></div>}
+                {selectedAsset.quality_index != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Quality</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.quality_index}%</div></div>}
+                {selectedAsset.ph != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>pH</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.ph}</div></div>}
               </div>
-            )}
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Type</div>
-                <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>
-                  {selectedAsset.type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </div>
-              </div>
-              {selectedAsset.county && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>County</div>
-                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.county}</div>
-                </div>
-              )}
-              {selectedAsset.capacity && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Capacity</div>
-                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.capacity}</div>
-                </div>
-              )}
-              {selectedAsset.manufacturer && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Manufacturer</div>
-                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.manufacturer}</div>
-                </div>
-              )}
-              {selectedAsset.serial_number && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Serial Number</div>
-                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500', fontFamily: 'monospace' }}>{selectedAsset.serial_number}</div>
-                </div>
-              )}
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>GPS Coordinates</div>
-                <div style={{ fontSize: '13px', color: '#0f172a', fontFamily: 'monospace' }}>
-                  {selectedAsset.latitude?.toFixed(6)}, {selectedAsset.longitude?.toFixed(6)}
-                </div>
+            {/* Details */}
+            <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div><strong>Type:</strong> {(selectedAsset.type || '').replace(/_/g, ' ')}</div>
+              {selectedAsset.county && <div><strong>County:</strong> {selectedAsset.county}</div>}
+              {selectedAsset.capacity && <div><strong>Capacity:</strong> {selectedAsset.capacity}</div>}
+              <div style={{ fontFamily: 'monospace', fontSize: '11px', background: '#f8fafc', padding: '8px', borderRadius: '6px' }}>
+                📍 {Number(selectedAsset.latitude).toFixed(6)}, {Number(selectedAsset.longitude).toFixed(6)}
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Add Asset Modal */}
+      {/* Add Node Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}
-            onClick={() => setShowAddModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}
+            onClick={() => setShowAddModal(false)}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
               onClick={(e) => e.stopPropagation()}
-              style={{ background: 'white', borderRadius: '20px', padding: '32px', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>Add New Node</h2>
-                <button onClick={() => setShowAddModal(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '8px', padding: '8px', cursor: 'pointer' }}>
-                  <X size={20} />
-                </button>
-              </div>
-
-              <form onSubmit={handleAddAsset} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Name *</label>
-                  <input type="text" required value={newAsset.name} onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })} placeholder="e.g., Kibera Sensor Node 2"
-                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', boxSizing: 'border-box' }} />
+              style={{ background: 'white', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '460px' }}>
+              <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: '800' }}>Add New Node</h2>
+              <form onSubmit={handleAddAsset} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <input type="text" required placeholder="Node Name *" value={newAsset.name} onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                  style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <select required value={newAsset.type} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }}>
+                    <option value="sensor">Sensor</option><option value="reservoir">Reservoir</option><option value="treatment_plant">Treatment Plant</option>
+                    <option value="water_tower">Water Tower</option><option value="water_point">Water Point</option><option value="valve">Valve</option><option value="hydrant">Hydrant</option>
+                  </select>
+                  <select required value={newAsset.county} onChange={(e) => setNewAsset({ ...newAsset, county: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }}>
+                    {ALL_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Type *</label>
-                    <select required value={newAsset.type} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
-                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', background: 'white', boxSizing: 'border-box' }}>
-                      <option value="sensor">Sensor</option>
-                      <option value="reservoir">Reservoir</option>
-                      <option value="treatment_plant">Treatment Plant</option>
-                      <option value="water_tower">Water Tower</option>
-                      <option value="water_point">Water Point</option>
-                      <option value="valve">Valve</option>
-                      <option value="hydrant">Hydrant</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>County *</label>
-                    <select required value={newAsset.county} onChange={(e) => setNewAsset({ ...newAsset, county: e.target.value })}
-                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', background: 'white', boxSizing: 'border-box' }}>
-                      <option value="">Select County</option>
-                      {ALL_COUNTIES.map(county => (
-                        <option key={county} value={county}>{county}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <input type="number" step="any" required placeholder="Latitude *" value={newAsset.latitude} onChange={(e) => setNewAsset({ ...newAsset, latitude: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
+                  <input type="number" step="any" required placeholder="Longitude *" value={newAsset.longitude} onChange={(e) => setNewAsset({ ...newAsset, longitude: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Latitude *</label>
-                    <input type="number" step="0.00000001" required value={newAsset.latitude} onChange={(e) => setNewAsset({ ...newAsset, latitude: e.target.value })} placeholder="-1.2921"
-                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Longitude *</label>
-                    <input type="number" step="0.00000001" required value={newAsset.longitude} onChange={(e) => setNewAsset({ ...newAsset, longitude: e.target.value })} placeholder="36.8219"
-                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', boxSizing: 'border-box' }} />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Capacity (optional)</label>
-                  <input type="text" value={newAsset.capacity} onChange={(e) => setNewAsset({ ...newAsset, capacity: e.target.value })} placeholder="e.g., 50M liters"
-                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', boxSizing: 'border-box' }} />
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                  <button type="button" onClick={() => setShowAddModal(false)}
-                    style={{ flex: 1, padding: '14px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '15px', cursor: 'pointer' }}>
-                    Cancel
-                  </button>
-                  <button type="submit"
-                    style={{ flex: 2, padding: '14px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <Save size={18} /> Add Node
+                <input type="text" placeholder="Capacity (optional)" value={newAsset.capacity} onChange={(e) => setNewAsset({ ...newAsset, capacity: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
+                <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                  <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
+                  <button type="submit" style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <Save size={16} /> Add Node
                   </button>
                 </div>
               </form>
