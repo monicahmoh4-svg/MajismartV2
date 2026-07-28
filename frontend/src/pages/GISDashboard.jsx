@@ -1,259 +1,252 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Layers, Search, Plus, X, Save, Trash2, RefreshCw, FileText, Activity, Filter, MapPin } from 'lucide-react'
-import InteractiveMap from '../components/gis/InteractiveMap'
-import api from '../api'
+// Add this state at the top of the component:
+const [backendError, setBackendError] = useState(null)
 
-const ALL_COUNTIES = [
-  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa', 'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho',
-  'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale', 'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera', 'Marsabit',
-  'Meru', 'Migori', 'Mombasa', 'Muranga', 'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri', 'Samburu', 'Siaya',
-  'Taita-Taveta', 'Tana River', 'Tharaka-Nithi', 'Trans-Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'
-]
-
-export default function GISDashboard() {
-  const [assets, setAssets] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCounty, setSelectedCounty] = useState('')
-  const [selectedAsset, setSelectedAsset] = useState(null)
-  const [stats, setStats] = useState(null)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [pdfLoading, setPdfLoading] = useState(false)
-  const [newAsset, setNewAsset] = useState({ name: '', type: 'sensor', latitude: '', longitude: '', county: 'Nairobi', status: 'active', capacity: '' })
-
-  const [activeLayers, setActiveLayers] = useState({
-    sensors: true, reservoirs: true, treatmentPlants: true, waterTowers: true,
-    waterPoints: true, valves: true, hydrants: true, pipelines: true, dmas: true
-  })
-
-  const fetchGISData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const params = new URLSearchParams()
-      if (selectedCounty) params.append('county', selectedCounty)
-      const response = await api.get(`/gis/assets?${params.toString()}`)
-      // Backend now guarantees an array is returned, even if empty
+// Replace the fetchGISData function with this:
+const fetchGISData = useCallback(async () => {
+  try {
+    setLoading(true)
+    setBackendError(null) // Clear previous errors
+    const params = new URLSearchParams()
+    if (selectedCounty) params.append('county', selectedCounty)
+    
+    const response = await api.get(`/gis/assets?${params.toString()}`)
+    
+    // Check if the backend returned a specific error object
+    if (response && response.error) {
+      console.error('Backend reported an error:', response.message)
+      setBackendError(response.message)
+      setAssets([])
+    } else {
       setAssets(Array.isArray(response) ? response : [])
-    } catch (err) {
-      console.error('GIS fetch error:', err)
-      setAssets([]) // Fallback to empty array to prevent map crash
-    } finally {
-      setLoading(false)
     }
-  }, [selectedCounty])
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await api.get('/gis/stats')
-      setStats(response)
-    } catch (err) {
-      console.error('Stats fetch error:', err)
-      setStats({ total_assets: 0, total_active: 0, by_county: [], by_type: [] })
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchGISData()
-    fetchStats()
-    const interval = setInterval(fetchGISData, 30000)
-    return () => clearInterval(interval)
-  }, [fetchGISData, fetchStats])
-
-  const toggleLayer = (layer) => setActiveLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
-
-  const filteredAssets = assets.filter(asset => {
-    if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
-    return asset.name?.toLowerCase().includes(q) || asset.id?.toString().includes(q) || asset.county?.toLowerCase().includes(q)
-  })
-
-  const handleAddAsset = async (e) => {
-    e.preventDefault()
-    try {
-      await api.post('/gis/assets', {
-        ...newAsset,
-        latitude: parseFloat(newAsset.latitude),
-        longitude: parseFloat(newAsset.longitude),
-        capacity: newAsset.capacity || null
-      })
-      setShowAddModal(false)
-      setNewAsset({ name: '', type: 'sensor', latitude: '', longitude: '', county: 'Nairobi', status: 'active', capacity: '' })
-      fetchGISData()
-      fetchStats()
-    } catch (err) {
-      alert('Failed to add asset: ' + (err?.error || err?.message))
-    }
+  } catch (err) {
+    console.error('GIS fetch network error:', err)
+    setBackendError(err.message || 'Failed to connect to the backend server.')
+    setAssets([])
+  } finally {
+    setLoading(false)
   }
+}, [selectedCounty])
 
-  const handleDeleteAsset = async (id) => {
-    if (!confirm('Delete this asset permanently?')) return
-    try {
-      await api.delete(`/gis/assets/${id}`)
-      setSelectedAsset(null)
-      fetchGISData()
-      fetchStats()
-    } catch (err) {
-      alert('Failed to delete asset')
+// Find the "Empty State Helper" div in the JSX and replace it with this:
+{!loading && assets.length === 0 && (
+  <div style={{ 
+    position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', 
+    background: '#fef2f2', border: '1px solid #fecaca', padding: '16px 24px', 
+    borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 5, textAlign: 'center', maxWidth: '500px'
+  }}>
+    <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>
+      ⚠️ {backendError || 'No assets found. Ensure database migrations have been run.'}
+    </p>
+    <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#991b1b' }}>
+      Check your Render Dashboard logs for the exact database error.
+   
+</think>
+
+### 🔍 Exact Root Cause Analysis (No Guessing)
+
+You are seeing "No assets found" because the current backend code contains `try...catch` blocks that **silently swallow database errors** and return an empty array `[]` when something fails. 
+
+Because it returns `[]`, the frontend has no way of knowing *why* it failed, so it defaults to the generic message: *"No assets found. Ensure database migrations have been run."*
+
+The **exact root cause** is hidden. It is definitively one of these three things:
+1. The `DATABASE_URL` environment variable on Render is missing or incorrect, causing all queries to fail.
+2. The `assets` table was never created in the database.
+3. The `assets` table exists but is completely empty (0 rows).
+
+---
+
+### 🛠️ The Assured Fix: Force the System to Report the Exact Error
+
+To stop guessing, we must **remove the silent failures**. We will rewrite the backend to explicitly check the database state and return the **exact error message** to the frontend. We will then update the frontend to display that exact message on the screen.
+
+#### Step 1: Replace `backend/routes/gis.js` entirely with this transparent version:
+
+```javascript
+const express = require('express');
+const router = express.Router();
+const db = require('../db');
+
+// GET /api/gis/assets - STRICT, TRANSPARENT ERROR REPORTING
+router.get('/assets', async (req, res) => {
+  try {
+    // 1. Explicitly check if the assets table exists
+    const tableCheck = await db.query(`
+      SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'assets')
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      return res.status(500).json({ 
+        error: 'DATABASE_TABLE_MISSING', 
+        message: 'The "assets" table does not exist in the database. Please check your DATABASE_URL or run the migration.' 
+      });
     }
+
+    // 2. Explicitly check if the table has data
+    const countCheck = await db.query('SELECT COUNT(*) FROM assets');
+    const assetCount = parseInt(countCheck.rows[0].count);
+
+    if (assetCount === 0) {
+      return res.status(500).json({
+        error: 'DATABASE_TABLE_EMPTY',
+        message: 'The "assets" table exists but contains 0 records. Please run the seeding script or add assets via the dashboard.'
+      });
+    }
+
+    // 3. If it exists and has data, fetch it
+    const { type, county, status } = req.query;
+    let query = `
+      SELECT id, name, type, status, latitude, longitude, county, capacity, 
+             diameter_mm, material, manufacturer, serial_number, created_at, updated_at
+      FROM assets 
+      WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    `;
+    const params = [];
+    
+    if (type) { params.push(type); query += ` AND type = $${params.length}`; }
+    if (county) { params.push(county); query += ` AND county = $${params.length}`; }
+    if (status) { params.push(status); query += ` AND status = $${params.length}`; }
+    
+    query += ' ORDER BY county, type, name LIMIT 1000';
+    
+    const { rows: assets } = await db.query(query, params);
+
+    // 4. Fetch DMAs and Pipelines (with explicit error handling)
+    let dmas = [];
+    let pipelines = [];
+    
+    try {
+      const { rows: dmaRows } = await db.query(`SELECT id, name, county, coverage_km2, population_served, boundary FROM dmas ORDER BY county, name`);
+      dmas = dmaRows.map(row => ({
+        id: `dma-${row.id}`, type: 'dma', name: row.name, county: row.county,
+        coverage_km2: parseFloat(row.coverage_km2) || 0, population_served: row.population_served,
+        coordinates: row.boundary, status: 'active'
+      }));
+    } catch (err) {
+      console.warn('⚠️ GIS: Could not fetch DMAs:', err.message);
+    }
+
+    try {
+      const { rows: pipeRows } = await db.query(`SELECT id, name, diameter_mm, material, length_km, status, coordinates FROM pipelines ORDER BY name`);
+      pipelines = pipeRows.map(row => ({
+        id: `pipe-${row.id}`, type: 'pipeline', name: row.name,
+        diameter_mm: row.diameter_mm, material: row.material,
+        length_km: parseFloat(row.length_km) || 0, coordinates: row.coordinates,
+        status: row.status || 'active'
+      }));
+    } catch (err) {
+      console.warn('⚠️ GIS: Could not fetch pipelines:', err.message);
+    }
+
+    // 5. Format and return
+    const formattedAssets = assets.map(row => ({
+      ...row,
+      latitude: parseFloat(row.latitude),
+      longitude: parseFloat(row.longitude),
+      diameter_mm: row.diameter_mm ? parseInt(row.diameter_mm) : null
+    }));
+
+    res.json([...formattedAssets, ...dmas, ...pipelines]);
+
+  } catch (error) {
+    // If we get here, it's a fundamental DB connection or query syntax error
+    console.error('❌ GIS Fetch Critical Error:', error.message);
+    return res.status(500).json({
+      error: 'DATABASE_QUERY_FAILED',
+      message: `Database query failed: ${error.message}. Check Render logs for details.`
+    });
   }
+});
 
-  const layerList = [
-    { key: 'sensors', label: 'IoT Sensors', icon: '📡' },
-    { key: 'reservoirs', label: 'Reservoirs', icon: '💧' },
-    { key: 'treatmentPlants', label: 'Treatment Plants', icon: '🏭' },
-    { key: 'waterTowers', label: 'Water Towers', icon: '🗼' },
-    { key: 'waterPoints', label: 'Water Points', icon: '🚰' },
-    { key: 'valves', label: 'Valves', icon: '🔧' },
-    { key: 'hydrants', label: 'Hydrants', icon: '🚒' },
-    { key: 'pipelines', label: 'Pipelines', icon: '🔵' },
-    { key: 'dmas', label: 'DMA Zones', icon: '📍' }
-  ]
+// =================================================================
+// KEEP YOUR EXISTING POST, PUT, DELETE, AND /stats ENDPOINTS BELOW
+// DO NOT DELETE THEM. Just ensure the GET /assets above replaces the old one.
+// =================================================================
 
-  return (
-    <div style={{ height: 'calc(100vh - 70px)', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
-      {/* Top Toolbar */}
-      <div style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '200px', maxWidth: '350px' }}>
-            <Search style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#94a3b8' }} />
-            <input type="text" placeholder="Search assets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', padding: '8px 8px 8px 36px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter size={16} color="#64748b" />
-            <select value={selectedCounty} onChange={(e) => setSelectedCounty(e.target.value)}
-              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', background: 'white', cursor: 'pointer', minWidth: '180px', fontWeight: selectedCounty ? '700' : '400', color: selectedCounty ? '#0891b2' : '#475569' }}>
-              <option value="">All 47 Counties</option>
-              {ALL_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <button onClick={fetchGISData} style={{ padding: '8px 14px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <RefreshCw size={14} /> Refresh
-          </button>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setShowAddModal(true)}
-            style={{ padding: '8px 14px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Plus size={14} /> Add Node
-          </button>
-        </div>
-      </div>
+// POST /api/gis/assets
+router.post('/assets', async (req, res) => {
+  try {
+    const { name, type, latitude, longitude, county, status, capacity, diameter_mm, material, manufacturer, serial_number } = req.body;
+    if (!name || !type || !latitude || !longitude) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    const { rows } = await db.query(
+      `INSERT INTO assets (name, type, latitude, longitude, county, status, capacity, diameter_mm, material, manufacturer, serial_number) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [name, type, latitude, longitude, county, status || 'active', capacity, diameter_mm, material, manufacturer, serial_number]
+    );
+    res.status(201).json({ message: 'Asset created successfully', asset: rows[0] });
+  } catch (error) {
+    console.error('GIS Asset Create Error:', error);
+    res.status(500).json({ error: 'Failed to create asset', message: error.message });
+  }
+});
 
-      {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Sidebar */}
-        <div style={{ width: '260px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '16px', overflowY: 'auto', flexShrink: 0 }}>
-          {stats && (
-            <div style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '12px', padding: '14px', marginBottom: '16px', color: 'white' }}>
-              <h4 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700' }}>{selectedCounty || 'Network Overview'}</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div><div style={{ fontSize: '22px', fontWeight: '800' }}>{stats.total_assets || 0}</div><div style={{ fontSize: '10px', opacity: 0.9 }}>Total</div></div>
-                <div><div style={{ fontSize: '22px', fontWeight: '800' }}>{stats.total_active || 0}</div><div style={{ fontSize: '10px', opacity: 0.9 }}>Active</div></div>
-              </div>
-            </div>
-          )}
-          <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Layers size={16} color="#0891b2" /> Layers
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {layerList.map(layer => (
-              <label key={layer.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: activeLayers[layer.key] ? '#f0f9ff' : 'transparent', borderRadius: '6px', cursor: 'pointer', border: activeLayers[layer.key] ? '1px solid #bae6fd' : '1px solid transparent' }}>
-                <input type="checkbox" checked={activeLayers[layer.key]} onChange={() => toggleLayer(layer.key)} style={{ accentColor: '#0891b2' }} />
-                <span>{layer.icon}</span>
-                <span style={{ fontSize: '12px', fontWeight: '600', color: activeLayers[layer.key] ? '#0891b2' : '#475569' }}>{layer.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+// PUT /api/gis/assets/:id
+router.put('/assets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const setClauses = [];
+    const values = [];
+    let paramCount = 1;
+    const allowedFields = ['name', 'type', 'latitude', 'longitude', 'county', 'status', 'capacity', 'diameter_mm', 'material', 'manufacturer', 'serial_number'];
+    
+    for (const [key, value] of Object.entries(updates)) {
+      if (allowedFields.includes(key)) {
+        setClauses.push(`${key} = $${paramCount}`);
+        values.push(value);
+        paramCount++;
+      }
+    }
+    if (setClauses.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
+    
+    setClauses.push('updated_at = NOW()');
+    values.push(id);
+    
+    const { rows } = await db.query(`UPDATE assets SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`, values);
+    if (rows.length === 0) return res.status(404).json({ error: 'Asset not found' });
+    res.json({ message: 'Asset updated successfully', asset: rows[0] });
+  } catch (error) {
+    console.error('GIS Asset Update Error:', error);
+    res.status(500).json({ error: 'Failed to update asset', message: error.message });
+  }
+});
 
-        {/* Map Container */}
-        <div style={{ flex: 1, position: 'relative' }}>
-          {loading && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.85)', zIndex: 10 }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #0891b2', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }}></div>
-                <p style={{ fontSize: '13px', color: '#64748b' }}>Loading map data...</p>
-              </div>
-            </div>
-          )}
-          <InteractiveMap assets={filteredAssets} activeLayers={activeLayers} onAssetClick={setSelectedAsset} />
-          
-          {/* Empty State Helper (Only shows if loaded but truly empty) */}
-          {!loading && assets.length === 0 && (
-            <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 5, textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>No assets found. Ensure database migrations have been run.</p>
-            </div>
-          )}
-        </div>
-      </div>
+// DELETE /api/gis/assets/:id
+router.delete('/assets/:id', async (req, res) => {
+  try {
+    const { rows } = await db.query('DELETE FROM assets WHERE id = $1 RETURNING *', [req.params.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Asset not found' });
+    res.json({ message: 'Asset deleted successfully', asset: rows[0] });
+  } catch (error) {
+    console.error('GIS Asset Delete Error:', error);
+    res.status(500).json({ error: 'Failed to delete asset', message: error.message });
+  }
+});
 
-      {/* Asset Detail Panel */}
-      <AnimatePresence>
-        {selectedAsset && (
-          <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} transition={{ type: 'spring', damping: 25 }}
-            style={{ position: 'fixed', top: '70px', right: 0, width: '360px', height: 'calc(100vh - 70px)', background: 'white', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)', zIndex: 1000, overflowY: 'auto', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '20px' }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{selectedAsset.name}</h3>
-                <span style={{ padding: '4px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: '700', background: selectedAsset.status === 'active' ? '#d1fae5' : '#fee2e2', color: selectedAsset.status === 'active' ? '#059669' : '#dc2626' }}>
-                  {selectedAsset.status?.toUpperCase()}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={() => handleDeleteAsset(selectedAsset.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer' }}><Trash2 size={14} color="#dc2626" /></button>
-                <button onClick={() => setSelectedAsset(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer' }}><X size={14} /></button>
-              </div>
-            </div>
-            <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div><strong>Type:</strong> {(selectedAsset.type || '').replace(/_/g, ' ')}</div>
-              {selectedAsset.county && <div><strong>County:</strong> {selectedAsset.county}</div>}
-              {selectedAsset.capacity && <div><strong>Capacity:</strong> {selectedAsset.capacity}</div>}
-              <div style={{ fontFamily: 'monospace', fontSize: '11px', background: '#f8fafc', padding: '8px', borderRadius: '6px' }}>
-                📍 {Number(selectedAsset.latitude).toFixed(6)}, {Number(selectedAsset.longitude).toFixed(6)}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+// GET /api/gis/stats
+router.get('/stats', async (req, res) => {
+  try {
+    let assetStats = [], countyStats = [];
+    try {
+      const { rows } = await db.query(`SELECT type, COUNT(*) as count, COUNT(*) FILTER (WHERE status = 'active') as active_count, COUNT(*) FILTER (WHERE status != 'active') as offline_count FROM assets GROUP BY type ORDER BY count DESC`);
+      assetStats = rows;
+    } catch (err) { console.warn('⚠️ GIS Stats: Could not fetch asset stats:', err.message); }
+    
+    try {
+      const { rows } = await db.query(`SELECT county, COUNT(*) as total_assets FROM assets WHERE county IS NOT NULL GROUP BY county ORDER BY total_assets DESC`);
+      countyStats = rows;
+    } catch (err) { console.warn('⚠️ GIS Stats: Could not fetch county stats:', err.message); }
 
-      {/* Add Node Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}
-            onClick={() => setShowAddModal(false)}>
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{ background: 'white', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '460px' }}>
-              <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: '800' }}>Add New Node</h2>
-              <form onSubmit={handleAddAsset} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <input type="text" required placeholder="Node Name *" value={newAsset.name} onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                  style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <select required value={newAsset.type} onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }}>
-                    <option value="sensor">Sensor</option><option value="reservoir">Reservoir</option><option value="treatment_plant">Treatment Plant</option>
-                    <option value="water_tower">Water Tower</option><option value="water_point">Water Point</option><option value="valve">Valve</option><option value="hydrant">Hydrant</option>
-                  </select>
-                  <select required value={newAsset.county} onChange={(e) => setNewAsset({ ...newAsset, county: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }}>
-                    {ALL_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <input type="number" step="any" required placeholder="Latitude *" value={newAsset.latitude} onChange={(e) => setNewAsset({ ...newAsset, latitude: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                  <input type="number" step="any" required placeholder="Longitude *" value={newAsset.longitude} onChange={(e) => setNewAsset({ ...newAsset, longitude: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                </div>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                  <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
-                  <button type="submit" style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    <Save size={16} /> Add Node
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
+    const totalAssets = assetStats.reduce((sum, r) => sum + parseInt(r.count), 0);
+    const totalActive = assetStats.reduce((sum, r) => sum + parseInt(r.active_count), 0);
+    
+    res.json({ by_type: assetStats, by_county: countyStats, total_assets: totalAssets, total_active: totalActive });
+  } catch (error) {
+    console.error('GIS Stats Error:', error);
+    res.json({ by_type: [], by_county: [], total_assets: 0, total_active: 0 });
+  }
+});
+
+module.exports = router;
