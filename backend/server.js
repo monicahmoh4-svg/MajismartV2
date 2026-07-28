@@ -1,15 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 
 const app = express();
 
-// ============================================
-// CORS CONFIGURATION
-// ============================================
+// CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -42,18 +39,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// ============================================
-// DATABASE CONNECTION
-// ============================================
+// Database connection
 const db = require('./db');
-
 db.query('SELECT NOW()')
   .then(() => console.log('✅ Database connected successfully'))
   .catch((err) => console.error('❌ Database connection failed:', err.message));
 
-// ============================================
-// ROUTE IMPORTS
-// ============================================
+// Route imports
 const authRoutes = require('./routes/auth');
 const citizenRoutes = require('./routes/citizen');
 const reportRoutes = require('./routes/reports');
@@ -66,9 +58,7 @@ const adminRoutes = require('./routes/admin');
 const countyRoutes = require('./routes/county');
 const operatorRoutes = require('./routes/operator');
 
-// ============================================
-// ROUTE MOUNTING
-// ============================================
+// Route mounting
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -90,9 +80,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/county', countyRoutes);
 app.use('/api/operator', operatorRoutes);
 
-// ============================================
-// ERROR HANDLING
-// ============================================
+// Error handling
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
@@ -107,9 +95,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ============================================
-// SERVER STARTUP
-// ============================================
+// Server startup
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
@@ -121,6 +107,7 @@ app.listen(PORT, () => {
   console.log(`✅ API Base: http://localhost:${PORT}/api`);
   console.log(`✅ Health: http://localhost:${PORT}/api/health`);
   console.log(`✅ GIS: http://localhost:${PORT}/api/gis/assets`);
+  console.log(`✅ GIS Stats: http://localhost:${PORT}/api/gis/stats`);
   console.log(`✅ Admin: http://localhost:${PORT}/api/admin/dashboard-stats`);
   console.log(`✅ County: http://localhost:${PORT}/api/county/dashboard-stats`);
   console.log(`✅ Operator: http://localhost:${PORT}/api/operator/dashboard-stats`);
