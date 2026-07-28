@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, useMap, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
@@ -46,11 +46,11 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
     const color = getMarkerColor(status)
     return L.divIcon({
       className: 'custom-marker',
-      html: `<div style="background-color: ${color}; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+      html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
         <div style="width: 8px; height: 8px; background: white; border-radius: 50%;"></div>
       </div>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
     })
   }
 
@@ -59,7 +59,7 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
   }
 
   const formatReading = (value, unit = '') => {
-    if (value === null || value === undefined) return 'N/A'
+    if (value === null || value === undefined || value === '') return 'N/A'
     return `${value}${unit}`
   }
 
@@ -76,12 +76,24 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
+      {/* DMA Polygons with Labels */}
       {dmas.map((dma, idx) => (
         <Polygon 
           key={`dma-${idx}`} 
           positions={dma.coordinates} 
           pathOptions={{ color: '#8b5cf6', weight: 3, fillOpacity: 0.15, dashArray: '5, 5' }}
         >
+          <Tooltip permanent={true} direction="center" className="custom-tooltip" style={{ 
+            fontSize: '12px', 
+            fontWeight: 'bold', 
+            color: '#8b5cf6',
+            background: 'rgba(255,255,255,0.9)',
+            border: '2px solid #8b5cf6',
+            borderRadius: '4px',
+            padding: '4px 8px'
+          }}>
+            {dma.name}
+          </Tooltip>
           <Popup>
             <div style={{ padding: '8px', minWidth: '220px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{dma.name}</h4>
@@ -99,12 +111,17 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
         </Polygon>
       ))}
 
+      {/* Pipeline Lines with Labels */}
       {pipelines.map((pipe, idx) => (
         <Polyline 
           key={`pipe-${idx}`} 
           positions={pipe.coordinates} 
           pathOptions={{ color: getMarkerColor(pipe.status), weight: 5, opacity: 0.8 }}
         >
+          <Tooltip permanent={false} direction="top" sticky>
+            <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{pipe.name}</div>
+            <div style={{ fontSize: '10px' }}>{pipe.diameter_mm}mm • {pipe.material}</div>
+          </Tooltip>
           <Popup>
             <div style={{ padding: '8px', minWidth: '220px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{pipe.name}</h4>
@@ -122,6 +139,7 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
         </Polyline>
       ))}
 
+      {/* Asset Markers with Labels */}
       {[...sensors, ...reservoirs, ...treatmentPlants, ...waterTowers, ...waterPoints, ...valves, ...hydrants].map((asset, idx) => (
         <Marker 
           key={`${asset.type}-${asset.id || idx}`} 
@@ -131,8 +149,29 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
             click: () => handleMarkerClick(asset)
           }}
         >
+          {/* Permanent Label on Map */}
+          <Tooltip 
+            permanent={true} 
+            direction="top" 
+            className="custom-label"
+            style={{ 
+              fontSize: '11px', 
+              fontWeight: '600', 
+              color: '#0f172a',
+              background: 'rgba(255,255,255,0.95)',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              padding: '3px 6px',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            {asset.name}
+          </Tooltip>
+
+          {/* Detailed Popup */}
           <Popup>
-            <div style={{ padding: '8px', minWidth: '260px' }}>
+            <div style={{ padding: '8px', minWidth: '280px', maxHeight: '400px', overflowY: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{asset.name}</h4>
                 <span style={{ 
@@ -163,47 +202,59 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
               </div>
 
               {/* Live Sensor Readings */}
-              {(asset.water_level !== null || asset.pressure !== null || asset.flow_rate !== null || asset.temperature !== null || asset.quality_index !== null) && (
-                <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '8px', marginBottom: '8px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '700', color: '#0891b2', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ width: '6px', height: '6px', background: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
-                    LIVE SENSOR DATA
+              {(asset.water_level !== null || asset.pressure !== null || asset.flow_rate !== null || asset.temperature !== null || asset.quality_index !== null || asset.ph !== null) && (
+                <div style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', borderRadius: '8px', padding: '12px', marginBottom: '8px', border: '1px solid #bae6fd' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                    <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#0891b2' }}>LIVE SENSOR DATA</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px' }}>
                     {asset.water_level !== null && asset.water_level !== undefined && (
-                      <div>
-                        <span style={{ color: '#64748b' }}>Water Level:</span>
-                        <strong style={{ color: '#0f172a' }}> {formatReading(asset.water_level, '%')}</strong>
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>Water Level:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.water_level, '%')}</div>
                       </div>
                     )}
                     {asset.pressure !== null && asset.pressure !== undefined && (
-                      <div>
-                        <span style={{ color: '#64748b' }}>Pressure:</span>
-                        <strong style={{ color: '#0f172a' }}> {formatReading(asset.pressure, ' PSI')}</strong>
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>Pressure:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.pressure, ' PSI')}</div>
                       </div>
                     )}
                     {asset.flow_rate !== null && asset.flow_rate !== undefined && (
-                      <div>
-                        <span style={{ color: '#64748b' }}>Flow Rate:</span>
-                        <strong style={{ color: '#0f172a' }}> {formatReading(asset.flow_rate, ' L/min')}</strong>
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>Flow Rate:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.flow_rate, ' L/min')}</div>
                       </div>
                     )}
                     {asset.temperature !== null && asset.temperature !== undefined && (
-                      <div>
-                        <span style={{ color: '#64748b' }}>Temp:</span>
-                        <strong style={{ color: '#0f172a' }}> {formatReading(asset.temperature, '°C')}</strong>
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>Temp:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.temperature, '°C')}</div>
                       </div>
                     )}
                     {asset.quality_index !== null && asset.quality_index !== undefined && (
-                      <div>
-                        <span style={{ color: '#64748b' }}>Quality:</span>
-                        <strong style={{ color: '#0f172a' }}> {formatReading(asset.quality_index, '%')}</strong>
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>Quality:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.quality_index, '%')}</div>
                       </div>
                     )}
                     {asset.ph !== null && asset.ph !== undefined && (
-                      <div>
-                        <span style={{ color: '#64748b' }}>pH:</span>
-                        <strong style={{ color: '#0f172a' }}> {formatReading(asset.ph)}</strong>
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>pH:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.ph)}</div>
+                      </div>
+                    )}
+                    {asset.turbidity !== null && asset.turbidity !== undefined && (
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>Turbidity:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.turbidity, ' NTU')}</div>
+                      </div>
+                    )}
+                    {asset.tds !== null && asset.tds !== undefined && (
+                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>TDS:</span>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.tds, ' ppm')}</div>
                       </div>
                     )}
                   </div>
@@ -213,25 +264,25 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
               {/* Asset Details */}
               <div style={{ fontSize: '11px', color: '#475569' }}>
                 {asset.capacity && (
-                  <div style={{ marginBottom: '2px' }}><strong>Capacity:</strong> {asset.capacity}</div>
+                  <div style={{ marginBottom: '4px' }}><strong>Capacity:</strong> {asset.capacity}</div>
                 )}
                 {asset.diameter_mm && (
-                  <div style={{ marginBottom: '2px' }}><strong>Diameter:</strong> {asset.diameter_mm}mm</div>
+                  <div style={{ marginBottom: '4px' }}><strong>Diameter:</strong> {asset.diameter_mm}mm</div>
                 )}
                 {asset.material && (
-                  <div style={{ marginBottom: '2px' }}><strong>Material:</strong> {asset.material}</div>
+                  <div style={{ marginBottom: '4px' }}><strong>Material:</strong> {asset.material}</div>
                 )}
                 {asset.manufacturer && (
-                  <div style={{ marginBottom: '2px' }}><strong>Manufacturer:</strong> {asset.manufacturer}</div>
+                  <div style={{ marginBottom: '4px' }}><strong>Manufacturer:</strong> {asset.manufacturer}</div>
                 )}
                 {asset.serial_number && (
-                  <div style={{ marginBottom: '2px' }}><strong>Serial:</strong> {asset.serial_number}</div>
+                  <div style={{ marginBottom: '4px' }}><strong>Serial:</strong> {asset.serial_number}</div>
                 )}
-                <div style={{ marginTop: '6px', fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8' }}>
+                <div style={{ marginTop: '8px', fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8', background: '#f8fafc', padding: '6px', borderRadius: '4px' }}>
                   📍 {asset.latitude.toFixed(6)}, {asset.longitude.toFixed(6)}
                 </div>
                 {asset.last_reading_at && (
-                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontStyle: 'italic' }}>
                     Last update: {new Date(asset.last_reading_at).toLocaleString()}
                   </div>
                 )}
