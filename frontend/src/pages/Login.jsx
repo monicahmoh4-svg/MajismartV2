@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react'
@@ -9,8 +9,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { user, login } = useAuth()
   const navigate = useNavigate()
+
+  // ✅ Use useEffect to navigate AFTER user state is set
+  useEffect(() => {
+    if (user) {
+      console.log('✅ User detected, navigating to dashboard')
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -19,13 +27,11 @@ export default function Login() {
 
     const result = await login(formData.email, formData.password)
     
-    if (result.success) {
-      // ✅ Navigate to dashboard after successful login
-      navigate('/dashboard')
-    } else {
+    if (!result.success) {
       setError(result.error)
       setLoading(false)
     }
+    // ✅ Navigation is handled by useEffect above
   }
 
   return (
@@ -79,8 +85,12 @@ export default function Login() {
             padding: '12px 16px',
             marginBottom: '20px',
             color: '#dc2626',
-            fontSize: '14px'
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}>
+            <AlertCircle size={16} />
             {error}
           </div>
         )}
@@ -90,21 +100,25 @@ export default function Login() {
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
               Email Address
             </label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="you@example.com"
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '12px',
-                border: '1.5px solid #e2e8f0',
-                fontSize: '15px',
-                boxSizing: 'border-box'
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <Mail style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="you@example.com"
+                style={{
+                  width: '100%',
+                  padding: '14px 14px 14px 44px',
+                  borderRadius: '12px',
+                  border: '1.5px solid #e2e8f0',
+                  fontSize: '15px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
           </div>
 
           <div>
@@ -112,6 +126,7 @@ export default function Login() {
               Password
             </label>
             <div style={{ position: 'relative' }}>
+              <Lock style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
@@ -120,10 +135,11 @@ export default function Login() {
                 placeholder="Enter your password"
                 style={{
                   width: '100%',
-                  padding: '14px 44px 14px 14px',
+                  padding: '14px 44px 14px 44px',
                   borderRadius: '12px',
                   border: '1.5px solid #e2e8f0',
                   fontSize: '15px',
+                  outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
@@ -158,10 +174,19 @@ export default function Login() {
               fontSize: '16px',
               fontWeight: '700',
               cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1
+              opacity: loading ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in...' : (
+              <>
+                <LogIn size={18} />
+                Sign In
+              </>
+            )}
           </button>
         </form>
 
