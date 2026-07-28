@@ -1,21 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Layers, Search, Plus, X, Save, Trash2, 
-  RefreshCw, FileText, Activity, Filter, MapPin
-} from 'lucide-react'
+import { Layers, Search, Plus, X, Save, Trash2, RefreshCw, FileText, Activity, Filter, MapPin } from 'lucide-react'
 import InteractiveMap from '../components/gis/InteractiveMap'
 import api from '../api'
 
 const ALL_COUNTIES = [
-  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu',
-  'Garissa', 'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho',
-  'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui',
-  'Kwale', 'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera',
-  'Marsabit', 'Meru', 'Migori', 'Mombasa', 'Muranga', 'Nairobi',
-  'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri',
-  'Samburu', 'Siaya', 'Taita-Taveta', 'Tana River', 'Tharaka-Nithi',
-  'Trans-Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'
+  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa', 'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho',
+  'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale', 'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera', 'Marsabit',
+  'Meru', 'Migori', 'Mombasa', 'Muranga', 'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri', 'Samburu', 'Siaya',
+  'Taita-Taveta', 'Tana River', 'Tharaka-Nithi', 'Trans-Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'
 ]
 
 export default function GISDashboard() {
@@ -27,30 +20,24 @@ export default function GISDashboard() {
   const [stats, setStats] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [newAsset, setNewAsset] = useState({
-    name: '', type: 'sensor', latitude: '', longitude: '',
-    county: 'Nairobi', status: 'active', capacity: ''
-  })
+  const [newAsset, setNewAsset] = useState({ name: '', type: 'sensor', latitude: '', longitude: '', county: 'Nairobi', status: 'active', capacity: '' })
 
   const [activeLayers, setActiveLayers] = useState({
-    sensors: true, reservoirs: true, treatmentPlants: true,
-    waterTowers: true, waterPoints: true, valves: true,
-    hydrants: true, pipelines: true, dmas: true
+    sensors: true, reservoirs: true, treatmentPlants: true, waterTowers: true,
+    waterPoints: true, valves: true, hydrants: true, pipelines: true, dmas: true
   })
 
   const fetchGISData = useCallback(async () => {
     try {
       setLoading(true)
-      setError(null)
       const params = new URLSearchParams()
       if (selectedCounty) params.append('county', selectedCounty)
       const response = await api.get(`/gis/assets?${params.toString()}`)
+      // Backend now guarantees an array is returned, even if empty
       setAssets(Array.isArray(response) ? response : [])
     } catch (err) {
       console.error('GIS fetch error:', err)
-      setError('Failed to load GIS data')
-      setAssets([])
+      setAssets([]) // Fallback to empty array to prevent map crash
     } finally {
       setLoading(false)
     }
@@ -62,33 +49,23 @@ export default function GISDashboard() {
       setStats(response)
     } catch (err) {
       console.error('Stats fetch error:', err)
+      setStats({ total_assets: 0, total_active: 0, by_county: [], by_type: [] })
     }
   }, [])
 
   useEffect(() => {
     fetchGISData()
     fetchStats()
-  }, [fetchGISData, fetchStats])
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
     const interval = setInterval(fetchGISData, 30000)
     return () => clearInterval(interval)
-  }, [fetchGISData])
+  }, [fetchGISData, fetchStats])
 
-  const toggleLayer = (layer) => {
-    setActiveLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
-  }
+  const toggleLayer = (layer) => setActiveLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
 
   const filteredAssets = assets.filter(asset => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
-    return (
-      asset.name?.toLowerCase().includes(q) ||
-      asset.id?.toString().includes(q) ||
-      asset.county?.toLowerCase().includes(q) ||
-      asset.type?.toLowerCase().includes(q)
-    )
+    return asset.name?.toLowerCase().includes(q) || asset.id?.toString().includes(q) || asset.county?.toLowerCase().includes(q)
   })
 
   const handleAddAsset = async (e) => {
@@ -105,7 +82,7 @@ export default function GISDashboard() {
       fetchGISData()
       fetchStats()
     } catch (err) {
-      alert('Failed to add asset: ' + (err?.error || err?.message || 'Unknown error'))
+      alert('Failed to add asset: ' + (err?.error || err?.message))
     }
   }
 
@@ -118,100 +95,6 @@ export default function GISDashboard() {
       fetchStats()
     } catch (err) {
       alert('Failed to delete asset')
-    }
-  }
-
-  const handleExportPDF = async () => {
-    setPdfLoading(true)
-    try {
-      const { jsPDF } = await import('jspdf')
-      const { default: autoTable } = await import('jspdf-autotable')
-      
-      const doc = new jsPDF()
-      const pw = doc.internal.pageSize.getWidth()
-      const now = new Date()
-
-      // Header
-      doc.setFillColor(8, 145, 178)
-      doc.rect(0, 0, pw, 35, 'F')
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(20)
-      doc.setFont('helvetica', 'bold')
-      doc.text('MajiSmart GIS Report', 15, 16)
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`Generated: ${now.toLocaleString()}`, 15, 26)
-      if (selectedCounty) doc.text(`County: ${selectedCounty}`, pw - 15, 26, { align: 'right' })
-
-      let y = 50
-
-      // Summary
-      doc.setTextColor(15, 23, 42)
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Summary', 15, y)
-      y += 8
-
-      const summaryData = [
-        ['Total Assets', (stats?.total_assets || 0).toString()],
-        ['Active Assets', (stats?.total_active || 0).toString()],
-        ['Counties Covered', (stats?.by_county?.length || 0).toString()],
-        ['Asset Types', (stats?.by_type?.length || 0).toString()]
-      ]
-
-      autoTable(doc, {
-        startY: y,
-        body: summaryData,
-        theme: 'plain',
-        styles: { fontSize: 10, cellPadding: 3 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 40 } }
-      })
-      y = doc.lastAutoTable.finalY + 12
-
-      // Asset Inventory
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Asset Inventory', 15, y)
-      y += 5
-
-      const tableData = filteredAssets
-        .filter(a => a.type !== 'dma' && a.type !== 'pipeline')
-        .map(a => [
-          a.name || '-',
-          (a.type || '').replace(/_/g, ' '),
-          a.county || '-',
-          a.status || '-',
-          `${Number(a.latitude || 0).toFixed(4)}, ${Number(a.longitude || 0).toFixed(4)}`
-        ])
-
-      autoTable(doc, {
-        startY: y,
-        head: [['Name', 'Type', 'County', 'Status', 'Coordinates']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [8, 145, 178], fontSize: 8 },
-        styles: { fontSize: 7, cellPadding: 2 },
-        alternateRowStyles: { fillColor: [240, 249, 255] }
-      })
-
-      // Footer
-      const pages = doc.internal.getNumberOfPages()
-      for (let i = 1; i <= pages; i++) {
-        doc.setPage(i)
-        doc.setFillColor(15, 23, 42)
-        doc.rect(0, doc.internal.pageSize.getHeight() - 12, pw, 12, 'F')
-        doc.setTextColor(148, 163, 184)
-        doc.setFontSize(7)
-        doc.text('MajiSmart Kenya', 15, doc.internal.pageSize.getHeight() - 4)
-        doc.text(`Page ${i}/${pages}`, pw - 15, doc.internal.pageSize.getHeight() - 4, { align: 'right' })
-      }
-
-      doc.save(`MajiSmart_GIS_${selectedCounty || 'All'}_${now.toISOString().split('T')[0]}.pdf`)
-    } catch (err) {
-      console.error('PDF error:', err)
-      alert('PDF export failed. Make sure jspdf is installed.')
-    } finally {
-      setPdfLoading(false)
     }
   }
 
@@ -237,7 +120,6 @@ export default function GISDashboard() {
             <input type="text" placeholder="Search assets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%', padding: '8px 8px 8px 36px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
           </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Filter size={16} color="#64748b" />
             <select value={selectedCounty} onChange={(e) => setSelectedCounty(e.target.value)}
@@ -246,17 +128,11 @@ export default function GISDashboard() {
               {ALL_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-
           <button onClick={fetchGISData} style={{ padding: '8px 14px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <RefreshCw size={14} /> Refresh
           </button>
         </div>
-
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handleExportPDF} disabled={pdfLoading}
-            style={{ padding: '8px 14px', background: '#dc2626', border: 'none', borderRadius: '8px', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '6px', opacity: pdfLoading ? 0.6 : 1 }}>
-            <FileText size={14} /> {pdfLoading ? 'Generating...' : 'Export PDF'}
-          </button>
           <button onClick={() => setShowAddModal(true)}
             style={{ padding: '8px 14px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Plus size={14} /> Add Node
@@ -270,26 +146,16 @@ export default function GISDashboard() {
         <div style={{ width: '260px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '16px', overflowY: 'auto', flexShrink: 0 }}>
           {stats && (
             <div style={{ background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '12px', padding: '14px', marginBottom: '16px', color: 'white' }}>
-              <h4 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700' }}>
-                {selectedCounty || 'Network Overview'}
-              </h4>
+              <h4 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700' }}>{selectedCounty || 'Network Overview'}</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div><div style={{ fontSize: '22px', fontWeight: '800' }}>{stats.total_assets || 0}</div><div style={{ fontSize: '10px', opacity: 0.9 }}>Total</div></div>
                 <div><div style={{ fontSize: '22px', fontWeight: '800' }}>{stats.total_active || 0}</div><div style={{ fontSize: '10px', opacity: 0.9 }}>Active</div></div>
               </div>
             </div>
           )}
-
-          {error && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px', marginBottom: '16px', fontSize: '12px', color: '#dc2626' }}>
-              {error}
-            </div>
-          )}
-
           <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Layers size={16} color="#0891b2" /> Layers
           </h3>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {layerList.map(layer => (
               <label key={layer.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: activeLayers[layer.key] ? '#f0f9ff' : 'transparent', borderRadius: '6px', cursor: 'pointer', border: activeLayers[layer.key] ? '1px solid #bae6fd' : '1px solid transparent' }}>
@@ -301,7 +167,7 @@ export default function GISDashboard() {
           </div>
         </div>
 
-        {/* Map */}
+        {/* Map Container */}
         <div style={{ flex: 1, position: 'relative' }}>
           {loading && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.85)', zIndex: 10 }}>
@@ -312,6 +178,13 @@ export default function GISDashboard() {
             </div>
           )}
           <InteractiveMap assets={filteredAssets} activeLayers={activeLayers} onAssetClick={setSelectedAsset} />
+          
+          {/* Empty State Helper (Only shows if loaded but truly empty) */}
+          {!loading && assets.length === 0 && (
+            <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 5, textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>No assets found. Ensure database migrations have been run.</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -332,21 +205,6 @@ export default function GISDashboard() {
                 <button onClick={() => setSelectedAsset(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer' }}><X size={14} /></button>
               </div>
             </div>
-
-            {/* Live data */}
-            <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px', marginBottom: '16px', border: '1px solid #bae6fd' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: '#0891b2', marginBottom: '10px' }}>📡 LIVE SENSOR DATA</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {selectedAsset.water_level != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Water Level</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.water_level}%</div></div>}
-                {selectedAsset.pressure != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Pressure</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.pressure} PSI</div></div>}
-                {selectedAsset.flow_rate != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Flow Rate</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.flow_rate} L/m</div></div>}
-                {selectedAsset.temperature != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Temp</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.temperature}°C</div></div>}
-                {selectedAsset.quality_index != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>Quality</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.quality_index}%</div></div>}
-                {selectedAsset.ph != null && <div style={{ background: 'white', padding: '8px', borderRadius: '6px' }}><div style={{ fontSize: '9px', color: '#94a3b8' }}>pH</div><div style={{ fontSize: '16px', fontWeight: '800' }}>{selectedAsset.ph}</div></div>}
-              </div>
-            </div>
-
-            {/* Details */}
             <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div><strong>Type:</strong> {(selectedAsset.type || '').replace(/_/g, ' ')}</div>
               {selectedAsset.county && <div><strong>County:</strong> {selectedAsset.county}</div>}
@@ -385,7 +243,6 @@ export default function GISDashboard() {
                   <input type="number" step="any" required placeholder="Latitude *" value={newAsset.latitude} onChange={(e) => setNewAsset({ ...newAsset, latitude: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
                   <input type="number" step="any" required placeholder="Longitude *" value={newAsset.longitude} onChange={(e) => setNewAsset({ ...newAsset, longitude: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
                 </div>
-                <input type="text" placeholder="Capacity (optional)" value={newAsset.capacity} onChange={(e) => setNewAsset({ ...newAsset, capacity: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
                 <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                   <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
                   <button type="submit" style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
