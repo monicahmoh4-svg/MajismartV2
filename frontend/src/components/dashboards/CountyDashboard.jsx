@@ -5,7 +5,7 @@ import api from '../../api'
 import { motion } from 'framer-motion'
 import { 
   Users, Activity, MapPin, AlertTriangle, 
-  RefreshCw, Map, FileText, TrendingUp
+  RefreshCw, Map, FileText, Package
 } from 'lucide-react'
 import { Loading } from '../ui/StateViews'
 
@@ -97,11 +97,11 @@ export default function CountyDashboard() {
               Welcome back, {user?.name || 'Officer'}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard?view=gis')}
+              onClick={() => navigate('/dashboard?view=assets')}
               style={{
                 padding: '12px 20px',
                 background: 'white',
@@ -113,7 +113,30 @@ export default function CountyDashboard() {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}
+            >
+              <Package size={18} />
+              Assets
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/dashboard?view=gis')}
+              style={{
+                padding: '12px 20px',
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(10px)'
               }}
             >
               <Map size={18} />
