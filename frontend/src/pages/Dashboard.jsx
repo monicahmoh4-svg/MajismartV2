@@ -8,8 +8,9 @@ import OperatorDashboard from '../components/dashboards/OperatorDashboard'
 import CommunityDashboard from '../components/dashboards/CommunityDashboard'
 import CitizenDashboard from './CitizenDashboard'
 
-// Enterprise GIS Dashboard (New)
+// Enterprise Modules (Feature 1 & 2)
 import GISDashboard from './GISDashboard'
+import AssetManagement from './AssetManagement'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
@@ -30,23 +31,28 @@ export default function Dashboard() {
   }
 
   // Route to the correct dashboard based on role
-  // Defaults to CitizenDashboard if role is missing or unrecognized
   const dashboards = {
     admin: <AdminDashboard />,
     county_officer: <CountyDashboard />,
     operator: <OperatorDashboard />,
-    community: <CitizenDashboard />,       // Community Members get the Citizen Dashboard
-    community_manager: <CommunityDashboard />, // Separate role for managers, if needed
+    community: <CitizenDashboard />,
+    community_manager: <CommunityDashboard />,
   }
   
-  // Enterprise GIS Override
-  // Allow admin, county_officer, and operator roles to access the GIS dashboard
-  // via URL parameter: /dashboard?view=gis
+  // Enterprise Module Override
+  // Allow admin, county_officer, and operator roles to access enterprise modules
   const viewMode = searchParams.get('view')
-  const gisAuthorizedRoles = ['admin', 'county_officer', 'operator']
+  const authorizedRoles = ['admin', 'county_officer', 'operator']
   
-  if (viewMode === 'gis' && gisAuthorizedRoles.includes(user?.role)) {
-    return <GISDashboard />
+  if (viewMode && authorizedRoles.includes(user?.role)) {
+    switch (viewMode) {
+      case 'gis':
+        return <GISDashboard />
+      case 'assets':
+        return <AssetManagement />
+      default:
+        break
+    }
   }
   
   return dashboards[user?.role] || <CitizenDashboard />
