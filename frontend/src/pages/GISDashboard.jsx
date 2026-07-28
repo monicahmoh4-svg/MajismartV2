@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { MapPin, Layers, Search, Download, Upload, Maximize2, Filter, RefreshCw, Database } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  MapPin, Layers, Search, Download, Upload, Maximize2, 
+  Filter, RefreshCw, Database, Plus, X, Save, Edit2, Trash2
+} from 'lucide-react'
 import InteractiveMap from '../components/gis/InteractiveMap'
 import api from '../api'
 
@@ -11,6 +14,20 @@ export default function GISDashboard() {
   const [selectedCounty, setSelectedCounty] = useState('')
   const [selectedAsset, setSelectedAsset] = useState(null)
   const [stats, setStats] = useState(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [newAsset, setNewAsset] = useState({
+    name: '',
+    type: 'sensor',
+    latitude: '',
+    longitude: '',
+    county: '',
+    status: 'active',
+    capacity: '',
+    diameter_mm: '',
+    material: ''
+  })
+
   const [activeLayers, setActiveLayers] = useState({
     sensors: true,
     reservoirs: true,
@@ -95,6 +112,54 @@ export default function GISDashboard() {
     URL.revokeObjectURL(url)
   }
 
+  const handleAddAsset = async (e) => {
+    e.preventDefault()
+    try {
+      const payload = {
+        ...newAsset,
+        latitude: parseFloat(newAsset.latitude),
+        longitude: parseFloat(newAsset.longitude),
+        diameter_mm: newAsset.diameter_mm ? parseInt(newAsset.diameter_mm) : null,
+        capacity: newAsset.capacity || null
+      }
+      
+      await api.post('/gis/assets', payload)
+      setShowAddModal(false)
+      setNewAsset({
+        name: '',
+        type: 'sensor',
+        latitude: '',
+        longitude: '',
+        county: '',
+        status: 'active',
+        capacity: '',
+        diameter_mm: '',
+        material: ''
+      })
+      fetchGISData()
+      fetchStats()
+      alert('Asset added successfully!')
+    } catch (error) {
+      console.error('Failed to add asset:', error)
+      alert('Failed to add asset. Please try again.')
+    }
+  }
+
+  const handleDeleteAsset = async (id) => {
+    if (!confirm('Are you sure you want to delete this asset?')) return
+    
+    try {
+      await api.delete(`/gis/assets/${id}`)
+      setSelectedAsset(null)
+      fetchGISData()
+      fetchStats()
+      alert('Asset deleted successfully!')
+    } catch (error) {
+      console.error('Failed to delete asset:', error)
+      alert('Failed to delete asset. Please try again.')
+    }
+  }
+
   return (
     <div style={{ height: 'calc(100vh - 70px)', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
       {/* GIS Toolbar */}
@@ -171,6 +236,28 @@ export default function GISDashboard() {
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAddModal(true)}
+            style={{ 
+              padding: '10px 16px', 
+              background: 'linear-gradient(135deg, #0891b2, #06b6d4)', 
+              border: 'none', 
+              borderRadius: '8px', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              fontSize: '14px', 
+              fontWeight: '700', 
+              color: 'white',
+              boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)'
+            }}
+          >
+            <Plus style={{ width: '16px', height: '16px' }} /> Add Node
+          </motion.button>
+          
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleExportGeoJSON}
             style={{ 
               padding: '10px 16px', 
@@ -186,7 +273,7 @@ export default function GISDashboard() {
               color: '#475569'
             }}
           >
-            <Download style={{ width: '16px', height: '16px' }} /> Export GeoJSON
+            <Download style={{ width: '16px', height: '16px' }} /> Export
           </motion.button>
         </div>
       </div>
@@ -328,101 +415,353 @@ export default function GISDashboard() {
       </div>
 
       {/* Asset Details Panel */}
-      {selectedAsset && (
-        <motion.div
-          initial={{ y: 300, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 300, opacity: 0 }}
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: '350px',
-            background: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-            padding: '24px',
-            zIndex: 1000,
-            maxHeight: '500px',
-            overflowY: 'auto'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-            <div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
-                {selectedAsset.name}
-              </h3>
-              <span style={{ 
-                display: 'inline-block', 
-                padding: '4px 12px', 
-                borderRadius: '12px', 
-                fontSize: '11px', 
-                fontWeight: '700',
-                background: selectedAsset.status === 'active' ? '#d1fae5' : '#fee2e2',
-                color: selectedAsset.status === 'active' ? '#059669' : '#dc2626'
-              }}>
-                {selectedAsset.status.toUpperCase()}
-              </span>
+      <AnimatePresence>
+        {selectedAsset && (
+          <motion.div
+            initial={{ y: 300, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 300, opacity: 0 }}
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              width: '350px',
+              background: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              padding: '24px',
+              zIndex: 1000,
+              maxHeight: '500px',
+              overflowY: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
+                  {selectedAsset.name}
+                </h3>
+                <span style={{ 
+                  display: 'inline-block', 
+                  padding: '4px 12px', 
+                  borderRadius: '12px', 
+                  fontSize: '11px', 
+                  fontWeight: '700',
+                  background: selectedAsset.status === 'active' ? '#d1fae5' : '#fee2e2',
+                  color: selectedAsset.status === 'active' ? '#059669' : '#dc2626'
+                }}>
+                  {selectedAsset.status.toUpperCase()}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={() => handleDeleteAsset(selectedAsset.id)}
+                  style={{
+                    background: '#fee2e2',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Trash2 size={16} color="#dc2626" />
+                </button>
+                <button 
+                  onClick={() => setSelectedAsset(null)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
-            <button 
-              onClick={() => setSelectedAsset(null)}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Type</div>
+                <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>
+                  {selectedAsset.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </div>
+              </div>
+              
+              {selectedAsset.county && (
+                <div>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>County</div>
+                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.county}</div>
+                </div>
+              )}
+
+              {selectedAsset.capacity && (
+                <div>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Capacity</div>
+                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.capacity}</div>
+                </div>
+              )}
+
+              {selectedAsset.diameter_mm && (
+                <div>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Diameter</div>
+                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.diameter_mm}mm</div>
+                </div>
+              )}
+
+              {selectedAsset.material && (
+                <div>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Material</div>
+                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.material}</div>
+                </div>
+              )}
+
+              <div>
+                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Coordinates</div>
+                <div style={{ fontSize: '13px', color: '#0f172a', fontFamily: 'monospace' }}>
+                  {selectedAsset.latitude.toFixed(6)}, {selectedAsset.longitude.toFixed(6)}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Asset Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2000,
+              padding: '20px'
+            }}
+            onClick={() => setShowAddModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
               style={{
-                background: '#f1f5f9',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px',
-                cursor: 'pointer'
+                background: 'white',
+                borderRadius: '20px',
+                padding: '32px',
+                width: '100%',
+                maxWidth: '500px',
+                maxHeight: '90vh',
+                overflowY: 'auto'
               }}
             >
-              ✕
-            </button>
-          </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>
+                  Add New Node
+                </h2>
+                <button 
+                  onClick={() => setShowAddModal(false)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Type</div>
-              <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>
-                {selectedAsset.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-              </div>
-            </div>
-            
-            {selectedAsset.county && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>County</div>
-                <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.county}</div>
-              </div>
-            )}
+              <form onSubmit={handleAddAsset} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newAsset.name}
+                    onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                    placeholder="e.g., Kibera Sensor Node 2"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '10px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
 
-            {selectedAsset.capacity && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Capacity</div>
-                <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.capacity}</div>
-              </div>
-            )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+                      Type *
+                    </label>
+                    <select
+                      required
+                      value={newAsset.type}
+                      onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '14px',
+                        background: 'white',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <option value="sensor">Sensor</option>
+                      <option value="reservoir">Reservoir</option>
+                      <option value="treatment_plant">Treatment Plant</option>
+                      <option value="water_tower">Water Tower</option>
+                      <option value="water_point">Water Point</option>
+                      <option value="valve">Valve</option>
+                      <option value="hydrant">Hydrant</option>
+                    </select>
+                  </div>
 
-            {selectedAsset.diameter_mm && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Diameter</div>
-                <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.diameter_mm}mm</div>
-              </div>
-            )}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+                      County
+                    </label>
+                    <input
+                      type="text"
+                      value={newAsset.county}
+                      onChange={(e) => setNewAsset({ ...newAsset, county: e.target.value })}
+                      placeholder="e.g., Nairobi"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
 
-            {selectedAsset.material && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Material</div>
-                <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedAsset.material}</div>
-              </div>
-            )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+                      Latitude *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      required
+                      value={newAsset.latitude}
+                      onChange={(e) => setNewAsset({ ...newAsset, latitude: e.target.value })}
+                      placeholder="-1.2921"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
 
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>Coordinates</div>
-              <div style={{ fontSize: '13px', color: '#0f172a', fontFamily: 'monospace' }}>
-                {selectedAsset.latitude.toFixed(6)}, {selectedAsset.longitude.toFixed(6)}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+                      Longitude *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.00000001"
+                      required
+                      value={newAsset.longitude}
+                      onChange={(e) => setNewAsset({ ...newAsset, longitude: e.target.value })}
+                      placeholder="36.8219"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+                    Capacity (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newAsset.capacity}
+                    onChange={(e) => setNewAsset({ ...newAsset, capacity: e.target.value })}
+                    placeholder="e.g., 50M liters"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '10px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    style={{
+                      flex: 1,
+                      padding: '14px',
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      border: 'none',
+                      borderRadius: '10px',
+                      fontWeight: '700',
+                      fontSize: '15px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      flex: 2,
+                      padding: '14px',
+                      background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '10px',
+                      fontWeight: '700',
+                      fontSize: '15px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Save size={18} />
+                    Add Node
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
