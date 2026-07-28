@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -10,6 +10,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,11 +19,13 @@ export default function Login() {
 
     const result = await login(formData.email, formData.password)
     
-    if (!result.success) {
+    if (result.success) {
+      // ✅ Navigate to dashboard after successful login
+      navigate('/dashboard')
+    } else {
       setError(result.error)
       setLoading(false)
     }
-    // ✅ Do NOT navigate here - AuthContext handles the redirect
   }
 
   return (
@@ -32,29 +35,8 @@ export default function Login() {
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
-      padding: '20px',
-      position: 'relative',
-      overflow: 'hidden'
+      padding: '20px'
     }}>
-      <div style={{
-        position: 'absolute',
-        top: '-100px',
-        right: '-100px',
-        width: '400px',
-        height: '400px',
-        background: 'rgba(255,255,255,0.1)',
-        borderRadius: '50%'
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '-150px',
-        left: '-150px',
-        width: '500px',
-        height: '500px',
-        background: 'rgba(255,255,255,0.05)',
-        borderRadius: '50%'
-      }} />
-
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -65,9 +47,7 @@ export default function Login() {
           padding: '40px',
           width: '100%',
           maxWidth: '440px',
-          boxShadow: '0 25px 70px rgba(0,0,0,0.2)',
-          position: 'relative',
-          zIndex: 1
+          boxShadow: '0 25px 70px rgba(0,0,0,0.2)'
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -79,8 +59,7 @@ export default function Login() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: '0 8px 20px rgba(8, 145, 178, 0.3)'
+            margin: '0 auto 16px'
           }}>
             <Droplets style={{ color: 'white', width: '32px', height: '32px' }} />
           </div>
@@ -93,60 +72,46 @@ export default function Login() {
         </div>
 
         {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              background: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '12px',
-              padding: '12px 16px',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              color: '#dc2626',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            <AlertCircle style={{ width: '18px', height: '18px', flexShrink: 0 }} />
+          <div style={{
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            marginBottom: '20px',
+            color: '#dc2626',
+            fontSize: '14px'
+          }}>
             {error}
-          </motion.div>
+          </div>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
               Email Address
             </label>
-            <div style={{ position: 'relative' }}>
-              <Mail style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="you@example.com"
-                style={{
-                  width: '100%',
-                  padding: '14px 14px 14px 44px',
-                  borderRadius: '12px',
-                  border: '1.5px solid #e2e8f0',
-                  fontSize: '15px',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="you@example.com"
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '12px',
+                border: '1.5px solid #e2e8f0',
+                fontSize: '15px',
+                boxSizing: 'border-box'
+              }}
+            />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
               Password
             </label>
             <div style={{ position: 'relative' }}>
-              <Lock style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
@@ -155,11 +120,10 @@ export default function Login() {
                 placeholder="Enter your password"
                 style={{
                   width: '100%',
-                  padding: '14px 44px 14px 44px',
+                  padding: '14px 44px 14px 14px',
                   borderRadius: '12px',
                   border: '1.5px solid #e2e8f0',
                   fontSize: '15px',
-                  outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
@@ -173,23 +137,17 @@ export default function Login() {
                   transform: 'translateY(-50%)',
                   background: 'transparent',
                   border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px'
+                  cursor: 'pointer'
                 }}
               >
-                {showPassword 
-                  ? <EyeOff style={{ width: '18px', height: '18px', color: '#94a3b8' }} />
-                  : <Eye style={{ width: '18px', height: '18px', color: '#94a3b8' }} />
-                }
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
-          <motion.button
+          <button
             type="submit"
             disabled={loading}
-            whileHover={{ scale: loading ? 1 : 1.02 }}
-            whileTap={{ scale: loading ? 1 : 0.98 }}
             style={{
               width: '100%',
               padding: '14px',
@@ -200,21 +158,11 @@ export default function Login() {
               fontSize: '16px',
               fontWeight: '700',
               cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              boxShadow: '0 4px 16px rgba(8, 145, 178, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
+              opacity: loading ? 0.7 : 1
             }}
           >
-            {loading ? 'Signing in...' : (
-              <>
-                <LogIn style={{ width: '18px', height: '18px' }} />
-                Sign In
-              </>
-            )}
-          </motion.button>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
         </form>
 
         <div style={{
@@ -222,7 +170,6 @@ export default function Login() {
           padding: '12px',
           background: '#f0f9ff',
           borderRadius: '10px',
-          border: '1px solid #bae6fd',
           fontSize: '13px',
           color: '#0369a1',
           textAlign: 'center'
