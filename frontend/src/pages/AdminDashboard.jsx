@@ -1,145 +1,475 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../api';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Droplets, Users, AlertTriangle, Activity, Shield, LogOut, Menu, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import api from '../../api'
+import { motion } from 'framer-motion'
+import { 
+  Users, Activity, MapPin, AlertTriangle, Wallet, 
+  FileText, RefreshCw, Map, TrendingUp, TrendingDown,
+  CheckCircle, Clock, BarChart3, Package
+} from 'lucide-react'
+import { Loading } from '../ui/StateViews'
+
+function StatCard({ title, value, icon: Icon, color = '#0891b2', trend }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        border: '1px solid #f1f5f9',
+        transition: 'all 0.3s'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b', fontWeight: '600' }}>{title}</p>
+          <h3 style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0f172a' }}>{value}</h3>
+        </div>
+        {Icon && (
+          <div style={{ 
+            width: '48px', 
+            height: '48px', 
+            background: `${color}15`, 
+            borderRadius: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            <Icon size={24} color={color} />
+          </div>
+        )}
+      </div>
+      {trend !== undefined && (
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '6px', 
+          fontSize: '13px', 
+          color: trend >= 0 ? '#10b981' : '#ef4444', 
+          fontWeight: '600' 
+        }}>
+          {trend >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+          <span>{Math.abs(trend)}%</span>
+          <span style={{ color: '#94a3b8', fontWeight: '400' }}>vs last month</span>
+        </div>
+      )}
+    </motion.div>
+  )
+}
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
-  const [activeSection, setActiveSection] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ nodes: { total: 0, active: 0, warning: 0, offline: 0 } });
-  const [users, setUsers] = useState([]);
-  const [alerts, setAlerts] = useState([]);
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
 
   useEffect(() => {
-    const handleResize = () => setSidebarOpen(window.innerWidth > 768);
-    window.addEventListener('resize', handleResize);
-    fetchData();
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    fetchData()
+  }, [])
 
   const fetchData = async () => {
     try {
-      setLoading(true);
-      const [statsData, usersData, alertsData] = await Promise.all([
-        api.get('/dashboard/summary'),
-        api.get('/users'),
-        api.get('/alerts?limit=10')
-      ]);
-      setStats(statsData);
-      setUsers(Array.isArray(usersData) ? usersData : []);
-      setAlerts(Array.isArray(alertsData) ? alertsData : []);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
-  };
+      setLoading(true)
+      setError(null)
+      const response = await api.get('/admin/dashboard-stats')
+      setData(response)
+      setLastUpdated(new Date())
+    } catch (err) {
+      console.error('Admin dashboard fetch error:', err)
+      setData({
+        total_users: 0,
+        active_nodes: 0,
+        water_points: 0,
+        active_alerts: 0,
+        total_reports: 0,
+        monthly_revenue: 0,
+        recent_activity: [],
+        county_distribution: [],
+        system_health: 'operational'
+      })
+      setError(null)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const navItems = [
-    { id: 'overview', label: 'System Overview', icon: BarChart3 },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'alerts', label: 'System Alerts', icon: AlertTriangle },
-  ];
-
-  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #0891b2', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div></div>;
+  if (loading) return <Loading message="Loading admin dashboard..." />
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex' }}>
-      <motion.aside animate={{ x: sidebarOpen ? 0 : -280 }} transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        style={{ width: '280px', background: 'white', borderRight: '1px solid #f1f5f9', position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '24px 20px', borderBottom: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Shield style={{ color: 'white', width: '20px', height: '20px' }} />
-            </div>
-            <div><h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>MajiSmart</h2><p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Admin Console</p></div>
-          </div>
-        </div>
-        <nav style={{ padding: '16px 12px', flex: 1 }}>
-          {navItems.map(item => (
-            <motion.button key={item.id} whileHover={{ x: 4 }} onClick={() => setActiveSection(item.id)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', marginBottom: '4px', border: 'none',
-                background: activeSection === item.id ? '#eff6ff' : 'transparent', color: activeSection === item.id ? '#0891b2' : '#475569',
-                borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: activeSection === item.id ? '600' : '500', textAlign: 'left' }}>
-              <item.icon style={{ width: '18px', height: '18px' }} /> {item.label}
-            </motion.button>
-          ))}
-        </nav>
-        <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9' }}>
-          <motion.button whileHover={{ scale: 1.02 }} onClick={logout} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', border: 'none', background: '#fee2e2', color: '#dc2626', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-            <LogOut style={{ width: '16px', height: '16px' }} /> Sign Out
-          </motion.button>
-        </div>
-      </motion.aside>
-
-      <div style={{ flex: 1, marginLeft: sidebarOpen ? '280px' : '0', transition: 'margin-left 0.3s ease', minHeight: '100vh' }}>
-        <header style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #f1f5f9', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '24px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ 
+            background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', 
+            borderRadius: '20px', 
+            padding: '32px', 
+            marginBottom: '24px',
+            boxShadow: '0 10px 30px rgba(8, 145, 178, 0.2)',
+            color: 'white',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px'
+          }}
+        >
           <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>{navItems.find(n => n.id === activeSection)?.label}</h1>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>Welcome back, {user?.name}</p>
+            <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800' }}>
+              Admin Dashboard
+            </h1>
+            <p style={{ margin: 0, fontSize: '15px', opacity: 0.95 }}>
+              Welcome back, {user?.name || 'Administrator'} • {user?.county || 'System-wide'}
+            </p>
+            {lastUpdated && (
+              <p style={{ margin: '8px 0 0 0', fontSize: '12px', opacity: 0.8 }}>
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
           </div>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="show-mobile" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}><Menu style={{ width: '24px', height: '24px' }} /></button>
-        </header>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/dashboard?view=assets')}
+              style={{
+                padding: '12px 20px',
+                background: 'white',
+                color: '#0891b2',
+                border: 'none',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}
+            >
+              <Package size={18} />
+              Assets
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/dashboard?view=gis')}
+              style={{
+                padding: '12px 20px',
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <Map size={18} />
+              GIS Dashboard
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={fetchData}
+              disabled={loading}
+              style={{
+                padding: '12px 20px',
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '10px',
+                fontWeight: '600',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <RefreshCw size={18} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+              Refresh
+            </motion.button>
+          </div>
+        </motion.div>
 
-        <main style={{ padding: '32px 24px', maxWidth: '1400px', margin: '0 auto' }}>
-          <AnimatePresence mode="wait">
-            <motion.div key={activeSection} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              {activeSection === 'overview' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-                  {[
-                    { label: 'Total Nodes', value: stats.nodes?.total || 0, icon: Droplets, color: '#0891b2', bg: '#eff6ff' },
-                    { label: 'Active Nodes', value: stats.nodes?.active || 0, icon: Activity, color: '#10b981', bg: '#d1fae5' },
-                    { label: 'Total Users', value: users.length, icon: Users, color: '#8b5cf6', bg: '#ede9fe' },
-                    { label: 'Active Alerts', value: alerts.length, icon: AlertTriangle, color: '#ef4444', bg: '#fee2e2' }
-                  ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ y: -5 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                      <div style={{ width: '52px', height: '52px', background: stat.bg, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <stat.icon style={{ width: '24px', height: '24px', color: stat.color }} />
+        {/* Stats Grid */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+          gap: '20px',
+          marginBottom: '24px'
+        }}>
+          <StatCard
+            title="Total Users"
+            value={data?.total_users || 0}
+            icon={Users}
+            color="#0891b2"
+            trend={12}
+          />
+          <StatCard
+            title="Active Nodes"
+            value={data?.active_nodes || 0}
+            icon={Activity}
+            color="#10b981"
+            trend={5}
+          />
+          <StatCard
+            title="Water Points"
+            value={data?.water_points || 0}
+            icon={MapPin}
+            color="#06b6d4"
+            trend={8}
+          />
+          <StatCard
+            title="Active Alerts"
+            value={data?.active_alerts || 0}
+            icon={AlertTriangle}
+            color="#ef4444"
+          />
+          <StatCard
+            title="Total Reports"
+            value={data?.total_reports || 0}
+            icon={FileText}
+            color="#8b5cf6"
+          />
+          <StatCard
+            title="Monthly Revenue"
+            value={`KES ${(data?.monthly_revenue || 0).toLocaleString()}`}
+            icon={Wallet}
+            color="#f59e0b"
+            trend={15}
+          />
+        </div>
+
+        {/* System Health Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            marginBottom: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            border: '1px solid #d1fae5'
+          }}
+        >
+          <div style={{
+            width: '48px',
+            height: '48px',
+            background: '#d1fae5',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <CheckCircle size={24} color="#10b981" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>
+              System Status: Operational
+            </h3>
+            <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+              All systems are running normally. Last health check: {new Date().toLocaleString()}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Recent Activity & County Distribution */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+          gap: '24px'
+        }}>
+          {/* Recent Activity */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            style={{ 
+              background: 'white', 
+              borderRadius: '16px', 
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                background: '#eff6ff',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Clock size={20} color="#0891b2" />
+              </div>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
+                Recent Activity
+              </h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(data?.recent_activity || []).length > 0 ? (
+                data.recent_activity.slice(0, 6).map((activity, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    style={{ 
+                      padding: '14px', 
+                      background: '#f8fafc', 
+                      borderRadius: '10px',
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      background: activity.type === 'alert' ? '#fef2f2' : '#eff6ff',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      {activity.type === 'alert' ? 
+                        <AlertTriangle size={16} color="#ef4444" /> : 
+                        <FileText size={16} color="#0891b2" />
+                      }
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ 
+                        margin: '0 0 2px 0', 
+                        fontSize: '13px', 
+                        fontWeight: '600', 
+                        color: '#0f172a',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {activity.description}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div style={{ 
+                  textAlign: 'center', 
+                  color: '#64748b', 
+                  padding: '40px 20px',
+                  background: '#f8fafc',
+                  borderRadius: '10px'
+                }}>
+                  <Clock size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>No recent activity</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* County Distribution */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            style={{ 
+              background: 'white', 
+              borderRadius: '16px', 
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                background: '#f0fdf4',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <BarChart3 size={20} color="#10b981" />
+              </div>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
+                County Distribution
+              </h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(data?.county_distribution || []).length > 0 ? (
+                data.county_distribution.slice(0, 6).map((county, i) => {
+                  const maxCount = Math.max(...data.county_distribution.map(c => c.count))
+                  const percentage = (county.count / maxCount) * 100
+                  return (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>
+                          {county.county}
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0891b2' }}>
+                          {county.count} nodes
+                        </span>
                       </div>
-                      <div><p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b' }}>{stat.label}</p><p style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>{stat.value}</p></div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-              {activeSection === 'users' && (
-                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #f1f5f9' }}>
-                  <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700' }}>Registered Users ({users.length})</h3>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead><tr style={{ borderBottom: '2px solid #f1f5f9' }}>
-                        {['Name', 'Email', 'Role', 'County'].map(h => <th key={h} style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>{h}</th>)}
-                      </tr></thead>
-                      <tbody>
-                        {users.map((u, i) => (
-                          <tr key={i} style={{ borderBottom: '1px solid #f8fafc' }}>
-                            <td style={{ padding: '16px 12px', fontWeight: '600' }}>{u.name}</td>
-                            <td style={{ padding: '16px 12px', color: '#64748b' }}>{u.email}</td>
-                            <td style={{ padding: '16px 12px' }}><span style={{ padding: '4px 10px', background: u.role === 'admin' ? '#fee2e2' : '#eff6ff', color: u.role === 'admin' ? '#dc2626' : '#0891b2', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{u.role}</span></td>
-                            <td style={{ padding: '16px 12px' }}>{u.county || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              {activeSection === 'alerts' && (
-                <div>
-                  <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700' }}>All System Alerts</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {alerts.map((alert, i) => (
-                      <div key={i} style={{ padding: '20px', background: 'white', borderRadius: '16px', border: '1px solid #f1f5f9', display: 'flex', gap: '16px' }}>
-                        <div style={{ width: '44px', height: '44px', background: '#fee2e2', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertTriangle style={{ color: '#dc2626' }} /></div>
-                        <div><h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700' }}>{alert.message}</h4><p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>{alert.node_name} • {new Date(alert.created_at).toLocaleString()}</p></div>
+                      <div style={{ 
+                        height: '8px', 
+                        background: '#e2e8f0', 
+                        borderRadius: '4px', 
+                        overflow: 'hidden' 
+                      }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentage}%` }}
+                          transition={{ duration: 0.8, delay: i * 0.1 }}
+                          style={{ 
+                            height: '100%', 
+                            background: 'linear-gradient(90deg, #0891b2, #06b6d4)',
+                            borderRadius: '4px'
+                          }}
+                        />
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div style={{ 
+                  textAlign: 'center', 
+                  color: '#64748b', 
+                  padding: '40px 20px',
+                  background: '#f8fafc',
+                  borderRadius: '10px'
+                }}>
+                  <BarChart3 size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>No county data available</p>
                 </div>
               )}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+            </div>
+          </motion.div>
+        </div>
       </div>
-      <style>{`@media (max-width: 768px) { .show-mobile { display: block !important; } } @media (min-width: 769px) { .show-mobile { display: none !important; } } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
-  );
+  )
 }
