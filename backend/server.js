@@ -1,12 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 dotenv.config();
 
 const app = express();
 
-// CORS Configuration
+// ============================================
+// CORS CONFIGURATION
+// ============================================
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -39,13 +42,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// Database connection
+// ============================================
+// DATABASE CONNECTION
+// ============================================
 const db = require('./db');
+
 db.query('SELECT NOW()')
   .then(() => console.log('✅ Database connected successfully'))
   .catch((err) => console.error('❌ Database connection failed:', err.message));
 
-// Route imports
+// ============================================
+// ROUTE IMPORTS
+// ============================================
 const authRoutes = require('./routes/auth');
 const citizenRoutes = require('./routes/citizen');
 const reportRoutes = require('./routes/reports');
@@ -57,8 +65,11 @@ const gisRoutes = require('./routes/gis');
 const adminRoutes = require('./routes/admin');
 const countyRoutes = require('./routes/county');
 const operatorRoutes = require('./routes/operator');
+const assetsRoutes = require('./routes/assets');
 
-// Route mounting
+// ============================================
+// ROUTE MOUNTING
+// ============================================
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -79,8 +90,11 @@ app.use('/api/gis', gisRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/county', countyRoutes);
 app.use('/api/operator', operatorRoutes);
+app.use('/api/assets', assetsRoutes);
 
-// Error handling
+// ============================================
+// ERROR HANDLING
+// ============================================
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
@@ -95,7 +109,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Server startup
+// ============================================
+// SERVER STARTUP
+// ============================================
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
@@ -107,7 +123,7 @@ app.listen(PORT, () => {
   console.log(`✅ API Base: http://localhost:${PORT}/api`);
   console.log(`✅ Health: http://localhost:${PORT}/api/health`);
   console.log(`✅ GIS: http://localhost:${PORT}/api/gis/assets`);
-  console.log(`✅ GIS Stats: http://localhost:${PORT}/api/gis/stats`);
+  console.log(`✅ Assets: http://localhost:${PORT}/api/assets`);
   console.log(`✅ Admin: http://localhost:${PORT}/api/admin/dashboard-stats`);
   console.log(`✅ County: http://localhost:${PORT}/api/county/dashboard-stats`);
   console.log(`✅ Operator: http://localhost:${PORT}/api/operator/dashboard-stats`);
