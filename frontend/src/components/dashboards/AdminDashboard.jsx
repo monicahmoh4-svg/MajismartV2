@@ -6,11 +6,10 @@ import { motion } from 'framer-motion'
 import { 
   Users, Activity, MapPin, AlertTriangle, Wallet, 
   FileText, RefreshCw, Map, TrendingUp, TrendingDown,
-  CheckCircle, Clock, BarChart3
+  CheckCircle, Clock, BarChart3, Package
 } from 'lucide-react'
-import { Loading, ErrorState } from '../ui/StateViews'
+import { Loading } from '../ui/StateViews'
 
-// Inline StatCard component (since it may not be exported properly)
 function StatCard({ title, value, icon: Icon, color = '#0891b2', trend }) {
   return (
     <motion.div
@@ -84,7 +83,6 @@ export default function AdminDashboard() {
       setLastUpdated(new Date())
     } catch (err) {
       console.error('Admin dashboard fetch error:', err)
-      // Provide fallback data so dashboard still renders
       setData({
         total_users: 0,
         active_nodes: 0,
@@ -96,7 +94,7 @@ export default function AdminDashboard() {
         county_distribution: [],
         system_health: 'operational'
       })
-      setError(null) // Don't show error, use fallback data
+      setError(null)
     } finally {
       setLoading(false)
     }
@@ -142,7 +140,7 @@ export default function AdminDashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard?view=gis')}
+              onClick={() => navigate('/dashboard?view=assets')}
               style={{
                 padding: '12px 20px',
                 background: 'white',
@@ -156,6 +154,28 @@ export default function AdminDashboard() {
                 alignItems: 'center',
                 gap: '8px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}
+            >
+              <Package size={18} />
+              Assets
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/dashboard?view=gis')}
+              style={{
+                padding: '12px 20px',
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(10px)'
               }}
             >
               <Map size={18} />
