@@ -1,260 +1,200 @@
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, useMap, Tooltip } from 'react-leaflet'
+import { useEffect, useState, useMemo } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import './gis-styles.css'
 import L from 'leaflet'
 
-import icon from 'leaflet/dist/images/marker-icon.png'
-import iconShadow from 'leaflet/dist/images/marker-shadow.png'
-
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
+// Fix default marker icons for Vite production builds
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
 })
-L.Marker.prototype.options.icon = DefaultIcon
 
-function MapController({ center, zoom }) {
-  const map = useMap()
-  useEffect(() => {
-    map.setView(center, zoom)
-  }, [center, zoom, map])
-  return null
+function getMarkerIcon(status) {
+  const color = status === 'active' ? '#10b981' : status === 'warning' ? '#f59e0b' : '#ef4444'
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      background-color: ${color};
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -16]
+  })
 }
 
 export default function InteractiveMap({ assets = [], activeLayers = {}, onAssetClick }) {
-  const [mapCenter, setMapCenter] = useState([-0.0236, 37.9209])
-  const [mapZoom, setMapZoom] = useState(7)
+  const defaultCenter = [-0.5, 37.5]
+  const defaultZoom = 7
 
-  const sensors = activeLayers.sensors ? assets.filter(a => a.type === 'sensor') : []
-  const reservoirs = activeLayers.reservoirs ? assets.filter(a => a.type === 'reservoir') : []
-  const treatmentPlants = activeLayers.treatmentPlants ? assets.filter(a => a.type === 'treatment_plant') : []
-  const waterTowers = activeLayers.waterTowers ? assets.filter(a => a.type === 'water_tower') : []
-  const waterPoints = activeLayers.waterPoints ? assets.filter(a => a.type === 'water_point') : []
-  const valves = activeLayers.valves ? assets.filter(a => a.type === 'valve') : []
-  const hydrants = activeLayers.hydrants ? assets.filter(a => a.type === 'hydrant') : []
-  const pipelines = activeLayers.pipelines ? assets.filter(a => a.type === 'pipeline') : []
-  const dmas = activeLayers.dmas ? assets.filter(a => a.type === 'dma') : []
+  const pointAssets = useMemo(() => {
+    return assets.filter(a => 
+      a.type !== 'dma' && a.type !== 'pipeline' && a.latitude && a.longitude
+    )
+  }, [assets])
 
-  const getMarkerColor = (status) => {
-    if (status === 'active') return '#10b981'
-    if (status === 'warning') return '#f59e0b'
-    return '#ef4444'
-  }
+  const pipelineAssets = useMemo(() => {
+    return activeLayers.pipelines ? assets.filter(a => a.type === 'pipeline' && a.coordinates) : []
+  }, [assets, activeLayers.pipelines])
 
-  const getAssetIcon = (type, status) => {
-    const color = getMarkerColor(status)
-    return L.divIcon({
-      className: 'custom-marker',
-      html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
-        <div style="width: 8px; height: 8px; background: white; border-radius: 50%;"></div>
-      </div>`,
-      iconSize: [30, 30],
-      iconAnchor: [15, 15]
+  const dmaAssets = useMemo(() => {
+    return activeLayers.dmas ? assets.filter(a => a.type === 'dma' && a.coordinates) : []
+  }, [assets, activeLayers.dmas])
+
+  const visiblePoints = useMemo(() => {
+    return pointAssets.filter(a => {
+      if (a.type === 'sensor' && !activeLayers.sensors) return false
+      if (a.type === 'reservoir' && !activeLayers.reservoirs) return false
+      if (a.type === 'treatment_plant' && !activeLayers.treatmentPlants) return false
+      if (a.type === 'water_tower' && !activeLayers.waterTowers) return false
+      if (a.type === 'water_point' && !activeLayers.waterPoints) return false
+      if (a.type === 'valve' && !activeLayers.valves) return false
+      if (a.type === 'hydrant' && !activeLayers.hydrants) return false
+      return true
     })
-  }
+  }, [pointAssets, activeLayers])
 
-  const handleMarkerClick = (asset) => {
-    if (onAssetClick) onAssetClick(asset)
-  }
-
-  const formatReading = (value, unit = '') => {
-    if (value === null || value === undefined || value === '') return 'N/A'
-    return `${value}${unit}`
-  }
+  const formatVal = (v, u = '') => (v !== null && v !== undefined && v !== '') ? `${v}${u}` : null
 
   return (
     <MapContainer 
-      center={mapCenter} 
-      zoom={mapZoom} 
-      style={{ height: '100%', width: '100%', borderRadius: '12px', zIndex: 1 }}
+      center={defaultCenter} 
+      zoom={defaultZoom} 
+      style={{ height: '100%', width: '100%' }}
+      scrollWheelZoom={true}
     >
-      <MapController center={mapCenter} zoom={mapZoom} />
-      
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution='&copy; OpenStreetMap'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* DMA Polygons with Labels */}
-      {dmas.map((dma, idx) => (
+      {/* DMA Polygons with permanent labels */}
+      {dmaAssets.map((dma, idx) => (
         <Polygon 
-          key={`dma-${idx}`} 
+          key={`dma-${dma.id || idx}`} 
           positions={dma.coordinates} 
-          pathOptions={{ color: '#8b5cf6', weight: 3, fillOpacity: 0.15, dashArray: '5, 5' }}
+          pathOptions={{ color: '#8b5cf6', weight: 2, fillOpacity: 0.12, dashArray: '6, 4' }}
         >
-          <Tooltip permanent={true} direction="center" className="custom-tooltip" style={{ 
-            fontSize: '12px', 
-            fontWeight: 'bold', 
-            color: '#8b5cf6',
-            background: 'rgba(255,255,255,0.9)',
-            border: '2px solid #8b5cf6',
-            borderRadius: '4px',
-            padding: '4px 8px'
-          }}>
+          <Tooltip permanent direction="center" className="dma-label">
             {dma.name}
           </Tooltip>
           <Popup>
-            <div style={{ padding: '8px', minWidth: '220px' }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{dma.name}</h4>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                <strong>County:</strong> {dma.county}
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                <strong>Coverage:</strong> {dma.coverage_km2} km²
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                <strong>Population Served:</strong> {(dma.population_served || 0).toLocaleString()}
-              </div>
+            <div style={{ padding: '12px' }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{dma.name}</h4>
+              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>County:</strong> {dma.county}</p>
+              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>Coverage:</strong> {dma.coverage_km2} km²</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}><strong>Population:</strong> {(dma.population_served || 0).toLocaleString()}</p>
             </div>
           </Popup>
         </Polygon>
       ))}
 
-      {/* Pipeline Lines with Labels */}
-      {pipelines.map((pipe, idx) => (
+      {/* Pipelines */}
+      {pipelineAssets.map((pipe, idx) => (
         <Polyline 
-          key={`pipe-${idx}`} 
+          key={`pipe-${pipe.id || idx}`} 
           positions={pipe.coordinates} 
-          pathOptions={{ color: getMarkerColor(pipe.status), weight: 5, opacity: 0.8 }}
+          pathOptions={{ color: pipe.status === 'active' ? '#0891b2' : '#ef4444', weight: 4, opacity: 0.8 }}
         >
-          <Tooltip permanent={false} direction="top" sticky>
-            <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{pipe.name}</div>
-            <div style={{ fontSize: '10px' }}>{pipe.diameter_mm}mm • {pipe.material}</div>
+          <Tooltip sticky>
+            <strong>{pipe.name}</strong><br/>
+            {pipe.diameter_mm}mm • {pipe.material} • {pipe.length_km}km
           </Tooltip>
           <Popup>
-            <div style={{ padding: '8px', minWidth: '220px' }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{pipe.name}</h4>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                <strong>Diameter:</strong> {pipe.diameter_mm}mm
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                <strong>Material:</strong> {pipe.material}
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                <strong>Length:</strong> {pipe.length_km} km
-              </div>
+            <div style={{ padding: '12px' }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{pipe.name}</h4>
+              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>Diameter:</strong> {pipe.diameter_mm}mm</p>
+              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>Material:</strong> {pipe.material}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}><strong>Length:</strong> {pipe.length_km} km</p>
             </div>
           </Popup>
         </Polyline>
       ))}
 
-      {/* Asset Markers with Labels */}
-      {[...sensors, ...reservoirs, ...treatmentPlants, ...waterTowers, ...waterPoints, ...valves, ...hydrants].map((asset, idx) => (
+      {/* Asset Markers with permanent name labels */}
+      {visiblePoints.map((asset, idx) => (
         <Marker 
           key={`${asset.type}-${asset.id || idx}`} 
           position={[asset.latitude, asset.longitude]}
-          icon={getAssetIcon(asset.type, asset.status)}
-          eventHandlers={{
-            click: () => handleMarkerClick(asset)
-          }}
+          icon={getMarkerIcon(asset.status)}
+          eventHandlers={{ click: () => onAssetClick && onAssetClick(asset) }}
         >
-          {/* Permanent Label on Map */}
-          <Tooltip 
-            permanent={true} 
-            direction="top" 
-            className="custom-label"
-            style={{ 
-              fontSize: '11px', 
-              fontWeight: '600', 
-              color: '#0f172a',
-              background: 'rgba(255,255,255,0.95)',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              padding: '3px 6px',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          >
+          {/* Permanent name label above marker */}
+          <Tooltip permanent direction="top" offset={[0, -8]} className="custom-label">
             {asset.name}
           </Tooltip>
 
-          {/* Detailed Popup */}
-          <Popup>
-            <div style={{ padding: '8px', minWidth: '280px', maxHeight: '400px', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{asset.name}</h4>
-                <span style={{ 
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '2px 8px', 
-                  borderRadius: '10px', 
-                  fontSize: '10px', 
-                  fontWeight: '700',
+          {/* Detailed popup on click */}
+          <Popup maxWidth={320}>
+            <div style={{ padding: '12px' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '10px' }}>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0f172a', flex: 1 }}>{asset.name}</h4>
+                <span style={{
+                  padding: '3px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700',
                   background: asset.status === 'active' ? '#d1fae5' : '#fee2e2',
-                  color: asset.status === 'active' ? '#059669' : '#dc2626'
+                  color: asset.status === 'active' ? '#059669' : '#dc2626',
+                  marginLeft: '8px', whiteSpace: 'nowrap'
                 }}>
-                  <span style={{ 
-                    width: '6px', 
-                    height: '6px', 
-                    borderRadius: '50%', 
-                    background: asset.status === 'active' ? '#10b981' : '#ef4444',
-                    animation: 'pulse 2s infinite'
-                  }}></span>
-                  {asset.status.toUpperCase()}
+                  {asset.status?.toUpperCase() || 'UNKNOWN'}
                 </span>
               </div>
 
-              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #e2e8f0' }}>
-                <strong>Type:</strong> {asset.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} • 
-                {asset.county && <span> <strong>County:</strong> {asset.county}</span>}
+              {/* Type and County */}
+              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
+                <strong>Type:</strong> {(asset.type || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                {asset.county && <span> • <strong>County:</strong> {asset.county}</span>}
               </div>
 
-              {/* Live Sensor Readings */}
-              {(asset.water_level !== null || asset.pressure !== null || asset.flow_rate !== null || asset.temperature !== null || asset.quality_index !== null || asset.ph !== null) && (
-                <div style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', borderRadius: '8px', padding: '12px', marginBottom: '8px', border: '1px solid #bae6fd' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                    <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#0891b2' }}>LIVE SENSOR DATA</span>
+              {/* Live Sensor Data */}
+              {(formatVal(asset.water_level) || formatVal(asset.pressure) || formatVal(asset.flow_rate) || formatVal(asset.temperature) || formatVal(asset.quality_index) || formatVal(asset.ph)) && (
+                <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '10px', marginBottom: '10px', border: '1px solid #bae6fd' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: '#0891b2', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '7px', height: '7px', background: '#10b981', borderRadius: '50%', display: 'inline-block' }}></span>
+                    LIVE SENSOR DATA
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px' }}>
-                    {asset.water_level !== null && asset.water_level !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>Water Level:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.water_level, '%')}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    {formatVal(asset.water_level, '%') && (
+                      <div style={{ background: 'white', padding: '6px 8px', borderRadius: '6px' }}>
+                        <div style={{ fontSize: '9px', color: '#94a3b8' }}>Water Level</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{asset.water_level}%</div>
                       </div>
                     )}
-                    {asset.pressure !== null && asset.pressure !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>Pressure:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.pressure, ' PSI')}</div>
+                    {formatVal(asset.pressure, ' PSI') && (
+                      <div style={{ background: 'white', padding: '6px 8px', borderRadius: '6px' }}>
+                        <div style={{ fontSize: '9px', color: '#94a3b8' }}>Pressure</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{asset.pressure} PSI</div>
                       </div>
                     )}
-                    {asset.flow_rate !== null && asset.flow_rate !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>Flow Rate:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.flow_rate, ' L/min')}</div>
+                    {formatVal(asset.flow_rate, ' L/m') && (
+                      <div style={{ background: 'white', padding: '6px 8px', borderRadius: '6px' }}>
+                        <div style={{ fontSize: '9px', color: '#94a3b8' }}>Flow Rate</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{asset.flow_rate} L/m</div>
                       </div>
                     )}
-                    {asset.temperature !== null && asset.temperature !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>Temp:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.temperature, '°C')}</div>
+                    {formatVal(asset.temperature, '°C') && (
+                      <div style={{ background: 'white', padding: '6px 8px', borderRadius: '6px' }}>
+                        <div style={{ fontSize: '9px', color: '#94a3b8' }}>Temperature</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{asset.temperature}°C</div>
                       </div>
                     )}
-                    {asset.quality_index !== null && asset.quality_index !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>Quality:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.quality_index, '%')}</div>
+                    {formatVal(asset.quality_index, '%') && (
+                      <div style={{ background: 'white', padding: '6px 8px', borderRadius: '6px' }}>
+                        <div style={{ fontSize: '9px', color: '#94a3b8' }}>Quality</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{asset.quality_index}%</div>
                       </div>
                     )}
-                    {asset.ph !== null && asset.ph !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>pH:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.ph)}</div>
-                      </div>
-                    )}
-                    {asset.turbidity !== null && asset.turbidity !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>Turbidity:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.turbidity, ' NTU')}</div>
-                      </div>
-                    )}
-                    {asset.tds !== null && asset.tds !== undefined && (
-                      <div style={{ background: 'white', padding: '6px', borderRadius: '6px' }}>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>TDS:</span>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{formatReading(asset.tds, ' ppm')}</div>
+                    {formatVal(asset.ph) && (
+                      <div style={{ background: 'white', padding: '6px 8px', borderRadius: '6px' }}>
+                        <div style={{ fontSize: '9px', color: '#94a3b8' }}>pH</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{asset.ph}</div>
                       </div>
                     )}
                   </div>
@@ -263,26 +203,14 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
 
               {/* Asset Details */}
               <div style={{ fontSize: '11px', color: '#475569' }}>
-                {asset.capacity && (
-                  <div style={{ marginBottom: '4px' }}><strong>Capacity:</strong> {asset.capacity}</div>
-                )}
-                {asset.diameter_mm && (
-                  <div style={{ marginBottom: '4px' }}><strong>Diameter:</strong> {asset.diameter_mm}mm</div>
-                )}
-                {asset.material && (
-                  <div style={{ marginBottom: '4px' }}><strong>Material:</strong> {asset.material}</div>
-                )}
-                {asset.manufacturer && (
-                  <div style={{ marginBottom: '4px' }}><strong>Manufacturer:</strong> {asset.manufacturer}</div>
-                )}
-                {asset.serial_number && (
-                  <div style={{ marginBottom: '4px' }}><strong>Serial:</strong> {asset.serial_number}</div>
-                )}
+                {asset.capacity && <div style={{ marginBottom: '3px' }}><strong>Capacity:</strong> {asset.capacity}</div>}
+                {asset.diameter_mm && <div style={{ marginBottom: '3px' }}><strong>Diameter:</strong> {asset.diameter_mm}mm</div>}
+                {asset.material && <div style={{ marginBottom: '3px' }}><strong>Material:</strong> {asset.material}</div>}
                 <div style={{ marginTop: '8px', fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8', background: '#f8fafc', padding: '6px', borderRadius: '4px' }}>
-                  📍 {asset.latitude.toFixed(6)}, {asset.longitude.toFixed(6)}
+                  📍 {Number(asset.latitude).toFixed(6)}, {Number(asset.longitude).toFixed(6)}
                 </div>
                 {asset.last_reading_at && (
-                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontStyle: 'italic' }}>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
                     Last update: {new Date(asset.last_reading_at).toLocaleString()}
                   </div>
                 )}
