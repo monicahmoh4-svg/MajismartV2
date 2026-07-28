@@ -2,15 +2,26 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MapPin, Layers, Search, Download, Plus, X, Save, Trash2, 
-  RefreshCw, FileText, Activity
+  RefreshCw, FileText, Activity, Filter
 } from 'lucide-react'
 import InteractiveMap from '../components/gis/InteractiveMap'
 import api from '../api'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-// MajiSmart Logo as base64 (water drop SVG)
 const MAJISMART_LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwZWE1ZTkiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwNmI2ZDQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0idXJsKCNnKSIgcng9IjEwMCIvPjxwYXRoIGQ9Ik0yNTYgODAgQzI1NiA4MCAxMjAgMjQwIDEyMCAzMjAgQTEzNiAxMzYgMCAwIDAgMzkyIDMyMCBDMzkyIDI0MCAyNTYgODAgMjU2IDgwIFoiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4='
+
+// All 47 Kenyan counties
+const ALL_COUNTIES = [
+  'Mombasa', 'Kwale', 'Kilifi', 'Tana River', 'Lamu', 'Taita-Taveta',
+  'Garissa', 'Wajir', 'Mandera', 'Marsabit', 'Isiolo', 'Meru',
+  'Tharaka-Nithi', 'Embu', 'Kitui', 'Machakos', 'Makueni', 'Nyandarua',
+  'Nyeri', 'Kirinyaga', 'Muranga', 'Kiambu', 'Turkana', 'West Pokot',
+  'Samburu', 'Trans-Nzoia', 'Uasin Gishu', 'Elgeyo-Marakwet', 'Nandi',
+  'Baringo', 'Laikipia', 'Nakuru', 'Narok', 'Kajiado', 'Kericho',
+  'Bomet', 'Kakamega', 'Vihiga', 'Bungoma', 'Busia', 'Siaya',
+  'Kisumu', 'Homa Bay', 'Migori', 'Kisii', 'Nyamira', 'Nairobi'
+]
 
 export default function GISDashboard() {
   const [assets, setAssets] = useState([])
@@ -35,12 +46,11 @@ export default function GISDashboard() {
   useEffect(() => {
     fetchGISData()
     fetchStats()
-    // Auto-refresh live data every 30 seconds
     const interval = setInterval(() => {
       fetchGISData()
     }, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [selectedCounty])
 
   const fetchGISData = async () => {
     try {
@@ -114,7 +124,6 @@ export default function GISDashboard() {
     }
   }
 
-  // Professional PDF Report Generation
   const generatePDFReport = async () => {
     setGeneratingPDF(true)
     try {
@@ -122,19 +131,15 @@ export default function GISDashboard() {
       const pageWidth = doc.internal.pageSize.getWidth()
       const now = new Date()
       
-      // ===== HEADER WITH LOGO =====
-      // Cyan gradient header bar
       doc.setFillColor(8, 145, 178)
       doc.rect(0, 0, pageWidth, 40, 'F')
       
-      // Add logo
       try {
         doc.addImage(MAJISMART_LOGO, 'PNG', 15, 8, 24, 24)
       } catch (e) {
-        console.warn('Logo embedding failed, continuing without it')
+        console.warn('Logo embedding failed')
       }
       
-      // Title
       doc.setTextColor(255, 255, 255)
       doc.setFontSize(22)
       doc.setFont('helvetica', 'bold')
@@ -143,14 +148,12 @@ export default function GISDashboard() {
       doc.setFont('helvetica', 'normal')
       doc.text('Enterprise GIS Infrastructure Report', 45, 26)
       
-      // Date on right
       doc.setFontSize(9)
       doc.text(`Generated: ${now.toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth - 15, 18, { align: 'right' })
       doc.text(`Time: ${now.toLocaleTimeString('en-KE')}`, pageWidth - 15, 24, { align: 'right' })
       
       let yPos = 55
       
-      // ===== EXECUTIVE SUMMARY =====
       doc.setTextColor(15, 23, 42)
       doc.setFontSize(16)
       doc.setFont('helvetica', 'bold')
@@ -166,17 +169,16 @@ export default function GISDashboard() {
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(71, 85, 105)
       doc.text(
-        `This report provides a comprehensive overview of MajiSmart's water infrastructure network across Kenya's 47 counties. The system monitors ${stats?.total_assets || 0} total assets, with ${stats?.total_active || 0} currently operational.`,
+        `This report provides a comprehensive overview of MajiSmart's water infrastructure network${selectedCounty ? ` in ${selectedCounty}` : ' across Kenya'}. The system monitors ${stats?.total_assets || 0} total assets, with ${stats?.total_active || 0} currently operational.`,
         15, yPos, { maxWidth: pageWidth - 30 }
       )
       yPos += 18
       
-      // ===== KEY METRICS BOXES =====
       const metrics = [
         { label: 'Total Assets', value: stats?.total_assets || 0, color: [8, 145, 178] },
         { label: 'Active', value: stats?.total_active || 0, color: [16, 185, 129] },
-        { label: 'Counties', value: counties.length, color: [139, 92, 246] },
-        { label: 'Reports', value: filteredAssets.length, color: [245, 158, 11] }
+        { label: 'Counties', value: counties.length || 1, color: [139, 92, 246] },
+        { label: 'Live Sensors', value: stats?.live_sensors || 0, color: [245, 158, 11] }
       ]
       
       const boxWidth = (pageWidth - 45) / 4
@@ -194,7 +196,6 @@ export default function GISDashboard() {
       })
       yPos += 40
       
-      // ===== ASSET BREAKDOWN BY TYPE =====
       doc.setTextColor(15, 23, 42)
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
@@ -224,7 +225,6 @@ export default function GISDashboard() {
         yPos = doc.lastAutoTable.finalY + 15
       }
       
-      // ===== COUNTY DISTRIBUTION =====
       if (yPos > 240) {
         doc.addPage()
         yPos = 20
@@ -257,7 +257,6 @@ export default function GISDashboard() {
         yPos = doc.lastAutoTable.finalY + 15
       }
       
-      // ===== DETAILED ASSET INVENTORY =====
       if (yPos > 200) {
         doc.addPage()
         yPos = 20
@@ -274,7 +273,7 @@ export default function GISDashboard() {
       
       const assetData = filteredAssets
         .filter(a => a.type !== 'dma' && a.type !== 'pipeline')
-        .slice(0, 100) // Limit to 100 for PDF size
+        .slice(0, 100)
         .map(a => [
           a.name || 'Unnamed',
           (a.type || '').replace('_', ' '),
@@ -309,15 +308,11 @@ export default function GISDashboard() {
         })
       }
       
-      // ===== FOOTER ON EVERY PAGE =====
       const pageCount = doc.internal.getNumberOfPages()
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i)
-        
-        // Footer bar
         doc.setFillColor(15, 23, 42)
         doc.rect(0, doc.internal.pageSize.getHeight() - 15, pageWidth, 15, 'F')
-        
         doc.setTextColor(148, 163, 184)
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
@@ -326,13 +321,12 @@ export default function GISDashboard() {
         doc.text('Confidential • For Official Use Only', pageWidth / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' })
       }
       
-      // Save PDF
-      const filename = `MajiSmart_GIS_Report_${now.toISOString().split('T')[0]}.pdf`
+      const filename = `MajiSmart_GIS_Report_${selectedCounty ? selectedCounty.replace(/\s+/g, '_') + '_' : ''}${now.toISOString().split('T')[0]}.pdf`
       doc.save(filename)
       alert(`✅ Report generated: ${filename}`)
     } catch (error) {
       console.error('PDF generation failed:', error)
-      alert('❌ Failed to generate PDF report.')
+      alert(' Failed to generate PDF report.')
     } finally {
       setGeneratingPDF(false)
     }
@@ -357,16 +351,29 @@ export default function GISDashboard() {
             />
           </div>
           
-          <select 
-            value={selectedCounty}
-            onChange={(e) => setSelectedCounty(e.target.value)}
-            style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', background: 'white', cursor: 'pointer' }}
-          >
-            <option value="">All 47 Counties</option>
-            {counties.map(county => (
-              <option key={county} value={county}>{county}</option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter style={{ width: '18px', height: '18px', color: '#64748b' }} />
+            <select 
+              value={selectedCounty}
+              onChange={(e) => setSelectedCounty(e.target.value)}
+              style={{ 
+                padding: '10px 16px', 
+                borderRadius: '8px', 
+                border: '1px solid #e2e8f0', 
+                fontSize: '14px', 
+                background: 'white',
+                cursor: 'pointer',
+                minWidth: '200px',
+                fontWeight: '600',
+                color: selectedCounty ? '#0891b2' : '#475569'
+              }}
+            >
+              <option value="">All 47 Counties</option>
+              {ALL_COUNTIES.map(county => (
+                <option key={county} value={county}>{county}</option>
+              ))}
+            </select>
+          </div>
 
           <motion.button 
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -419,7 +426,9 @@ export default function GISDashboard() {
               background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', borderRadius: '12px', padding: '16px', 
               marginBottom: '20px', color: 'white'
             }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '700' }}>Network Overview</h4>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '700' }}>
+                Network Overview{selectedCounty && ` - ${selectedCounty}`}
+              </h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <div style={{ fontSize: '24px', fontWeight: '800' }}>{stats.total_assets}</div>
@@ -430,7 +439,7 @@ export default function GISDashboard() {
                   <div style={{ fontSize: '11px', opacity: 0.9 }}>Active</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '24px', fontWeight: '800' }}>{counties.length}</div>
+                  <div style={{ fontSize: '24px', fontWeight: '800' }}>{counties.length || 1}</div>
                   <div style={{ fontSize: '11px', opacity: 0.9 }}>Counties</div>
                 </div>
                 <div>
@@ -527,7 +536,6 @@ export default function GISDashboard() {
               </div>
             </div>
 
-            {/* Live Sensor Data Section */}
             {(selectedAsset.water_level !== null || selectedAsset.pressure !== null || selectedAsset.flow_rate !== null) && (
               <div style={{ 
                 background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', 
@@ -664,8 +672,13 @@ export default function GISDashboard() {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>County *</label>
-                    <input type="text" required value={newAsset.county} onChange={(e) => setNewAsset({ ...newAsset, county: e.target.value })} placeholder="e.g., Nairobi"
-                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <select required value={newAsset.county} onChange={(e) => setNewAsset({ ...newAsset, county: e.target.value })}
+                      style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', background: 'white', boxSizing: 'border-box' }}>
+                      <option value="">Select County</option>
+                      {ALL_COUNTIES.map(county => (
+                        <option key={county} value={county}>{county}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
