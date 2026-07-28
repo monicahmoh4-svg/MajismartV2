@@ -2,21 +2,19 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// GET /api/gis/assets - Fetch ALL GIS assets (Resilient, no fragile joins)
+// GET /api/gis/assets - Fetch ALL GIS assets (100% Resilient to missing migration columns)
 router.get('/assets', async (req, res) => {
   try {
     const { type, county, status } = req.query;
     
-    // 1. Query the assets table (Single source of truth for GIS)
+    // 1. Query ONLY base columns guaranteed to exist from the initial GIS migration
     let assetsQuery = `
       SELECT 
         id, name, type, status, latitude, longitude, 
         county, capacity, diameter_mm, material, 
-        installation_date, manufacturer, serial_number,
-        condition, expected_lifespan_years, last_maintenance_date,
-        next_inspection_date, notes, created_at, updated_at
+        manufacturer, serial_number, created_at, updated_at
       FROM assets 
-      WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND deleted_at IS NULL
+      WHERE latitude IS NOT NULL AND longitude IS NOT NULL
     `;
     
     const params = [];
@@ -83,8 +81,7 @@ router.get('/assets', async (req, res) => {
       ...asset,
       latitude: parseFloat(asset.latitude),
       longitude: parseFloat(asset.longitude),
-      diameter_mm: asset.diameter_mm ? parseInt(asset.diameter_mm) : null,
-      expected_lifespan_years: asset.expected_lifespan_years ? parseInt(asset.expected_lifespan_years) : null
+      diameter_mm: asset.diameter_mm ? parseInt(asset.diameter_mm) : null
     }));
     
     // Combine all data
@@ -107,37 +104,23 @@ router.get('/assets', async (req, res) => {
 // POST /api/gis/assets - Create new GIS asset
 router.post('/assets', async (req, res) => {
   try {
-    const { 
-      name, type, latitude, longitude, county, status, 
-      capacity, diameter_mm, material, manufacturer, serial_number 
-    } = req.body;
+    const { name, type, latitude, longitude, county, status, capacity, diameter_mm, material, manufacturer, serial_number } = req.body;
     
     if (!name || !type || !latitude || !longitude) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: name, type, latitude, longitude' 
-      });
+      return res.status(400).json({ error: 'Missing required fields: name, type, latitude, longitude' });
     }
     
     const { rows } = await db.query(
-      `INSERT INTO assets (
-        name, type, latitude, longitude, county, status, 
-        capacity, diameter_mm, material, manufacturer, serial_number
-      ) 
+      `INSERT INTO assets (name, type, latitude, longitude, county, status, capacity, diameter_mm, material, manufacturer, serial_number) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
        RETURNING *`,
       [name, type, latitude, longitude, county, status || 'active', capacity, diameter_mm, material, manufacturer, serial_number]
     );
     
-    res.status(201).json({
-      message: 'Asset created successfully',
-      asset: rows[0]
-    });
+    res.status(201).json({ message: 'Asset created successfully', asset: rows[0] });
   } catch (error) {
     console.error('GIS Asset Create Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to create asset',
-      message: error.message 
-    });
+    res.status(500).json({ error: 'Failed to create asset', message: error.message });
   }
 });
 
@@ -151,12 +134,8 @@ router.put('/assets/:id', async (req, res) => {
     const values = [];
     let paramCount = 1;
     
-    const allowedFields = [
-      'name', 'type', 'latitude', 'longitude', 'county', 'status',
-      'capacity', 'diameter_mm', 'material', 'manufacturer', 'serial_number',
-      'condition', 'expected_lifespan_years', 'last_maintenance_date',
-      'next_inspection_date', 'notes'
-    ];
+    // Only allow updates to guaranteed base columns
+    const allowedFields = ['name', 'type', 'latitude', 'longitude', 'county', 'status', 'capacity', 'diameter_mm', 'material', 'manufacturer', 'serial_number'];
     
     for (const [key, value] of Object.entries(updates)) {
       if (allowedFields.includes(key)) {
@@ -173,66 +152,42 @@ router.put('/assets/:id', async (req, res) => {
     setClauses.push('updated_at = NOW()');
     values.push(id);
     
-    const query = `UPDATE assets SET ${setClauses.join(', ')} WHERE id = $${paramCount} AND deleted_at IS NULL RETURNING *`;
-    
+    const query = `UPDATE assets SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`;
     const { rows } = await db.query(query, values);
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Asset not found' });
     }
     
-    res.json({
-      message: 'Asset updated successfully',
-      asset: rows[0]
-    });
+    res.json({ message: 'Asset updated successfully', asset: rows[0] });
   } catch (error) {
     console.error('GIS Asset Update Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to update asset',
-      message: error.message 
-    });
+    res.status(500).json({ error: 'Failed to update asset', message: error.message });
   }
 });
 
-// DELETE /api/gis/assets/:id - Soft delete asset
+// DELETE /api/gis/assets/:id - Hard delete asset (safest fallback)
 router.delete('/assets/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const { rows } = await db.query(
-      'UPDATE assets SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *',
-      [id]
-    );
+    const { rows } = await db.query('DELETE FROM assets WHERE id = $1 RETURNING *', [id]);
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Asset not found' });
     }
     
-    res.json({ 
-      message: 'Asset deleted successfully', 
-      asset: rows[0] 
-    });
+    res.json({ message: 'Asset deleted successfully', asset: rows[0] });
   } catch (error) {
     console.error('GIS Asset Delete Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to delete asset',
-      message: error.message 
-    });
+    res.status(500).json({ error: 'Failed to delete asset', message: error.message });
   }
 });
 
 // GET /api/gis/assets/:id - Fetch single asset
 router.get('/assets/:id', async (req, res) => {
   try {
-    const { rows } = await db.query(
-      'SELECT * FROM assets WHERE id = $1 AND deleted_at IS NULL',
-      [req.params.id]
-    );
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Asset not found' });
-    }
-    
+    const { rows } = await db.query('SELECT * FROM assets WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Asset not found' });
     res.json(rows[0]);
   } catch (error) {
     console.error('GIS Asset Fetch Error:', error);
@@ -240,7 +195,7 @@ router.get('/assets/:id', async (req, res) => {
   }
 });
 
-// GET /api/gis/stats - GIS statistics
+// GET /api/gis/stats - GIS statistics (Resilient)
 router.get('/stats', async (req, res) => {
   try {
     const { rows: assetStats } = await db.query(`
@@ -248,19 +203,16 @@ router.get('/stats', async (req, res) => {
         type,
         COUNT(*) as count,
         COUNT(*) FILTER (WHERE status = 'active') as active_count,
-        COUNT(*) FILTER (WHERE status = 'offline' OR status = 'maintenance') as offline_count
+        COUNT(*) FILTER (WHERE status != 'active') as offline_count
       FROM assets
-      WHERE deleted_at IS NULL
       GROUP BY type
       ORDER BY count DESC
     `);
     
     const { rows: countyStats } = await db.query(`
-      SELECT 
-        county,
-        COUNT(*) as total_assets
+      SELECT county, COUNT(*) as total_assets
       FROM assets
-      WHERE county IS NOT NULL AND deleted_at IS NULL
+      WHERE county IS NOT NULL
       GROUP BY county
       ORDER BY total_assets DESC
     `);
