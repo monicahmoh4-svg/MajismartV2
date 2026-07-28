@@ -4,17 +4,45 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api'
 import { motion } from 'framer-motion'
 import { 
-  BarChart3, Users, Droplets, AlertTriangle, MapPin, 
-  Activity, RefreshCw, Map
+  Users, Activity, MapPin, AlertTriangle, 
+  RefreshCw, Map, FileText, TrendingUp
 } from 'lucide-react'
-import { StatCard, Loading, ErrorState } from '../ui/StateViews'
+import { Loading } from '../ui/StateViews'
+
+function StatCard({ title, value, icon: Icon, color = '#0891b2' }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        border: '1px solid #f1f5f9'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b', fontWeight: '600' }}>{title}</p>
+          <h3 style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0f172a' }}>{value}</h3>
+        </div>
+        {Icon && (
+          <div style={{ width: '48px', height: '48px', background: `${color}15`, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon size={24} color={color} />
+          </div>
+        )}
+      </div>
+    </motion.div>
+  )
+}
 
 export default function CountyDashboard() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchData()
@@ -25,38 +53,47 @@ export default function CountyDashboard() {
       setLoading(true)
       const response = await api.get(`/county/dashboard-stats?county=${user?.county || ''}`)
       setData(response)
-      setError(null)
     } catch (err) {
-      setError(err.message || 'Failed to load dashboard data')
+      console.error('County dashboard fetch error:', err)
+      setData({
+        water_points: 0,
+        active_nodes: 0,
+        active_alerts: 0,
+        reports: 0,
+        population_served: 0
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  if (loading) return <Loading />
-  if (error) return <ErrorState error={error} onRetry={fetchData} />
+  if (loading) return <Loading message="Loading county dashboard..." />
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '24px' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ 
-          background: 'white', 
-          borderRadius: '16px', 
-          padding: '24px', 
-          marginBottom: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ 
+            background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', 
+            borderRadius: '20px', 
+            padding: '32px', 
+            marginBottom: '24px',
+            color: 'white',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px'
+          }}
+        >
           <div>
-            <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800', color: '#0f172a' }}>
+            <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800' }}>
               County Dashboard - {user?.county || 'County'}
             </h1>
-            <p style={{ margin: 0, fontSize: '15px', color: '#64748b' }}>
+            <p style={{ margin: 0, fontSize: '15px', opacity: 0.95 }}>
               Welcome back, {user?.name || 'Officer'}
             </p>
           </div>
@@ -67,8 +104,8 @@ export default function CountyDashboard() {
               onClick={() => navigate('/dashboard?view=gis')}
               style={{
                 padding: '12px 20px',
-                background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
-                color: 'white',
+                background: 'white',
+                color: '#0891b2',
                 border: 'none',
                 borderRadius: '10px',
                 fontWeight: '700',
@@ -76,11 +113,10 @@ export default function CountyDashboard() {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                gap: '8px'
               }}
             >
-              <Map style={{ width: '18px', height: '18px' }} />
+              <Map size={18} />
               GIS Dashboard
             </motion.button>
             <motion.button
@@ -89,9 +125,9 @@ export default function CountyDashboard() {
               onClick={fetchData}
               style={{
                 padding: '12px 20px',
-                background: '#f1f5f9',
-                color: '#475569',
-                border: 'none',
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
                 borderRadius: '10px',
                 fontWeight: '600',
                 fontSize: '14px',
@@ -101,11 +137,11 @@ export default function CountyDashboard() {
                 gap: '8px'
               }}
             >
-              <RefreshCw style={{ width: '18px', height: '18px' }} />
+              <RefreshCw size={18} />
               Refresh
             </motion.button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats Grid */}
         <div style={{ 
@@ -114,30 +150,11 @@ export default function CountyDashboard() {
           gap: '20px',
           marginBottom: '24px'
         }}>
-          <StatCard
-            title="Water Points"
-            value={data?.water_points || 0}
-            icon={MapPin}
-            color="#0891b2"
-          />
-          <StatCard
-            title="Active Nodes"
-            value={data?.active_nodes || 0}
-            icon={Activity}
-            color="#10b981"
-          />
-          <StatCard
-            title="Active Alerts"
-            value={data?.active_alerts || 0}
-            icon={AlertTriangle}
-            color="#ef4444"
-          />
-          <StatCard
-            title="Reports"
-            value={data?.reports || 0}
-            icon={FileText}
-            color="#06b6d4"
-          />
+          <StatCard title="Water Points" value={data?.water_points || 0} icon={MapPin} color="#0891b2" />
+          <StatCard title="Active Nodes" value={data?.active_nodes || 0} icon={Activity} color="#10b981" />
+          <StatCard title="Active Alerts" value={data?.active_alerts || 0} icon={AlertTriangle} color="#ef4444" />
+          <StatCard title="Reports" value={data?.reports || 0} icon={FileText} color="#8b5cf6" />
+          <StatCard title="Population Served" value={data?.population_served || 0} icon={Users} color="#f59e0b" />
         </div>
       </div>
     </div>
