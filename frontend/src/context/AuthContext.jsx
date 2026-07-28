@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import api from '../api'
 
 const AuthContext = createContext()
@@ -7,7 +6,6 @@ const AuthContext = createContext()
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -34,10 +32,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem('token', response.token)
         localStorage.setItem('user', JSON.stringify(response.user))
         setUser(response.user)
-        
-        // ✅ Redirect to dashboard after successful login
-        navigate('/dashboard')
-        return { success: true }
+        return { success: true, user: response.user }
       } else {
         throw new Error('Invalid response from server')
       }
@@ -58,10 +53,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem('token', response.token)
         localStorage.setItem('user', JSON.stringify(response.user))
         setUser(response.user)
-        
-        // ✅ Redirect to dashboard after successful registration
-        navigate('/dashboard')
-        return { success: true }
+        return { success: true, user: response.user }
       } else {
         throw new Error('Invalid response from server')
       }
@@ -78,7 +70,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setUser(null)
-    navigate('/')
   }
 
   return (
@@ -89,5 +80,9 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }
