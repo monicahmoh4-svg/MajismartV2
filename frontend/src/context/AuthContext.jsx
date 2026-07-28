@@ -32,8 +32,11 @@ export function AuthProvider({ children }) {
         localStorage.setItem('token', response.token)
         localStorage.setItem('user', JSON.stringify(response.user))
         setUser(response.user)
+        
+        console.log('✅ Login successful, user set:', response.user.email)
         return { success: true, user: response.user }
       } else {
+        console.error('❌ Invalid response structure:', response)
         throw new Error('Invalid response from server')
       }
     } catch (error) {
@@ -53,8 +56,11 @@ export function AuthProvider({ children }) {
         localStorage.setItem('token', response.token)
         localStorage.setItem('user', JSON.stringify(response.user))
         setUser(response.user)
+        
+        console.log('✅ Registration successful, user set:', response.user.email)
         return { success: true, user: response.user }
       } else {
+        console.error('❌ Invalid response structure:', response)
         throw new Error('Invalid response from server')
       }
     } catch (error) {
@@ -73,7 +79,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   )
