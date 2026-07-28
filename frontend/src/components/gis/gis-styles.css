@@ -1,0 +1,77 @@
+/* Fix Leaflet container */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  font-family: inherit;
+}
+
+/* Fix broken default marker icons in Vite */
+.leaflet-default-icon-path {
+  background-image: url(https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png);
+}
+
+/* Custom permanent labels on map */
+.custom-label {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  opacity: 1 !important;
+}
+
+.custom-label::before {
+  border-top-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* DMA zone labels */
+.dma-label {
+  background: rgba(139, 92, 246, 0.9) !important;
+  border: 2px solid #7c3aed !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
+}
+
+.dma-label::before {
+  border-top-color: rgba(139, 92, 246, 0.9) !important;
+}
+
+/* Popup styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  min-width: 260px !important;
+}
+
+.leaflet-popup-tip {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Hide label at low zoom levels to prevent clutter */
+.leaflet-zoom-hide-label .custom-label {
+  display: none !important;
+}
+
+/* Pulsing animation for live indicators */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
+.live-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
