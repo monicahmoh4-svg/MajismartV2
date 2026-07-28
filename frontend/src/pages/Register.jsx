@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, UserPlus, User, MapPin } from 'lucide-react'
@@ -14,8 +14,16 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
+  const { user, register } = useAuth()
   const navigate = useNavigate()
+
+  // ✅ Use useEffect to navigate AFTER user state is set
+  useEffect(() => {
+    if (user) {
+      console.log('✅ User detected, navigating to dashboard')
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, navigate])
 
   const counties = [
     'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret',
@@ -29,13 +37,11 @@ export default function Register() {
 
     const result = await register(formData)
     
-    if (result.success) {
-      // ✅ Navigate to dashboard after successful registration
-      navigate('/dashboard')
-    } else {
+    if (!result.success) {
       setError(result.error)
       setLoading(false)
     }
+    // ✅ Navigation is handled by useEffect above
   }
 
   return (
@@ -89,8 +95,12 @@ export default function Register() {
             padding: '12px 16px',
             marginBottom: '20px',
             color: '#dc2626',
-            fontSize: '14px'
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}>
+            <AlertCircle size={16} />
             {error}
           </div>
         )}
@@ -98,31 +108,38 @@ export default function Register() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Full Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="John Doe"
-              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box' }}
-            />
+            <div style={{ position: 'relative' }}>
+              <User style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="John Doe"
+                style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box' }}
+              />
+            </div>
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="you@example.com"
-              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box' }}
-            />
+            <div style={{ position: 'relative' }}>
+              <Mail style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="you@example.com"
+                style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box' }}
+              />
+            </div>
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Password</label>
             <div style={{ position: 'relative' }}>
+              <Lock style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
@@ -130,7 +147,7 @@ export default function Register() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="At least 6 characters"
-                style={{ width: '100%', padding: '12px 44px 12px 12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px 44px 12px 44px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box' }}
               />
               <button
                 type="button"
@@ -152,17 +169,20 @@ export default function Register() {
 
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>County</label>
-            <select
-              required
-              value={formData.county}
-              onChange={(e) => setFormData({ ...formData, county: e.target.value })}
-              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', background: 'white', boxSizing: 'border-box' }}
-            >
-              <option value="">Select your county</option>
-              {counties.map(county => (
-                <option key={county} value={county}>{county}</option>
-              ))}
-            </select>
+            <div style={{ position: 'relative' }}>
+              <MapPin style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
+              <select
+                required
+                value={formData.county}
+                onChange={(e) => setFormData({ ...formData, county: e.target.value })}
+                style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', background: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">Select your county</option>
+                {counties.map(county => (
+                  <option key={county} value={county}>{county}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <button
@@ -178,10 +198,19 @@ export default function Register() {
               fontSize: '16px',
               fontWeight: '700',
               cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1
+              opacity: loading ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Creating account...' : (
+              <>
+                <UserPlus size={18} />
+                Create Account
+              </>
+            )}
           </button>
         </form>
 
