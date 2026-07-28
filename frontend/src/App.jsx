@@ -40,36 +40,16 @@ function ProtectedRoute({ children }) {
   return children
 }
 
-function PublicRoute({ children }) {
-  const { user, loading } = useAuth()
-  
-  // If already authenticated, redirect to dashboard
-  if (!loading && user) {
-    return <Navigate to="/dashboard" replace />
-  }
-  
-  return children
-}
-
 function AppRoutes() {
   return (
     <>
       <Routes>
+        {/* Public routes - always accessible */}
         <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         
-        {/* Public routes - redirect to dashboard if already logged in */}
-        <Route path="/login" element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        } />
-        <Route path="/register" element={
-          <PublicRoute>
-            <Register />
-          </PublicRoute>
-        } />
-        
-        {/* Protected route - redirect to login if not authenticated */}
+        {/* Protected route - requires authentication */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
