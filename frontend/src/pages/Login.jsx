@@ -1,115 +1,290 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { Droplets, Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [show, setShow] = useState(false)
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
-  const submit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
+
+    const result = await login(formData.email, formData.password)
     
-    try {
-      await login(form.email, form.password)
-      navigate('/app/dashboard')
-    } catch (err) {
-      console.error('Login error:', err)
-      setError(err.error || err.message || 'Login failed. Please check your credentials.')
-    } finally {
+    if (!result.success) {
+      setError(result.error)
       setLoading(false)
     }
+    // ✅ Successful login redirects to /dashboard inside AuthContext
   }
 
-  const fill = (email, pw) => setForm({ email, password: pw })
-
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0c1a2e,#0d3a6e)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'white', borderRadius: 16, padding: '40px 36px', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 52, height: 52, background: 'linear-gradient(135deg,#1a7fd4,#0d9e75)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-            <Droplets size={26} color="white" />
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)',
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      padding: '20px',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Decorative circles */}
+      <div style={{
+        position: 'absolute',
+        top: '-100px',
+        right: '-100px',
+        width: '400px',
+        height: '400px',
+        background: 'rgba(255,255,255,0.1)',
+        borderRadius: '50%'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '-150px',
+        left: '-150px',
+        width: '500px',
+        height: '500px',
+        background: 'rgba(255,255,255,0.05)',
+        borderRadius: '50%'
+      }} />
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        style={{
+          background: 'white',
+          borderRadius: '24px',
+          padding: '40px',
+          width: '100%',
+          maxWidth: '440px',
+          boxShadow: '0 25px 70px rgba(0,0,0,0.2)',
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+            boxShadow: '0 8px 20px rgba(8, 145, 178, 0.3)'
+          }}>
+            <Droplets style={{ color: 'white', width: '32px', height: '32px' }} />
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Welcome back</h1>
-          <p style={{ color: '#5f6368', fontSize: 14 }}>Sign in to MajiSmart</p>
+          <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800', color: '#0f172a' }}>
+            Welcome Back
+          </h1>
+          <p style={{ margin: 0, fontSize: '15px', color: '#64748b' }}>
+            Sign in to your MajiSmart account
+          </p>
         </div>
 
+        {/* Error Message */}
         {error && (
-          <div className="alert-bar alert-bar-error" style={{ marginBottom: 20 }}>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              color: '#dc2626',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            <AlertCircle style={{ width: '18px', height: '18px', flexShrink: 0 }} />
             {error}
-          </div>
+          </motion.div>
         )}
 
-        <form onSubmit={submit}>
-          <div className="form-group">
-            <label>Email address</label>
-            <input 
-              type="email" 
-              placeholder="you@example.com" 
-              value={form.email}
-              onChange={e => setForm(f => ({...f, email: e.target.value}))} 
-              required 
-            />
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' }}>
+              Email Address
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Mail style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="you@example.com"
+                style={{
+                  width: '100%',
+                  padding: '14px 14px 14px 44px',
+                  borderRadius: '12px',
+                  border: '1.5px solid #e2e8f0',
+                  fontSize: '15px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#0891b2'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+              />
+            </div>
           </div>
 
-          <div className="form-group" style={{ position: 'relative' }}>
-            <label>Password</label>
-            <input 
-              type={show ? 'text' : 'password'} 
-              placeholder="••••••••" 
-              value={form.password}
-              onChange={e => setForm(f => ({...f, password: e.target.value}))} 
-              required
-              style={{ paddingRight: 44 }} 
-            />
-            <button 
-              type="button" 
-              onClick={() => setShow(!show)}
-              style={{ position: 'absolute', right: 12, top: 34, background: 'none', border: 'none', color: '#9aa0a6', padding: 4 }}
-            >
-              {show ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' }}>
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Lock style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#94a3b8' }} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Enter your password"
+                style={{
+                  width: '100%',
+                  padding: '14px 44px 14px 44px',
+                  borderRadius: '12px',
+                  border: '1.5px solid #e2e8f0',
+                  fontSize: '15px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#0891b2'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {showPassword 
+                  ? <EyeOff style={{ width: '18px', height: '18px', color: '#94a3b8' }} />
+                  : <Eye style={{ width: '18px', height: '18px', color: '#94a3b8' }} />
+                }
+              </button>
+            </div>
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: 8, fontSize: 15 }} 
+          <motion.button
+            type="submit"
             disabled={loading}
+            whileHover={{ scale: loading ? 1 : 1.02 }}
+            whileTap={{ scale: loading ? 1 : 0.98 }}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '16px',
+              fontWeight: '700',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              boxShadow: '0 4px 16px rgba(8, 145, 178, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'all 0.2s'
+            }}
           >
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
+            {loading ? (
+              <>Signing in...</>
+            ) : (
+              <>
+                <LogIn style={{ width: '18px', height: '18px' }} />
+                Sign In
+              </>
+            )}
+          </motion.button>
         </form>
 
-        <div style={{ margin: '20px 0', borderTop: '1px solid #e8eaed', paddingTop: 16 }}>
-          <p style={{ fontSize: 12, color: '#9aa0a6', marginBottom: 8, textAlign: 'center' }}>Quick demo access</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-            {[
-              ['Admin', 'admin@majismart.ke'],
-              ['County', 'county@majismart.ke'],
-              ['Operator', 'operator@majismart.ke']
-            ].map(([label, email]) => (
-              <button 
-                key={label} 
-                onClick={() => fill(email, 'admin123')}
-                style={{ padding: '6px 4px', fontSize: 12, background: '#f1f3f4', border: '1px solid #e8eaed', borderRadius: 6, cursor: 'pointer', color: '#3c4043' }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        {/* Demo Credentials */}
+        <div style={{
+          marginTop: '20px',
+          padding: '12px',
+          background: '#f0f9ff',
+          borderRadius: '10px',
+          border: '1px solid #bae6fd',
+          fontSize: '13px',
+          color: '#0369a1',
+          textAlign: 'center'
+        }}>
+          <strong>Demo:</strong> admin@majismart.ke / admin123
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: 14, color: '#5f6368' }}>
-          No account? <Link to="/register" style={{ color: '#1a7fd4', fontWeight: 600 }}>Register here</Link>
+        {/* Sign Up Link */}
+        <p style={{ 
+          textAlign: 'center', 
+          marginTop: '24px', 
+          fontSize: '14px', 
+          color: '#64748b' 
+        }}>
+          Don't have an account?{' '}
+          <Link 
+            to="/register" 
+            style={{ 
+              color: '#0891b2', 
+              fontWeight: '700', 
+              textDecoration: 'none' 
+            }}
+          >
+            Sign up free
+          </Link>
         </p>
-      </div>
+
+        {/* Back to Home */}
+        <p style={{ 
+          textAlign: 'center', 
+          marginTop: '12px', 
+          fontSize: '13px' 
+        }}>
+          <Link 
+            to="/" 
+            style={{ 
+              color: '#94a3b8', 
+              textDecoration: 'none' 
+            }}
+          >
+            ← Back to home
+          </Link>
+        </p>
+      </motion.div>
     </div>
   )
 }
