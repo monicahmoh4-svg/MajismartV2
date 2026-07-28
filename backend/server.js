@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 
@@ -70,8 +69,6 @@ const assetsRoutes = require('./routes/assets');
 // ============================================
 // ROUTE MOUNTING
 // ============================================
-
-// ✅ NEW: Friendly root route for the API
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the MajiSmart Enterprise API',
@@ -88,12 +85,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    version: '2.0.0',
-    service: 'MajiSmart API'
-  });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '2.0.0', service: 'MajiSmart API' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -113,17 +105,12 @@ app.use('/api/assets', assetsRoutes);
 // ERROR HANDLING
 // ============================================
 app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Route ${req.originalUrl} not found. Did you mean to prefix with /api/ ?`
-  });
+  res.status(404).json({ error: 'Not Found', message: `Route ${req.originalUrl} not found. Did you mean to prefix with /api/ ?` });
 });
 
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error'
-  });
+  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
 // ============================================
