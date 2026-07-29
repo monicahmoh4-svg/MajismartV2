@@ -35,7 +35,6 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
@@ -67,45 +66,47 @@ const operatorRoutes = require('./routes/operator');
 const assetsRoutes = require('./routes/assets');
 
 // ============================================
-// ROUTE MOUNTING
+// ROUTE VALIDATION & MOUNTING (NO MORE GUESSING)
 // ============================================
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to the MajiSmart Enterprise API',
-    status: 'running',
-    version: '2.0.0',
-    note: 'This is a backend API. Please use your Vercel frontend URL to access the visual application.',
-    usefulEndpoints: {
-      healthCheck: '/api/health',
-      gisAssets: '/api/gis/assets',
-      assetManagement: '/api/assets',
-      adminStats: '/api/admin/dashboard-stats'
-    }
-  });
+  res.json({ message: 'Welcome to the MajiSmart Enterprise API', status: 'running', version: '2.0.0' });
 });
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '2.0.0', service: 'MajiSmart API' });
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/citizen', citizenRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/alerts', alertRoutes);
-app.use('/api/datasets', datasetRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/gis', gisRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/county', countyRoutes);
-app.use('/api/operator', operatorRoutes);
-app.use('/api/assets', assetsRoutes);
+const routesToMount = [
+  { path: '/api/auth', route: authRoutes, name: 'auth' },
+  { path: '/api/citizen', route: citizenRoutes, name: 'citizen' },
+  { path: '/api/reports', route: reportRoutes, name: 'reports' },
+  { path: '/api/alerts', route: alertRoutes, name: 'alerts' },
+  { path: '/api/datasets', route: datasetRoutes, name: 'datasets' },
+  { path: '/api/payments', route: paymentRoutes, name: 'payments' },
+  { path: '/api/ai', route: aiRoutes, name: 'ai' },
+  { path: '/api/gis', route: gisRoutes, name: 'gis' },
+  { path: '/api/admin', route: adminRoutes, name: 'admin' },
+  { path: '/api/county', route: countyRoutes, name: 'county' },
+  { path: '/api/operator', route: operatorRoutes, name: 'operator' },
+  { path: '/api/assets', route: assetsRoutes, name: 'assets' }
+];
+
+for (const { path, route, name } of routesToMount) {
+  if (typeof route !== 'function') {
+    console.error(`\n❌ FATAL ERROR: ${name}Routes is not a function!`);
+    console.error(`   Type received: ${typeof route}`);
+    console.error(`   ACTION REQUIRED: Open backend/routes/${name}.js and ensure the VERY LAST LINE is exactly:`);
+    console.error(`   module.exports = router;\n`);
+    process.exit(1); // Stop the server immediately and show the error
+  }
+  app.use(path, route);
+}
 
 // ============================================
 // ERROR HANDLING
 // ============================================
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not Found', message: `Route ${req.originalUrl} not found. Did you mean to prefix with /api/ ?` });
+  res.status(404).json({ error: 'Not Found', message: `Route ${req.originalUrl} not found.` });
 });
 
 app.use((err, req, res, next) => {
@@ -123,11 +124,6 @@ app.listen(PORT, () => {
   console.log('🚀 MajiSmart Enterprise API Server');
   console.log('='.repeat(60));
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ API Base: http://localhost:${PORT}`);
-  console.log(`✅ Health: http://localhost:${PORT}/api/health`);
-  console.log(`✅ GIS: http://localhost:${PORT}/api/gis/assets`);
-  console.log(`✅ Assets: http://localhost:${PORT}/api/assets`);
   console.log('='.repeat(60));
 });
 
