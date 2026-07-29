@@ -5,7 +5,7 @@ import api from '../../api'
 import { motion } from 'framer-motion'
 import { 
   Users, Activity, MapPin, AlertTriangle, 
-  RefreshCw, Map, FileText, Package
+  RefreshCw, Map, FileText, Package, MessageSquare
 } from 'lucide-react'
 import { Loading } from '../ui/StateViews'
 
@@ -98,6 +98,28 @@ export default function CountyDashboard() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/dashboard?view=reports')}
+              style={{
+                padding: '12px 20px',
+                background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+              }}
+            >
+              <MessageSquare size={18} />
+              Reports
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
