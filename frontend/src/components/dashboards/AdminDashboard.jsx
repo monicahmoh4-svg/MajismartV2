@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api'
-import { motion } from 'framer-motion'
+import { motion } from 'framer-motion`
 import { 
   Users, Activity, MapPin, AlertTriangle, Wallet, 
   FileText, RefreshCw, Map, TrendingUp, TrendingDown,
