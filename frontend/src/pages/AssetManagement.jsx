@@ -204,24 +204,32 @@ export default function AssetManagement() {
     }
   }
 
+  // ✅ FIXED: CSV Export using axios with responseType: 'blob'
   const handleExportCSV = async () => {
     try {
       setExporting(true)
-      const response = await fetch(`${api.defaults.baseURL}/assets/export/csv`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      console.log('📥 Starting CSV export...')
+      
+      const response = await api.get('/assets/export/csv', {
+        responseType: 'blob'
       })
-      if (!response.ok) throw new Error('Export failed')
-      const blob = await response.blob()
+      
+      // Create download link
+      const blob = new Blob([response], { type: 'text/csv;charset=utf-8;' })
       const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `majismart-assets-${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `majismart-assets-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
+      
+      console.log('✅ CSV export successful')
     } catch (err) {
-      alert('Failed to export CSV: ' + (err.message || 'Unknown error'))
+      console.error('❌ CSV export error:', err)
+      const errorMessage = err?.response?.data?.message || err?.message || 'Unknown error'
+      alert(`Failed to export CSV: ${errorMessage}`)
     } finally {
       setExporting(false)
     }
