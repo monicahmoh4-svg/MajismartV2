@@ -54,6 +54,7 @@ export default function CitizenReports() {
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
   const [commentText, setCommentText] = useState('')
+  const [submitting, setSubmitting] = useState(false) // ✅ NEW: Prevents stuck state
 
   const [newReport, setNewReport] = useState({
     title: '', description: '', category: 'leak', priority: 'medium',
@@ -95,18 +96,22 @@ export default function CitizenReports() {
     fetchStats()
   }, [fetchReports, fetchStats])
 
+  // ✅ ENHANCED: Proper loading state management with finally block
   const handleSubmitReport = async (e) => {
     e.preventDefault()
     if (!newReport.title.trim() || !newReport.description.trim() || !newReport.category) {
       alert('❌ Please fill in all required fields (Title, Description, Category)')
       return
     }
+    
+    setSubmitting(true) // Lock the button
     try {
       const response = await api.post('/reports-enhanced', {
         ...newReport,
         latitude: newReport.latitude ? parseFloat(newReport.latitude) : null,
         longitude: newReport.longitude ? parseFloat(newReport.longitude) : null
       })
+      
       alert(`✅ Report submitted successfully!\n\nYour report number is: ${response.report_number}\n\nPlease save this number for tracking.`)
       setShowSubmitModal(false)
       setNewReport({
@@ -121,6 +126,8 @@ export default function CitizenReports() {
       console.error('Report submission error:', err)
       const errorMessage = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Unknown error'
       alert(`❌ Failed to submit report: ${errorMessage}`)
+    } finally {
+      setSubmitting(false) // ✅ GUARANTEES button unlocks even on error
     }
   }
 
@@ -519,8 +526,37 @@ export default function CitizenReports() {
 
                 <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                   <button type="button" onClick={() => setShowSubmitModal(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
-                  <button type="submit" style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    <Send size={16} /> Submit Report
+                  
+                  {/* ✅ ENHANCED SUBMIT BUTTON WITH LOADING STATE */}
+                  <button 
+                    type="submit" 
+                    disabled={submitting}
+                    style={{ 
+                      flex: 2, 
+                      padding: '12px', 
+                      background: submitting ? '#94a3b8' : 'linear-gradient(135deg, #dc2626, #ef4444)', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '8px', 
+                      fontWeight: '700', 
+                      cursor: submitting ? 'not-allowed' : 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '6px',
+                      opacity: submitting ? 0.7 : 1
+                    }}
+                  >
+                    {submitting ? (
+                      <>
+                        <div style={{ width: '16px', height: '16px', border: '2px solid white', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} /> Submit Report
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
