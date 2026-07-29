@@ -5,7 +5,7 @@ import api from '../../api'
 import { motion } from 'framer-motion'
 import { 
   Activity, MapPin, AlertTriangle, 
-  RefreshCw, Map, FileText, Wrench, Package, MessageSquare
+  RefreshCw, Map, FileText, Wrench, Package, MessageSquare, Brain // ✅ Added Brain
 } from 'lucide-react'
 import { Loading } from '../ui/StateViews'
 
@@ -55,13 +55,7 @@ export default function OperatorDashboard() {
       setData(response)
     } catch (err) {
       console.error('Operator dashboard fetch error:', err)
-      setData({
-        water_points: 0,
-        active_nodes: 0,
-        active_alerts: 0,
-        work_orders: 0,
-        maintenance_tasks: 0
-      })
+      setData({ water_points: 0, active_nodes: 0, active_alerts: 0, work_orders: 0, maintenance_tasks: 0 })
     } finally {
       setLoading(false)
     }
@@ -98,6 +92,28 @@ export default function OperatorDashboard() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/dashboard?view=ai-analytics')} // ✅ NEW: Feature 4
+              style={{
+                padding: '12px 20px',
+                background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+              }}
+            >
+              <Brain size={18} />
+              AI Analytics
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -189,12 +205,7 @@ export default function OperatorDashboard() {
         </motion.div>
 
         {/* Stats Grid */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-          gap: '20px',
-          marginBottom: '24px'
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <StatCard title="Water Points" value={data?.water_points || 0} icon={MapPin} color="#0891b2" />
           <StatCard title="Active Nodes" value={data?.active_nodes || 0} icon={Activity} color="#10b981" />
           <StatCard title="Active Alerts" value={data?.active_alerts || 0} icon={AlertTriangle} color="#ef4444" />
