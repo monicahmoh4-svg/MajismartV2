@@ -8,7 +8,7 @@ import OperatorDashboard from '../components/dashboards/OperatorDashboard'
 import CommunityDashboard from '../components/dashboards/CommunityDashboard'
 import CitizenDashboard from './CitizenDashboard'
 
-// Enterprise Modules (Feature 1, 2, 3)
+// Enterprise Modules
 import GISDashboard from './GISDashboard'
 import AssetManagement from './AssetManagement'
 import ReportManagement from './ReportManagement'
@@ -18,7 +18,6 @@ export default function Dashboard() {
   const { user, loading } = useAuth()
   const [searchParams] = useSearchParams()
   
-  // Show loading state while checking auth
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
@@ -27,12 +26,10 @@ export default function Dashboard() {
     )
   }
 
-  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" replace />
   }
 
-  // Route to the correct dashboard based on role
   const dashboards = {
     admin: <AdminDashboard />,
     county_officer: <CountyDashboard />,
@@ -41,14 +38,12 @@ export default function Dashboard() {
     community_manager: <CommunityDashboard />,
   }
   
-  // Citizen Reports accessible to ALL authenticated users
   const viewMode = searchParams.get('view')
   
   if (viewMode === 'reports-citizen') {
     return <CitizenReports />
   }
   
-  // Enterprise Module Override for utility staff
   const authorizedRoles = ['admin', 'county_officer', 'operator']
   
   if (viewMode && authorizedRoles.includes(user?.role)) {
