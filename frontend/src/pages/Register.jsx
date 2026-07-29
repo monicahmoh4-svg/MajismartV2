@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, UserPlus, User, MapPin } from 'lucide-react'
@@ -14,16 +14,8 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { user, register } = useAuth()
+  const { register } = useAuth()
   const navigate = useNavigate()
-
-  // ✅ Use useEffect to navigate AFTER user state is set
-  useEffect(() => {
-    if (user) {
-      console.log('✅ User detected, navigating to dashboard')
-      navigate('/dashboard', { replace: true })
-    }
-  }, [user, navigate])
 
   const counties = [
     'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret',
@@ -35,13 +27,20 @@ export default function Register() {
     setError('')
     setLoading(true)
 
-    const result = await register(formData)
-    
-    if (!result.success) {
-      setError(result.error)
+    try {
+      const result = await register(formData)
+      
+      if (result.success) {
+        // Navigate after successful registration
+        navigate('/dashboard', { replace: true })
+      } else {
+        setError(result.error || 'Registration failed. Please try again.')
+      }
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred')
+    } finally {
       setLoading(false)
     }
-    // ✅ Navigation is handled by useEffect above
   }
 
   return (
