@@ -31,21 +31,12 @@ function ProtectedRoute({ children }) {
     )
   }
   
-  // ✅ Fallback: Check localStorage if user state is null (race condition fix)
+  // If not authenticated, redirect to login
   if (!user) {
-    const storedToken = localStorage.getItem('token')
-    const storedUser = localStorage.getItem('user')
-    
-    if (storedToken && storedUser) {
-      // Token and user exist in localStorage but state hasn't propagated yet
-      // Allow access and let the context catch up
-      console.log('⚠️ Race condition detected - allowing access based on localStorage')
-      return children
-    }
-    
     return <Navigate to="/login" replace />
   }
   
+  // User is authenticated, show the protected content
   return children
 }
 
@@ -53,14 +44,19 @@ function AppRoutes() {
   return (
     <>
       <Routes>
+        {/* Public routes - ALWAYS accessible */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        
+        {/* Protected route - requires authentication */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         } />
+        
+        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <PWAInstallBanner />
