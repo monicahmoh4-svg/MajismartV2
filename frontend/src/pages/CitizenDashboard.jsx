@@ -5,7 +5,7 @@ import api from '../api'
 import { motion } from 'framer-motion'
 import { 
   FileText, Plus, CheckCircle, Clock, LogOut, 
-  Droplets, Phone, BarChart3
+  Droplets, Phone, BarChart3, MapPin
 } from 'lucide-react'
 
 export default function CitizenDashboard() {
@@ -24,7 +24,7 @@ export default function CitizenDashboard() {
       setLoading(true)
       const statsRes = await api.get('/reports-enhanced/stats')
       setStats(statsRes)
-      
+
       const reportsRes = await api.get('/reports-enhanced?limit=5')
       setRecentReports(reportsRes.reports || [])
     } catch (err) {
@@ -126,12 +126,12 @@ export default function CitizenDashboard() {
             onClick={() => navigate('/dashboard?view=reports-citizen')}
           />
           <QuickActionCard 
-            icon={Droplets}
-            title="Water Conservation"
-            description="Learn tips and tricks to save water and reduce your bill."
+            icon={MapPin}
+            title="View GIS Map"
+            description="Explore water infrastructure and assets in your county."
             color="#10b981"
             bgColor="#f0fdf4"
-            onClick={() => {}}
+            onClick={() => navigate('/dashboard?view=gis')}
           />
           <QuickActionCard 
             icon={Phone}
@@ -181,7 +181,8 @@ export default function CitizenDashboard() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {recentReports.map((report) => (
-                  <div key={report.id} style={{ padding: '12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                  <div key={report.id} style={{ padding: '12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+                    onClick={() => navigate('/dashboard?view=reports-citizen')}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '6px' }}>
                       <span style={{ fontSize: '11px', fontWeight: '700', fontFamily: 'monospace', color: '#64748b' }}>{report.report_number}</span>
                       <StatusBadge status={report.status} />
