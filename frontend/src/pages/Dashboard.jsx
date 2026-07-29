@@ -8,9 +8,11 @@ import OperatorDashboard from '../components/dashboards/OperatorDashboard'
 import CommunityDashboard from '../components/dashboards/CommunityDashboard'
 import CitizenDashboard from './CitizenDashboard'
 
-// Enterprise Modules (Feature 1 & 2)
+// Enterprise Modules (Feature 1, 2, 3)
 import GISDashboard from './GISDashboard'
 import AssetManagement from './AssetManagement'
+import ReportManagement from './ReportManagement'
+import CitizenReports from './CitizenReports'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
@@ -39,9 +41,14 @@ export default function Dashboard() {
     community_manager: <CommunityDashboard />,
   }
   
-  // Enterprise Module Override
-  // Allow admin, county_officer, and operator roles to access enterprise modules
+  // Citizen Reports accessible to ALL authenticated users
   const viewMode = searchParams.get('view')
+  
+  if (viewMode === 'reports-citizen') {
+    return <CitizenReports />
+  }
+  
+  // Enterprise Module Override for utility staff
   const authorizedRoles = ['admin', 'county_officer', 'operator']
   
   if (viewMode && authorizedRoles.includes(user?.role)) {
@@ -50,6 +57,8 @@ export default function Dashboard() {
         return <GISDashboard />
       case 'assets':
         return <AssetManagement />
+      case 'reports':
+        return <ReportManagement />
       default:
         break
     }
