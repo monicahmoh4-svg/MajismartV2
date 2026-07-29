@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react'
@@ -9,29 +9,28 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { user, login } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
-
-  // ✅ Use useEffect to navigate AFTER user state is set
-  useEffect(() => {
-    if (user) {
-      console.log('✅ User detected, navigating to dashboard')
-      navigate('/dashboard', { replace: true })
-    }
-  }, [user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    const result = await login(formData.email, formData.password)
-    
-    if (!result.success) {
-      setError(result.error)
+    try {
+      const result = await login(formData.email, formData.password)
+      
+      if (result.success) {
+        // Navigate after successful login
+        navigate('/dashboard', { replace: true })
+      } else {
+        setError(result.error || 'Login failed. Please check your credentials.')
+      }
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred')
+    } finally {
       setLoading(false)
     }
-    // ✅ Navigation is handled by useEffect above
   }
 
   return (
