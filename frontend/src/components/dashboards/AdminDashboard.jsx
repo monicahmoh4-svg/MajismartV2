@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api'
-import { motion } from 'framer-motion`
+import { motion } from 'framer-motion'
 import { 
   Users, Activity, MapPin, AlertTriangle, Wallet, 
   FileText, RefreshCw, Map, TrendingUp, TrendingDown,
-  CheckCircle, Clock, BarChart3, Package, MessageSquare, Brain // ✅ Added Brain
+  CheckCircle, Clock, BarChart3, Package, MessageSquare, Brain
 } from 'lucide-react'
 import { Loading } from '../ui/StateViews'
 
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard?view=ai-analytics')} // ✅ NEW: Feature 4
+              onClick={() => navigate('/dashboard?view=ai-analytics')}
               style={{
                 padding: '12px 20px',
                 background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
