@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "migrate": "node scripts/migrate.js",
     "migrate:gis": "node scripts/migrate-gis.js",
-    "migrate:assets": "node scripts/migrate-assets-enhanced.js"
+    "migrate:assets": "node scripts/migrate-assets-enhanced.js",
+    "migrate:reports": "node scripts/migrate-reports.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
