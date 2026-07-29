@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// Helper: Check if a column exists
 async function columnExists(columnName) {
   try {
     const { rows } = await db.query(
@@ -13,7 +12,6 @@ async function columnExists(columnName) {
   } catch (err) { return false; }
 }
 
-// Helper: Check if a table exists
 async function tableExists(tableName) {
   try {
     const { rows } = await db.query(
@@ -25,7 +23,7 @@ async function tableExists(tableName) {
 }
 
 // ============================================
-// ⚠️ CRITICAL: Static routes MUST come BEFORE /:id routes
+// ⚠️ CRITICAL: Static routes BEFORE /:id routes
 // ============================================
 
 // GET /api/assets/stats
@@ -120,9 +118,11 @@ router.get('/alerts', async (req, res) => {
   }
 });
 
-// GET /api/assets/export/csv - ✅ FIXED: Now before /:id route
+// ✅ GET /api/assets/export/csv - FIXED: Now BEFORE /:id route
 router.get('/export/csv', async (req, res) => {
   try {
+    console.log('📥 CSV export requested');
+    
     const { rows } = await db.query(`
       SELECT id, name, type, status, county, latitude, longitude, 
              capacity, manufacturer, serial_number, created_at
@@ -135,20 +135,33 @@ router.get('/export/csv', async (req, res) => {
 
     rows.forEach(row => {
       csvRows.push([
-        row.id, row.name, row.type, row.status, row.county || '',
-        row.latitude, row.longitude, row.capacity || '', 
-        row.manufacturer || '', row.serial_number || '',
+        row.id, 
+        row.name, 
+        row.type, 
+        row.status, 
+        row.county || '',
+        row.latitude, 
+        row.longitude, 
+        row.capacity || '', 
+        row.manufacturer || '', 
+        row.serial_number || '',
         row.created_at ? new Date(row.created_at).toISOString() : ''
       ]);
     });
 
     const csv = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     
-    res.setHeader('Content-Type', 'text/csv');
+    // ✅ Add CORS headers explicitly
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=majismart-assets-${new Date().toISOString().split('T')[0]}.csv`);
+    
+    console.log(`✅ CSV export successful: ${rows.length} assets`);
     res.send(csv);
   } catch (error) {
-    console.error('CSV export error:', error);
+    console.error('❌ CSV export error:', error);
     res.status(500).json({ error: 'Failed to export CSV', message: error.message });
   }
 });
