@@ -10,7 +10,7 @@ async function runEnhancedAssetMigrations() {
     await db.query(`ALTER TABLE assets ADD COLUMN IF NOT EXISTS expected_lifespan_years INTEGER DEFAULT 25`);
     await db.query(`ALTER TABLE assets ADD COLUMN IF NOT EXISTS last_maintenance_date DATE`);
     await db.query(`ALTER TABLE assets ADD COLUMN IF NOT EXISTS next_maintenance_date DATE`);
-    await db.query(`ALTER TABLE assets ADD NOT NULL next_inspection_date DATE`);
+   await db.query(`ALTER TABLE assets ADD COLUMN IF NOT EXISTS next_inspection_date DATE`);
     await db.query(`ALTER TABLE assets ADD COLUMN IF NOT EXISTS warranty_expires DATE`);
     await db.query(`ALTER TABLE assets ADD COLUMN IF NOT EXISTS notes TEXT`);
     await db.query(`ALTER TABLE assets ADD COLUMN IF NOT EXISTS qr_code TEXT`);
