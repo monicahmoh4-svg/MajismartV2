@@ -1,7 +1,6 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import '../gis/gis-styles.css' // Ensure this CSS file exists from previous steps
 import L from 'leaflet'
 
 // Fix default marker icons for Vite production builds
@@ -24,9 +23,6 @@ function getMarkerIcon(status) {
 }
 
 export default function InteractiveMap({ assets = [], activeLayers = {}, onAssetClick }) {
-  const defaultCenter = [-0.5, 37.5]
-  const defaultZoom = 7
-
   const pointAssets = useMemo(() => assets.filter(a => a.type !== 'dma' && a.type !== 'pipeline' && a.latitude && a.longitude), [assets])
   const pipelineAssets = useMemo(() => activeLayers.pipelines ? assets.filter(a => a.type === 'pipeline' && a.coordinates) : [], [assets, activeLayers.pipelines])
   const dmaAssets = useMemo(() => activeLayers.dmas ? assets.filter(a => a.type === 'dma' && a.coordinates) : [], [assets, activeLayers.dmas])
@@ -45,40 +41,23 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
   }, [pointAssets, activeLayers])
 
   return (
-    <MapContainer center={defaultCenter} zoom={defaultZoom} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
+    <MapContainer center={[-0.5, 37.5]} zoom={7} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
       <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-      {/* DMA Polygons with permanent labels */}
       {dmaAssets.map((dma, idx) => (
-        <Polygon key={`dma-${dma.id || idx}`} positions={dma.coordinates} pathOptions={{ color: '#8b5cf6', weight: 2, fillOpacity: 0.12, dashArray: '6, 4' }}>
-          <Tooltip permanent direction="center" className="dma-label">{dma.name}</Tooltip>
-          <Popup>
-            <div style={{ padding: '12px' }}>
-              <h4 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{dma.name}</h4>
-              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>County:</strong> {dma.county}</p>
-              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>Coverage:</strong> {dma.coverage_km2} km²</p>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}><strong>Population:</strong> {(dma.population_served || 0).toLocaleString()}</p>
-            </div>
-          </Popup>
+        <Polygon key={`dma-${idx}`} positions={dma.coordinates} pathOptions={{ color: '#8b5cf6', weight: 2, fillOpacity: 0.12, dashArray: '6, 4' }}>
+          <Tooltip permanent direction="center" style={{ background: 'rgba(139, 92, 246, 0.9)', color: 'white', border: '2px solid #7c3aed', borderRadius: '6px', padding: '4px 10px', fontWeight: '700', fontSize: '12px' }}>
+            {dma.name}
+          </Tooltip>
         </Polygon>
       ))}
 
-      {/* Pipelines */}
       {pipelineAssets.map((pipe, idx) => (
-        <Polyline key={`pipe-${pipe.id || idx}`} positions={pipe.coordinates} pathOptions={{ color: pipe.status === 'active' ? '#0891b2' : '#ef4444', weight: 4, opacity: 0.8 }}>
-          <Tooltip sticky><strong>{pipe.name}</strong><br/>{pipe.diameter_mm}mm • {pipe.material} • {pipe.length_km}km</Tooltip>
-          <Popup>
-            <div style={{ padding: '12px' }}>
-              <h4 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{pipe.name}</h4>
-              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>Diameter:</strong> {pipe.diameter_mm}mm</p>
-              <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748b' }}><strong>Material:</strong> {pipe.material}</p>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}><strong>Length:</strong> {pipe.length_km} km</p>
-            </div>
-          </Popup>
+        <Polyline key={`pipe-${idx}`} positions={pipe.coordinates} pathOptions={{ color: pipe.status === 'active' ? '#0891b2' : '#ef4444', weight: 4, opacity: 0.8 }}>
+          <Tooltip sticky><strong>{pipe.name}</strong><br/>{pipe.diameter_mm}mm</Tooltip>
         </Polyline>
       ))}
 
-      {/* Asset Markers with permanent name labels */}
       {visiblePoints.map((asset, idx) => (
         <Marker 
           key={`${asset.type}-${asset.id || idx}`} 
@@ -86,31 +65,30 @@ export default function InteractiveMap({ assets = [], activeLayers = {}, onAsset
           icon={getMarkerIcon(asset.status)}
           eventHandlers={{ click: () => onAssetClick && onAssetClick(asset) }}
         >
-          {/* Permanent name label above marker */}
-          <Tooltip permanent direction="top" offset={[0, -8]} className="custom-label">
+          {/* ✅ PERMANENT LABELS */}
+          <Tooltip permanent direction="top" offset={[0, -8]} style={{ 
+            background: 'rgba(255,255,255,0.95)', 
+            border: '1px solid #e2e8f0', 
+            borderRadius: '6px', 
+            padding: '3px 8px', 
+            fontSize: '11px', 
+            fontWeight: '600', 
+            color: '#0f172a',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+          }}>
             {asset.name}
           </Tooltip>
 
-          {/* Detailed popup on click */}
           <Popup maxWidth={320}>
             <div style={{ padding: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '10px' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0f172a', flex: 1 }}>{asset.name}</h4>
-                <span style={{ padding: '3px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700', background: asset.status === 'active' ? '#d1fae5' : '#fee2e2', color: asset.status === 'active' ? '#059669' : '#dc2626', marginLeft: '8px', whiteSpace: 'nowrap' }}>
-                  {asset.status?.toUpperCase() || 'UNKNOWN'}
-                </span>
-              </div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #e2e8f0' }}>
-                <strong>Type:</strong> {(asset.type || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              <h4 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: '700' }}>{asset.name}</h4>
+              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '10px' }}>
+                <strong>Type:</strong> {(asset.type || '').replace(/_/g, ' ')}
                 {asset.county && <span> • <strong>County:</strong> {asset.county}</span>}
               </div>
-              <div style={{ fontSize: '11px', color: '#475569' }}>
-                {asset.capacity && <div style={{ marginBottom: '3px' }}><strong>Capacity:</strong> {asset.capacity}</div>}
-                {asset.diameter_mm && <div style={{ marginBottom: '3px' }}><strong>Diameter:</strong> {asset.diameter_mm}mm</div>}
-                {asset.material && <div style={{ marginBottom: '3px' }}><strong>Material:</strong> {asset.material}</div>}
-                <div style={{ marginTop: '8px', fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8', background: '#f8fafc', padding: '6px', borderRadius: '4px' }}>
-                  📍 {Number(asset.latitude).toFixed(6)}, {Number(asset.longitude).toFixed(6)}
-                </div>
+              <div style={{ fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8', background: '#f8fafc', padding: '6px', borderRadius: '4px' }}>
+                📍 {Number(asset.latitude).toFixed(6)}, {Number(asset.longitude).toFixed(6)}
               </div>
             </div>
           </Popup>
