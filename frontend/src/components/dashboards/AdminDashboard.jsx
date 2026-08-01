@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { 
   Users, Activity, MapPin, AlertTriangle, Wallet, 
   FileText, RefreshCw, Map, TrendingUp, TrendingDown,
-  CheckCircle, Clock, BarChart3, Package, MessageSquare, Brain
+  CheckCircle, Clock, BarChart3, Package, MessageSquare, Brain, Wrench
 } from 'lucide-react'
 import { Loading } from '../ui/StateViews'
 
@@ -105,7 +105,6 @@ export default function AdminDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '24px' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -124,140 +123,39 @@ export default function AdminDashboard() {
           }}
         >
           <div>
-            <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800' }}>
-              Admin Dashboard
-            </h1>
-            <p style={{ margin: 0, fontSize: '15px', opacity: 0.95 }}>
-              Welcome back, {user?.name || 'Administrator'} • {user?.county || 'System-wide'}
-            </p>
-            {lastUpdated && (
-              <p style={{ margin: '8px 0 0 0', fontSize: '12px', opacity: 0.8 }}>
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </p>
-            )}
+            <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '800' }}>Admin Dashboard</h1>
+            <p style={{ margin: 0, fontSize: '15px', opacity: 0.95 }}>Welcome back, {user?.name || 'Administrator'} • {user?.county || 'System-wide'}</p>
+            {lastUpdated && <p style={{ margin: '8px 0 0 0', fontSize: '12px', opacity: 0.8 }}>Last updated: {lastUpdated.toLocaleTimeString()}</p>}
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard?view=ai-analytics')}
-              style={{
-                padding: '12px 20px',
-                background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '10px',
-                fontWeight: '700',
-                fontSize: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
-              }}
-            >
-              <Brain size={18} />
-              AI Analytics
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/dashboard?view=workorders')}
+              style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}>
+              <Wrench size={18} /> Work Orders
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard?view=reports')}
-              style={{
-                padding: '12px 20px',
-                background: 'linear-gradient(135deg, #dc2626, #ef4444)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '10px',
-                fontWeight: '700',
-                fontSize: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
-              }}
-            >
-              <MessageSquare size={18} />
-              Reports
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/dashboard?view=ai-analytics')}
+              style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #8b5cf6, #a855f7)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>
+              <Brain size={18} /> AI Analytics
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard?view=assets')}
-              style={{
-                padding: '12px 20px',
-                background: 'white',
-                color: '#0891b2',
-                border: 'none',
-                borderRadius: '10px',
-                fontWeight: '700',
-                fontSize: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-              }}
-            >
-              <Package size={18} />
-              Assets
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/dashboard?view=reports')}
+              style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)' }}>
+              <MessageSquare size={18} /> Reports
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard?view=gis')}
-              style={{
-                padding: '12px 20px',
-                background: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.3)',
-                borderRadius: '10px',
-                fontWeight: '700',
-                fontSize: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <Map size={18} />
-              GIS Dashboard
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/dashboard?view=assets')}
+              style={{ padding: '12px 20px', background: 'white', color: '#0891b2', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <Package size={18} /> Assets
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={fetchData}
-              disabled={loading}
-              style={{
-                padding: '12px 20px',
-                background: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.3)',
-                borderRadius: '10px',
-                fontWeight: '600',
-                fontSize: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <RefreshCw size={18} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-              Refresh
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/dashboard?view=gis')}
+              style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', backdropFilter: 'blur(10px)' }}>
+              <Map size={18} /> GIS Dashboard
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={fetchData} disabled={loading}
+              style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '10px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', backdropFilter: 'blur(10px)' }}>
+              <RefreshCw size={18} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
             </motion.button>
           </div>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-          gap: '20px',
-          marginBottom: '24px'
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <StatCard title="Total Users" value={data?.total_users || 0} icon={Users} color="#0891b2" trend={12} />
           <StatCard title="Active Nodes" value={data?.active_nodes || 0} icon={Activity} color="#10b981" trend={5} />
           <StatCard title="Water Points" value={data?.water_points || 0} icon={MapPin} color="#06b6d4" trend={8} />
@@ -266,22 +164,7 @@ export default function AdminDashboard() {
           <StatCard title="Monthly Revenue" value={`KES ${(data?.monthly_revenue || 0).toLocaleString()}`} icon={Wallet} color="#f59e0b" trend={15} />
         </div>
 
-        {/* System Health Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '20px 24px',
-            marginBottom: '24px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            border: '1px solid #d1fae5'
-          }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '16px', border: '1px solid #d1fae5' }}>
           <div style={{ width: '48px', height: '48px', background: '#d1fae5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CheckCircle size={24} color="#10b981" />
           </div>
@@ -291,9 +174,7 @@ export default function AdminDashboard() {
           </div>
         </motion.div>
 
-        {/* Recent Activity & County Distribution */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-          {/* Recent Activity */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <div style={{ width: '40px', height: '40px', background: '#eff6ff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -304,8 +185,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {(data?.recent_activity || []).length > 0 ? (
                 data.recent_activity.slice(0, 6).map((activity, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    style={{ padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} style={{ padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '32px', height: '32px', background: activity.type === 'alert' ? '#fef2f2' : '#eff6ff', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {activity.type === 'alert' ? <AlertTriangle size={16} color="#ef4444" /> : <FileText size={16} color="#0891b2" />}
                     </div>
@@ -324,7 +204,6 @@ export default function AdminDashboard() {
             </div>
           </motion.div>
 
-          {/* County Distribution */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <div style={{ width: '40px', height: '40px', background: '#f0fdf4', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -344,8 +223,7 @@ export default function AdminDashboard() {
                         <span style={{ fontSize: '13px', fontWeight: '700', color: '#0891b2' }}>{county.count} nodes</span>
                       </div>
                       <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 0.8, delay: i * 0.1 }}
-                          style={{ height: '100%', background: 'linear-gradient(90deg, #0891b2, #06b6d4)', borderRadius: '4px' }} />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 0.8, delay: i * 0.1 }} style={{ height: '100%', background: 'linear-gradient(90deg, #0891b2, #06b6d4)', borderRadius: '4px' }} />
                       </div>
                     </div>
                   )
