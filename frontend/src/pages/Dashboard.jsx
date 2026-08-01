@@ -13,13 +13,13 @@ import GISDashboard from './GISDashboard'
 import AssetManagement from './AssetManagement'
 import ReportManagement from './ReportManagement'
 import CitizenReports from './CitizenReports'
-import AIAnalyticsDashboard from './AIAnalyticsDashboard' // ✅ NEW: Feature 4
+import AIAnalyticsDashboard from './AIAnalyticsDashboard'
+import WorkOrderManagement from './WorkOrderManagement'
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
   const [searchParams] = useSearchParams()
   
-  // Show loading state while checking auth
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
@@ -28,12 +28,10 @@ export default function Dashboard() {
     )
   }
 
-  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" replace />
   }
 
-  // Route to the correct dashboard based on role
   const dashboards = {
     admin: <AdminDashboard />,
     county_officer: <CountyDashboard />,
@@ -44,12 +42,10 @@ export default function Dashboard() {
   
   const viewMode = searchParams.get('view')
   
-  // Citizen Reports accessible to ALL authenticated users
   if (viewMode === 'reports-citizen') {
     return <CitizenReports />
   }
   
-  // Enterprise Module Override for utility staff
   const authorizedRoles = ['admin', 'county_officer', 'operator']
   
   if (viewMode && authorizedRoles.includes(user?.role)) {
@@ -60,8 +56,10 @@ export default function Dashboard() {
         return <AssetManagement />
       case 'reports':
         return <ReportManagement />
-      case 'ai-analytics': // ✅ NEW: Feature 4
+      case 'ai-analytics':
         return <AIAnalyticsDashboard />
+      case 'workorders':
+        return <WorkOrderManagement />
       default:
         break
     }
