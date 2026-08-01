@@ -65,7 +65,8 @@ const countyRoutes = require('./routes/county');
 const operatorRoutes = require('./routes/operator');
 const assetsRoutes = require('./routes/assets');
 const reportsEnhancedRoutes = require('./routes/reports-enhanced');
-const aiAnalyticsRoutes = require('./routes/ai-analytics'); // ✅ NEW: Feature 4
+const aiAnalyticsRoutes = require('./routes/ai-analytics');
+const workOrderRoutes = require('./routes/workorders');
 
 // ============================================
 // ROUTE MOUNTING
@@ -74,20 +75,21 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the MajiSmart Enterprise API',
     status: 'running',
-    version: '4.0.0',
+    version: '5.0.0',
     note: 'This is a backend API. Please use your Vercel frontend URL to access the visual application.',
     usefulEndpoints: {
       healthCheck: '/api/health',
       gisAssets: '/api/gis/assets',
       assetManagement: '/api/assets',
       citizenReports: '/api/reports-enhanced',
-      aiAnalytics: '/api/ai/predictive-maintenance'
+      aiAnalytics: '/api/ai/predictive-maintenance',
+      workOrders: '/api/workorders'
     }
   });
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '4.0.0', service: 'MajiSmart API' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '5.0.0', service: 'MajiSmart API' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -102,7 +104,8 @@ app.use('/api/county', countyRoutes);
 app.use('/api/operator', operatorRoutes);
 app.use('/api/assets', assetsRoutes);
 app.use('/api/reports-enhanced', reportsEnhancedRoutes);
-app.use('/api/ai', aiAnalyticsRoutes); // ✅ NEW: Feature 4
+app.use('/api/ai', aiAnalyticsRoutes);
+app.use('/api/workorders', workOrderRoutes);
 
 // ============================================
 // ERROR HANDLING
@@ -123,7 +126,7 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log('='.repeat(60));
-  console.log('🚀 MajiSmart Enterprise API Server v4.0.0');
+  console.log('🚀 MajiSmart Enterprise API Server v5.0.0');
   console.log('='.repeat(60));
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -133,7 +136,8 @@ app.listen(PORT, () => {
   console.log(`   🔹 GIS:          http://localhost:${PORT}/api/gis/assets`);
   console.log(`   🔹 Assets:       http://localhost:${PORT}/api/assets`);
   console.log(`   🔹 Reports:      http://localhost:${PORT}/api/reports-enhanced`);
-  console.log(`   🔹 AI Analytics: http://localhost:${PORT}/api/ai/predictive-maintenance`); // ✅ NEW
+  console.log(`   🔹 AI Analytics: http://localhost:${PORT}/api/ai/predictive-maintenance`);
+  console.log(`   🔹 Work Orders:  http://localhost:${PORT}/api/workorders`);
   console.log('='.repeat(60));
 });
 
