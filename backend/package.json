@@ -1,6 +1,6 @@
 {
   "name": "majismart-backend",
-  "version": "2.0.0",
+  "version": "5.0.0",
   "description": "MajiSmart Enterprise Digital Water Utility Operating System - Backend API",
   "main": "server.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "migrate": "node scripts/migrate.js",
     "migrate:gis": "node scripts/migrate-gis.js",
     "migrate:assets": "node scripts/migrate-assets-enhanced.js",
-    "migrate:reports": "node scripts/migrate-reports.js"
+    "migrate:reports": "node scripts/migrate-reports.js",
+    "migrate:workorders": "node scripts/migrate-workorders.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
