@@ -1,42 +1,59 @@
 const jwt = require('jsonwebtoken');
-const db = require('../db');
 
-const SECRET = process.env.JWT_SECRET || 'majismart_dev_secret';
+// Enhanced auth middleware that extracts role and tenant
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-async function authMiddleware(req, res, next) {
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'majismart-secret-key');
     
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, SECRET);
+    // Attach user info to request
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      name: decoded.name,
+      role: decoded.role || 'citizen',
+      tenant_id: decoded.tenant_id || decoded.county || 'system',
+      county: decoded.county
+    };
     
-    const { rows } = await db.query(
-      'SELECT id, email, role, county FROM users WHERE id=$1',
-      [decoded.id]
-    );
-    
-    if (!rows.length) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-    
-    req.user = rows[0];
     next();
-  } catch (err) {
-    console.error('Auth middleware error:', err.message);
-    return res.status(401).json({ error: 'Invalid or expired token' });
+  } catch (error) {
+    console.error('Token verification failed:', error.message);
+    return res.status(403).json({ error: 'Invalid or expired token' });
   }
 }
 
-function requireRole(...roles) {
-  return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
+// Optional auth - doesn't fail if no token (for public routes)
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'majismart-secret-key');
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      name: decoded.name,
+      role: decoded.role || 'citizen',
+      tenant_id: decoded.tenant_id || decoded.county || 'system',
+      county: decoded.county
+    };
     next();
-  };
+  } catch (error) {
+    req.user = null;
+    next();
+  }
 }
 
-module.exports = { authMiddleware, requireRole };
+module.exports = { authenticateToken, optionalAuth };
