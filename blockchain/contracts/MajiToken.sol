@@ -39,6 +39,7 @@ contract MajiToken is IERC20 {
 
     mapping(address => bool) public authorizedNodes;     // water dispense nodes
     mapping(address => bool) public authorizedOracles;   // backends that reward reporters
+    mapping(address => bool) public authorizedMinters;   // contracts allowed to mint (e.g. WaterPayment)
 
     // ── Events ──────────────────────────────────────────────────────────
     event WaterDispensed(address indexed user, address indexed node, uint256 tokens, uint256 litres);
@@ -89,7 +90,12 @@ contract MajiToken is IERC20 {
     }
 
     // ── Mint / Burn ──────────────────────────────────────────────────────
-    function mint(address to, uint256 amount) external onlyOwner {
+    function authorizeMinter(address minter, bool status) external onlyOwner {
+        authorizedMinters[minter] = status;
+    }
+
+    function mint(address to, uint256 amount) external {
+        require(msg.sender == owner || authorizedMinters[msg.sender], "MAJI: not authorised to mint");
         require(to != address(0), "MAJI: zero address");
         _totalSupply    += amount;
         _balances[to]   += amount;

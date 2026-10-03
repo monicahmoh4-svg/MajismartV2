@@ -4,12 +4,15 @@ import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, UserPlus, User, MapPin } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
+import { KENYA_COUNTIES, USER_ROLES } from '../lib/kenya'
+
 export default function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    county: ''
+    county: '',
+    role: 'citizen'
   })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -17,10 +20,7 @@ export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
 
-  const counties = [
-    'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret',
-    'Machakos', 'Kiambu', 'Kajiado', 'Meru', 'Nyeri'
-  ]
+  const counties = KENYA_COUNTIES
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -148,7 +148,21 @@ export default function Register() {
                 placeholder="At least 6 characters"
                 style={{ width: '100%', padding: '12px 44px 12px 44px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box' }}
               />
-              <button
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>I am joining as</label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '15px', background: 'white', boxSizing: 'border-box' }}
+            >
+              {USER_ROLES.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>County/Admin roles are approved by your utility. Kenya DPA consent applies at signup.</p>
+          </div>
+
+          <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 style={{

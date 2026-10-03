@@ -60,8 +60,8 @@ async function main() {
   // ── Post-deployment setup ────────────────────────────────────────────
   console.log('\n⚙️  Running post-deploy setup...');
 
-  // Allow WaterPayment to mint MAJI tokens
-  const tx1 = await majiToken.authorizeOracle(paymentAddr, true);
+  // Allow WaterPayment to mint MAJI tokens (minter role, not oracle role)
+  const tx1 = await majiToken.authorizeMinter(paymentAddr, true);
   await tx1.wait();
   console.log(`   ✅ WaterPayment authorised to mint MAJI`);
 

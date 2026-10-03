@@ -221,3 +221,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--blue); }
   .btn-lg { width: 100%; justify-content: center; }
   .section { padding: 60px 20px; }
 }
+
+/* Global loaders / motion (referenced across pages) */
+.page-loader { min-height: 60vh; display: flex; align-items: center; justify-content: center; background: transparent; }
+.spinner { width: 44px; height: 44px; border: 4px solid #e2e8f0; border-top: 4px solid #0891b2; border-radius: 50%; animation: spin 1s linear infinite; }
+.fade-in { animation: fadeIn .35s ease-in; }
+.animate-spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }

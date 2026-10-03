@@ -186,6 +186,7 @@ contract WaterQualityOracle {
     }
 
     function getSafetyLabel(string calldata nodeId) external view returns (string memory) {
+        if (readingCount[nodeId] == 0) return "No data";
         SafetyStatus s = latestReading[nodeId].safety;
         if (s == SafetyStatus.SAFE)       return "Safe to drink";
         if (s == SafetyStatus.BOIL_FIRST) return "Boil before drinking";

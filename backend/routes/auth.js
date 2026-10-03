@@ -27,15 +27,19 @@ async function ensureUserSchema() {
   }
 }
 
-// POST /api/auth/register
+// POST /api/auth/register — self-serve only citizen/operator/technician.
+// county_admin/super_admin must be granted by an admin (prevents privilege escalation).
 router.post('/register', async (req, res) => {
   try {
     await ensureUserSchema();
-    
-    const { name, email, password, county } = req.body;
-    
+
+    const { name, email, password, county, role } = req.body;
+
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
     const { rows: existing } = await db.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -44,11 +48,14 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
+    const SELF_SERVE_ROLES = ['citizen', 'operator', 'technician', 'viewer'];
+    const safeRole = SELF_SERVE_ROLES.includes(role) ? role : 'citizen';
+
     const { rows } = await db.query(
-      `INSERT INTO users (name, email, password, county, role, tenant_id) 
-       VALUES ($1, $2, $3, $4, 'citizen', $4) RETURNING id, name, email, county, role, tenant_id`,
-      [name, email, hashedPassword, county || null]
+      `INSERT INTO users (name, email, password, county, role, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $4) RETURNING id, name, email, county, role, tenant_id`,
+      [name, email, hashedPassword, county || null, safeRole]
     );
 
     const user = rows[0];
