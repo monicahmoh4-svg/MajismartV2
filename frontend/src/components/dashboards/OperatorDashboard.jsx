@@ -44,7 +44,9 @@ export default function OperatorDashboard() {
   const [data, setData] = useState(null)
   const [nodes, setNodes] = useState([])
   const [alerts, setAlerts] = useState([])
+  const [today, setToday] = useState(null)
   const [resolving, setResolving] = useState(null)
+  const [escalating, setEscalating] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -55,14 +57,16 @@ export default function OperatorDashboard() {
     try {
       setLoading(true)
       const q = user?.county ? `?county=${encodeURIComponent(user.county)}` : ''
-      const [stats, n, a] = await Promise.all([
+      const [stats, n, a, s] = await Promise.all([
         api.get('/operator/dashboard-stats'),
         api.get(`/nodes${q}`).catch(() => []),
         api.get('/alerts?resolved=false&limit=10').catch(() => []),
+        api.get('/dashboard/summary').catch(() => null),
       ])
       setData(stats)
       setNodes(Array.isArray(n) ? n : [])
       setAlerts(Array.isArray(a) ? a.filter(x => !user?.county || !x.county || x.county === user.county) : [])
+      setToday(s || null)
     } catch (err) {
       console.error('Operator dashboard fetch error:', err)
       setData({ water_points: 0, active_nodes: 0, active_alerts: 0, work_orders: 0, maintenance_tasks: 0 })
@@ -78,6 +82,23 @@ export default function OperatorDashboard() {
       setAlerts(list => list.filter(a => a.id !== id))
     } catch (e) { console.error('Resolve failed:', e.message) }
     finally { setResolving(null) }
+  }
+
+  const escalateAlert = async (a) => {
+    setEscalating(a.id)
+    try {
+      await api.post('/workorders', {
+        title: `${a.type?.replace(/_/g, ' ') || 'Field issue'} at ${a.node_name || 'node'}`,
+        description: `${a.message || ''} (from alert ${a.id}, severity ${a.severity})`,
+        priority: a.severity === 'critical' ? 'urgent' : 'high',
+        location: [a.node_name, a.county].filter(Boolean).join(', '),
+        source_type: 'report',
+        created_by: user?.name || 'Operator',
+      })
+      await api.patch(`/alerts/${a.id}/resolve`, {}).catch(() => {})
+      setAlerts(list => list.filter(x => x.id !== a.id))
+    } catch (e) { console.error('Escalation failed:', e.message) }
+    finally { setEscalating(null) }
   }
 
   if (loading) return <Loading message="Loading operator dashboard..." />
@@ -141,6 +162,23 @@ export default function OperatorDashboard() {
           <StatCard title="Maintenance Tasks" value={data?.maintenance_tasks || 0} icon={Wrench} color="#f59e0b" />
         </div>
 
+        {today && (
+          <div style={{ background: 'linear-gradient(135deg, #0d6e56, #0891b2)', borderRadius: '16px', padding: '18px 24px', marginBottom: '24px', color: 'white', display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '12px', opacity: 0.75 }}>Today's collections</div>
+              <div style={{ fontSize: '24px', fontWeight: '800' }}>Ksh {Number(today?.payments?.today_revenue || 0).toLocaleString()}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', opacity: 0.75 }}>Sensor readings (last hour)</div>
+              <div style={{ fontSize: '24px', fontWeight: '800' }}>{today?.sensor?.readings_last_hour ?? '—'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', opacity: 0.75 }}>Open critical alerts</div>
+              <div style={{ fontSize: '24px', fontWeight: '800' }}>{alerts.filter(a => a.severity === 'critical').length}</div>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
@@ -177,6 +215,9 @@ export default function OperatorDashboard() {
                 </div>
                 <button className="btn btn-success btn-sm" disabled={resolving === a.id} onClick={() => resolveAlert(a.id)}>
                   {resolving === a.id ? '…' : 'Resolve'}
+                </button>
+                <button className="btn btn-outline btn-sm" disabled={escalating === a.id} onClick={() => escalateAlert(a)} title="Create a work order from this alert">
+                  {escalating === a.id ? '…' : 'Escalate'}
                 </button>
               </div>
             ))}

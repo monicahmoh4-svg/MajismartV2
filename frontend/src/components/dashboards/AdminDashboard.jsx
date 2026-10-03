@@ -3,11 +3,12 @@ import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api'
 import { motion } from 'framer-motion'
-import { 
-  Users, Activity, MapPin, AlertTriangle, Wallet, 
+import {
+  Users, Activity, MapPin, AlertTriangle, Wallet,
   FileText, RefreshCw, Map, TrendingUp, TrendingDown,
   CheckCircle, Clock, BarChart3, Package, MessageSquare, Brain, Wrench
 } from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { Loading } from '../ui/StateViews'
 
 function StatCard({ title, value, icon: Icon, color = '#0891b2', trend }) {
@@ -67,6 +68,9 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [health, setHealth] = useState(null)
+  const [revenue14d, setRevenue14d] = useState([])
+  const [critical, setCritical] = useState([])
+  const [pendingVendors, setPendingVendors] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -79,12 +83,18 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
       setError(null)
-      const [stats, h] = await Promise.all([
+      const [stats, h, rev, critAlerts, vendors] = await Promise.all([
         api.get('/admin/dashboard-stats'),
         api.get('/health').catch(() => null),
+        api.get('/dashboard/revenue-chart?days=14').catch(() => []),
+        api.get('/alerts?resolved=false&severity=critical&limit=5').catch(() => []),
+        api.get('/wasreb/vendors').catch(() => []),
       ])
       setData(stats)
       setHealth(h && h.service ? h : null)
+      setRevenue14d(Array.isArray(rev) ? rev : [])
+      setCritical(critAlerts || [])
+      setPendingVendors((Array.isArray(vendors) ? vendors : []).filter(v => v.status === 'pending'))
       setLastUpdated(new Date())
     } catch (err) {
       console.error('Admin dashboard fetch error:', err)
@@ -190,6 +200,50 @@ export default function AdminDashboard() {
         </motion.div>
           );
         })()}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Revenue — last 14 days</h2>
+            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#64748b' }}>M-Pesa collections across all counties</p>
+            {revenue14d.length === 0 ? (
+              <p style={{ fontSize: '14px', color: '#94a3b8' }}>No completed payments in this window yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={revenue14d.map(d => ({ day: new Date(d.date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' }), revenue: Number(d.revenue) }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [`Ksh ${Number(v).toLocaleString()}`, 'Revenue']} />
+                  <Area type="monotone" dataKey="revenue" stroke="#0891b2" fill="#0891b2" fillOpacity={0.18} strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertTriangle size={18} color="#dc2626" /> Needs your attention
+            </h2>
+            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#64748b' }}>Critical alerts and vendor permits awaiting decision</p>
+            {critical.length === 0 && pendingVendors.length === 0 && (
+              <p style={{ fontSize: '14px', color: '#94a3b8' }}>All clear — nothing critical pending.</p>
+            )}
+            {critical.map(a => (
+              <div key={a.id} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'flex-start' }}>
+                <AlertTriangle size={15} color="#dc2626" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#0f172a' }}>{a.node_name || 'System'}</div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>{a.message}</div>
+                </div>
+              </div>
+            ))}
+            {pendingVendors.length > 0 && (
+              <div style={{ marginTop: 8, padding: '12px 14px', background: '#fef3d8', borderRadius: 10, fontSize: '13px', color: '#92400e' }}>
+                <strong>{pendingVendors.length}</strong> vendor permit{pendingVendors.length === 1 ? '' : 's'} awaiting approval
+                ({pendingVendors.slice(0, 3).map(v => v.county).filter(Boolean).join(', ') || 'various counties'}).
+              </div>
+            )}
+          </motion.div>
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>

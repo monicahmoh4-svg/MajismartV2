@@ -1,5 +1,7 @@
 const router = require('express').Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 
 // WASREB-aligned KPIs computed from live tables with graceful fallbacks.
 // KPIs: NRW %, collection efficiency, active points, hours of supply (proxy),
@@ -99,5 +101,29 @@ router.post('/vendors', async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: 'Failed to register vendor' }); }
 });
+
+// County officers approve/reject vendor permits (licensed-vendor workflow).
+// County admins may only decide vendors inside their own county tenant.
+router.patch('/vendors/:id',
+  authenticateToken,
+  requireRole('super_admin', 'county_admin'),
+  async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!['approved', 'rejected', 'pending', 'suspended'].includes(status)) {
+        return res.status(400).json({ error: 'status must be approved, rejected, pending or suspended' });
+      }
+      const { rows: found } = await db.query('SELECT * FROM vendors WHERE id=$1', [req.params.id]);
+      if (!found.length) return res.status(404).json({ error: 'Vendor not found' });
+      const { normalizeRole } = require('../middleware/auth');
+      const role = normalizeRole(req.user.role);
+      if (role === 'county_admin' && req.user.county && found[0].county !== req.user.county) {
+        return res.status(403).json({ error: 'Cannot decide vendors outside your county' });
+      }
+      const { rows } = await db.query(
+        `UPDATE vendors SET status=$1 WHERE id=$2 RETURNING *`, [status, req.params.id]);
+      res.json(rows[0]);
+    } catch (e) { res.status(500).json({ error: 'Failed to update vendor' }); }
+  });
 
 module.exports = router;

@@ -35,16 +35,23 @@ export default function CommunityDashboard() {
     e.preventDefault(); setPaying(true); setPayResult(null)
     try {
       const res = await api.post('/payments/initiate', payForm)
-      setPayResult({ ok: true, msg: res.message, id: res.payment_id })
+      setPayResult({ ok: true, msg: res.message, id: res.payment_id, token: res.token_formatted || res.token || null })
       let tries = 0
       const poll = setInterval(async () => {
         tries++
         const s = await api.get(`/payments/${res.payment_id}/status`)
-        if (s.status === 'completed') { clearInterval(poll); setPayResult({ ok: true, msg: `✅ Payment complete! M-Pesa code: ${s.mpesa_code}` }) }
+        if (s.status === 'completed') {
+          clearInterval(poll)
+          setPayResult(r => ({ ...r, ok: true, msg: `✅ Payment complete! M-Pesa code: ${s.mpesa_code}`, token: r.token || (s.token ? String(s.token).replace(/(.{4})/g, '$1-').replace(/-$/, '') : null) }))
+        }
         if (tries > 12) clearInterval(poll)
       }, 2500)
     } catch (err) { setPayResult({ ok: false, msg: err.error || 'Payment failed.' }) }
     finally { setPaying(false) }
+  }
+
+  const copyToken = async (t) => {
+    try { await navigator.clipboard.writeText(String(t).replace(/-/g, '')) } catch (e) { /* clipboard unavailable */ }
   }
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}><div style={{ width: 36, height: 36, border: '3px solid #e8eaed', borderTopColor: '#1a7fd4', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /></div>
@@ -104,7 +111,21 @@ export default function CommunityDashboard() {
         </div>
         {showPay && (
           <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid #e8eaed' }}>
-            {payResult && <div style={{ padding: '12px 16px', borderRadius: 8, marginBottom: 14, fontSize: 13, background: payResult.ok ? '#e1f5ee' : '#fce8e6', color: payResult.ok ? '#0a7a5c' : '#a52820' }}>{payResult.msg}</div>}
+            {payResult && (
+              <div style={{ padding: '12px 16px', borderRadius: 8, marginBottom: 14, fontSize: 13, background: payResult.ok ? '#e1f5ee' : '#fce8e6', color: payResult.ok ? '#0a7a5c' : '#a52820' }}>
+                <div>{payResult.msg}</div>
+                {payResult.ok && payResult.token && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px dashed #0d9e75' }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#5f6368' }}>Your prepaid token — enter it on the meter keypad</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 2, color: '#0d9e75' }}>{payResult.token}</div>
+                    </div>
+                    <button onClick={() => copyToken(payResult.token)} style={{ marginLeft: 'auto', background: '#0d9e75', color: 'white', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Copy</button>
+                  </div>
+                )}
+                {payResult.ok && <div style={{ fontSize: 11, color: '#5f6368', marginTop: 8 }}>Lost your token? Dial *384*99# or recover it any time from My Water → Token recovery.</div>}
+              </div>
+            )}
             <form onSubmit={pay}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
                 <div><label style={{ fontSize: 13, fontWeight: 500, color: '#5f6368' }}>Water Point</label>

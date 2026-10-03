@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Wallet, TrendingUp, TrendingDown, Droplets, MapPin, Receipt, Info } from 'lucide-react'
+import { useState } from 'react'
+import { Wallet, TrendingUp, TrendingDown, Droplets, MapPin, Receipt, Info, KeyRound, Copy } from 'lucide-react'
 import api from '../api'
 import { useApiData } from '../hooks/useApiData'
 import { Loading, ErrorState, EmptyState } from '../components/ui/StateViews'
@@ -21,21 +22,81 @@ export default function MyWater() {
   if (loading) return <Loading rows={3} />
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
-  if (!data?.has_data) {
-    return (
-      <div style={{ maxWidth: 480, margin: '0 auto' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>My Water Spending</h1>
-        <div className="card" style={{ padding: 28, textAlign: 'center' }}>
-          <Wallet size={36} color="#9aa0a6" style={{ display: 'block', margin: '0 auto 12px' }} />
-          <p style={{ color: '#5f6368', fontSize: 14, marginBottom: 16 }}>
-            {data?.message || 'Add your phone number to track your water purchases automatically.'}
-          </p>
-          <Link to="/app/settings" className="btn btn-primary">Add phone number</Link>
-        </div>
+  return (
+    <>
+      {data?.has_data ? <SpendingView data={data} /> : <EmptySpending data={data} />}
+      <TokenRecovery />
+    </>
+  )
+}
+
+function EmptySpending({ data }) {
+  return (
+    <div style={{ maxWidth: 480, margin: '0 auto 14px' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>My Water Spending</h1>
+      <div className="card" style={{ padding: 28, textAlign: 'center' }}>
+        <Wallet size={36} color="#9aa0a6" style={{ display: 'block', margin: '0 auto 12px' }} />
+        <p style={{ color: '#5f6368', fontSize: 14, marginBottom: 16 }}>
+          {data?.message || 'Add your phone number to track your water purchases automatically.'}
+        </p>
+        <Link to="/app/settings" className="btn btn-primary">Add phone number</Link>
       </div>
-    )
+    </div>
+  )
+}
+
+// Lost-token recovery: last 5 prepaid tokens for an M-Pesa number.
+function TokenRecovery() {
+  const [phone, setPhone] = useState('')
+  const [tokens, setTokens] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [copied, setCopied] = useState(null)
+
+  const recover = async (e) => {
+    e.preventDefault(); setBusy(true); setErr(''); setTokens(null)
+    try {
+      const res = await api.get(`/tokens/recover?phone=${encodeURIComponent(phone)}`)
+      setTokens(Array.isArray(res) ? res : [])
+    } catch (e2) {
+      setErr(e2.message || 'Recovery failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+  const copy = async (t, i) => {
+    try { await navigator.clipboard.writeText(String(t.token).replace(/-/g, '')); setCopied(i); setTimeout(() => setCopied(null), 1500) } catch (e) { /* noop */ }
   }
 
+  return (
+    <div className="card fade-in" style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#5f6368', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <KeyRound size={13} /> Token recovery
+      </div>
+      <p style={{ fontSize: 12, color: '#9aa0a6', margin: '0 0 10px' }}>Lost the SMS? Re-send your last 5 prepaid tokens to this screen.</p>
+      <form onSubmit={recover} style={{ display: 'flex', gap: 8 }}>
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712345678" required
+          style={{ flex: 1 }} inputMode="tel" />
+        <button className="btn btn-primary btn-sm" disabled={busy}>{busy ? '…' : 'Recover'}</button>
+      </form>
+      {err && <div className="alert-bar alert-bar-error" style={{ marginTop: 10 }}>{err}</div>}
+      {tokens && tokens.length === 0 && <p className="muted" style={{ marginTop: 10 }}>No tokens found for that number.</p>}
+      {tokens && tokens.length > 0 && tokens.map((t, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < tokens.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 1.5 }}>{t.token_formatted || t.token}</div>
+            <div style={{ fontSize: 11, color: '#9aa0a6' }}>{t.litres}L · Ksh {t.amount_ksh} · {t.status}{t.created_at ? ` · ${new Date(t.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })}` : ''}</div>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={() => copy(t, i)}>
+            <Copy size={13} /> {copied === i ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function SpendingView({ data }) {
   const tm = data.this_month
   const lm = data.last_month
   const fairCostMin = 0.10

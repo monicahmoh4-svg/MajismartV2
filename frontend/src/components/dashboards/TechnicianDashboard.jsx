@@ -8,6 +8,13 @@ const STATUS_TONE = {
   in_progress: 'warn', completed: 'ok', verified: 'ok',
 }
 
+const PRIORITY_RANK = { urgent: 0, high: 1, medium: 2, low: 3 }
+
+function ageDays(o) {
+  if (!o.created_at) return null
+  return Math.max(0, Math.floor((Date.now() - new Date(o.created_at).getTime()) / 86400000))
+}
+
 function mine(wo, user) {
   if (!user) return false
   const a = String(wo.assigned_to || '').toLowerCase()
@@ -25,6 +32,7 @@ export default function TechnicianDashboard() {
   const [busy, setBusy] = useState(null)
   const [notingId, setNotingId] = useState(null)
   const [note, setNote] = useState('')
+  const [sortBy, setSortBy] = useState('priority')
 
   const load = async () => {
     setLoading(true); setError('')
@@ -46,17 +54,30 @@ export default function TechnicianDashboard() {
   )
   const visible = useMemo(() => {
     const pool = myOrders.length ? myOrders : orders
-    if (filter === 'all') return pool
-    if (filter === 'open') return pool.filter((o) => ['open', 'pending', 'assigned'].includes(o.status))
-    if (filter === 'doing') return pool.filter((o) => o.status === 'in_progress')
-    return pool.filter((o) => ['completed', 'verified'].includes(o.status))
-  }, [orders, myOrders, filter])
+    let list = [...pool]
+    if (filter === 'open') list = list.filter((o) => ['open', 'pending', 'assigned'].includes(o.status))
+    else if (filter === 'doing') list = list.filter((o) => o.status === 'in_progress')
+    else if (filter === 'done') list = list.filter((o) => ['completed', 'verified'].includes(o.status))
+    if (sortBy === 'priority') {
+      list.sort((a, b) => (PRIORITY_RANK[a.priority] ?? 2) - (PRIORITY_RANK[b.priority] ?? 2))
+    } else if (sortBy === 'oldest') {
+      list.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0))
+    } else {
+      list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    }
+    return list
+  }, [orders, myOrders, filter, sortBy])
 
   const counts = useMemo(() => ({
     open: myOrders.filter((o) => ['open', 'pending', 'assigned'].includes(o.status)).length,
     doing: myOrders.filter((o) => o.status === 'in_progress').length,
     done: myOrders.filter((o) => ['completed', 'verified'].includes(o.status)).length,
   }), [myOrders])
+
+  const doneThisWeek = useMemo(() => myOrders.filter((o) =>
+    ['completed', 'verified'].includes(o.status) &&
+    o.completed_at && (Date.now() - new Date(o.completed_at).getTime()) < 7 * 86400000
+  ).length, [myOrders])
 
   const setStatus = async (id, status, completionNotes) => {
     setBusy(id)
@@ -105,11 +126,20 @@ export default function TechnicianDashboard() {
       <div className="panel">
         <div className="panel-h">
           <h2><Wrench size={16} /> Work queue</h2>
-          <div className="chip-row" role="tablist" aria-label="Filter tasks">
-            {[['open', 'Open'], ['doing', 'Doing'], ['done', 'Done'], ['all', 'All']].map(([v, l]) => (
-              <button key={v} role="tab" aria-selected={filter === v}
-                className={`chip${filter === v ? ' chip-on' : ''}`} onClick={() => setFilter(v)}>{l}</button>
-            ))}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="muted-sm">⚡ {doneThisWeek} closed this week</span>
+            <div className="chip-row" role="tablist" aria-label="Filter tasks">
+              {[['open', 'Open'], ['doing', 'Doing'], ['done', 'Done'], ['all', 'All']].map(([v, l]) => (
+                <button key={v} role="tab" aria-selected={filter === v}
+                  className={`chip${filter === v ? ' chip-on' : ''}`} onClick={() => setFilter(v)}>{l}</button>
+              ))}
+            </div>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label="Sort tasks"
+              style={{ width: 'auto', padding: '6px 10px', fontSize: 13 }}>
+              <option value="priority">Sort: priority</option>
+              <option value="oldest">Sort: oldest first</option>
+              <option value="newest">Sort: newest first</option>
+            </select>
           </div>
         </div>
 
@@ -129,6 +159,11 @@ export default function TechnicianDashboard() {
                     {(o.status || 'open').replace('_', ' ')}
                   </span>
                   {o.priority && <span className="chip">{o.priority} priority</span>}
+                  {ageDays(o) !== null && !['completed', 'verified'].includes(o.status) && (
+                    <span className="chip" style={ageDays(o) > 7 ? { borderColor: '#f5c6c3', color: '#a52820' } : undefined}>
+                      {ageDays(o) === 0 ? 'opened today' : `${ageDays(o)}d open`}
+                    </span>
+                  )}
                   {(o.node_name || o.county) && (
                     <span className="muted-sm"><MapPin size={12} /> {[o.node_name, o.county].filter(Boolean).join(' · ')}</span>
                   )}
