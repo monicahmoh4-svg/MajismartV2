@@ -133,8 +133,10 @@ export default function useWeb3() {
     }
     setConnecting(true); setError(null)
     try {
-      // Fetch network info from backend first
-      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/blockchain/status`)
+      // Fetch network info from backend first (shared resolver: cached
+      // winner → VITE_API_URL → live default, never a bare undefined host)
+      const { getConfiguredApiUrl } = await import('../api')
+      const res  = await fetch(`${getConfiguredApiUrl()}/blockchain/status`)
       const info = await res.json()
       setNetworkInfo(info)
 

@@ -64,10 +64,20 @@ export function AuthProvider({ children }) {
         throw new Error('Invalid response from server')
       }
     } catch (error) {
+      const msg = error?.message || ''
+      // Timeout ambiguity recovery: the account may have been created
+      // server-side even though the response never arrived (request retried
+      // across backends, or a slow wake-up). If the server says the email
+      // already exists, attempt login with the same credentials — success
+      // proves the account is real and completes the signup seamlessly.
+      if (/already registered|already exists/i.test(msg) && userData?.email && userData?.password) {
+        const attempt = await login(userData.email, userData.password)
+        if (attempt.success) return attempt
+      }
       console.error('Register error:', error)
-      return { 
-        success: false, 
-        error: error?.message || error?.error || 'Registration failed. Please try again.' 
+      return {
+        success: false,
+        error: msg || 'Registration failed. Please try again.'
       }
     }
   }
