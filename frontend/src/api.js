@@ -4,7 +4,7 @@ import axios from 'axios'
 let API_URL = import.meta.env.VITE_API_URL ||
   (window.location.hostname === 'localhost'
     ? 'http://localhost:5000'
-    : 'https://majismartv2.onrender.com')
+    : 'https://majismartv2-qmel.onrender.com')
 
 if (!API_URL.endsWith('/api')) {
   API_URL = API_URL.replace(/\/$/, '') + '/api'

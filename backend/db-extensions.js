@@ -119,6 +119,16 @@ async function ensureProductionTables() {
     CREATE INDEX IF NOT EXISTS idx_payments_status_time ON payments(status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_tokens_phone ON prepaid_tokens(phone);
   `);
+
+  // Backfill columns expected by legacy routes (idempotent).
+  // /api/reports needs: reported_by, reporter_phone, type, location.
+  // /api/datasets/water-quality selects: location, quality_index.
+  await db.query(`ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS reported_by UUID`);
+  await db.query(`ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS reporter_phone VARCHAR(20)`);
+  await db.query(`ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS type VARCHAR(60) DEFAULT 'other'`);
+  await db.query(`ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS location VARCHAR(200)`);
+  await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS location VARCHAR(200)`);
+  await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS quality_index INTEGER`);
   console.log('Production tables ensured');
 }
 

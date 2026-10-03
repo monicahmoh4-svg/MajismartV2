@@ -1,59 +1,174 @@
 const { Pool } = require('pg');
 
-// Validate DATABASE_URL at boot so dashboard misconfiguration is obvious.
-// Render failure seen in the wild: host `dpg-xxxx-a` with no domain means the
-// value was pasted truncated — Postgres then fails with ENOTFOUND.
-function checkDatabaseUrl() {
-  const url = process.env.DATABASE_URL || '';
-  if (!url) {
-    console.warn('⚠️  DATABASE_URL not set — database features will fail (API still boots degraded)');
-    return;
-  }
-  const m = url.match(/@([^/:?#]+)/);
-  const host = m && m[1];
-  if (!host) {
-    console.error('❌ DATABASE_URL has no host part — fix it on the Render dashboard (Environment → DATABASE_URL)');
-    return;
-  }
-  if (!host.includes('.')) {
-    console.error(`❌ DATABASE_URL host "${host}" has no domain — it looks TRUNCATED. ` +
-      `On Render: open the PostgreSQL instance → Info tab → copy the FULL "Internal Database URL" ` +
-      `(it ends with .oregon-postgres.render.com/<dbname>) into the Web Service Environment.`);
-    return;
-  }
-  console.log(`ℹ️  Database host: ${host}`);
+// ---------------------------------------------------------------------------
+// Self-healing DATABASE_URL handling.
+//
+// Production incident seen on Render: the stored DATABASE_URL host was
+// `dpg-xxxx-a` with NO domain (pasted truncated), so every connection failed
+// with ENOTFOUND and login/register (all DB-backed endpoints) went down.
+//
+// This module now:
+//  1. Trims pasted whitespace/newlines.
+//  2. Detects a bare Render host id (`dpg-...`) and expands it across Render's
+//     known Postgres domains, probing each until one connects.
+//  3. Creates the pg Pool lazily from the first working URL (no crash at
+//     require-time when the DB is unreachable; API boots degraded).
+// ---------------------------------------------------------------------------
+
+const RENDER_PG_DOMAINS = [
+  'oregon-postgres.render.com',
+  'ohio-postgres.render.com',
+  'frankfurt-postgres.render.com',
+  'singapore-postgres.render.com',
+];
+
+const PROBE_COOLDOWN_MS = 30000;
+
+const dbState = {
+  configured: false,
+  host: null,      // host actually used (never includes credentials)
+  repaired: false, // true when we expanded a truncated host id
+  connected: false,
+  lastError: null,
+  lastProbeAt: 0,
+};
+
+function extractHost(raw) {
+  const m = String(raw || '').match(/@([^/:?#]+)/);
+  return m ? m[1] : null;
 }
-checkDatabaseUrl();
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-});
-pool.on('error', (err) => {
-  console.error('Unexpected DB pool error:', err.message);
-});
-async function query(text, params) {
-  const client = await pool.connect();
+
+// Pure function — unit-testable without network. Returns ordered candidates.
+function candidateUrls(rawInput) {
+  let raw = String(rawInput || '').trim();
+  if (!raw) return { candidates: [], host: null, repaired: false };
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) raw = 'postgresql://' + raw;
+  const host = extractHost(raw);
+  if (!host) return { candidates: [raw], host: null, repaired: false };
+  if (host.includes('.')) return { candidates: [raw], host, repaired: false };
+  // Bare id like dpg-db0bm2c9v7es73aoe2h0-a → almost certainly a truncated
+  // Render Internal Database URL. Expand across Render regions.
+  if (/^dpg-[a-z0-9-]+$/i.test(host)) {
+    return {
+      candidates: RENDER_PG_DOMAINS.map((d) => raw.replace(host, `${host}.${d}`)),
+      host,
+      repaired: true,
+    };
+  }
+  return { candidates: [raw], host, repaired: false };
+}
+
+let pool = null;
+
+async function tryConnect(url) {
+  const probe = new Pool({
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+    max: 1,
+    connectionTimeoutMillis: 3000,
+  });
   try {
-    const res = await client.query(text, params);
-    return res;
+    await probe.query('SELECT 1');
+    return true;
   } finally {
-    client.release();
+    await probe.end().catch(() => {});
   }
 }
+
+async function ensurePool() {
+  if (pool) return pool;
+  const now = Date.now();
+  if (dbState.lastError && now - dbState.lastProbeAt < PROBE_COOLDOWN_MS) {
+    throw new Error(dbState.lastError);
+  }
+  const { candidates, host, repaired } = candidateUrls(process.env.DATABASE_URL);
+  dbState.configured = candidates.length > 0;
+  dbState.host = host;
+  dbState.repaired = repaired;
+  dbState.lastProbeAt = now;
+  if (!candidates.length) {
+    dbState.lastError = 'DATABASE_URL is not set — set it on the Render dashboard (Environment)';
+    console.warn('⚠️  ' + dbState.lastError);
+    throw new Error(dbState.lastError);
+  }
+  if (repaired) {
+    console.warn(`⚠️  DATABASE_URL host "${host}" has no domain — auto-expanding across Render regions. ` +
+      `For a faster boot, paste the FULL Internal Database URL on the Render dashboard.`);
+  } else if (host) {
+    console.log(`ℹ️  Database host: ${host}`);
+  }
+  let lastErr = 'connection failed';
+  for (const url of candidates) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await tryConnect(url);
+      pool = new Pool({
+        connectionString: url,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
+      });
+      pool.on('error', (err) => {
+        console.error('Unexpected DB pool error:', err.message);
+      });
+      dbState.connected = true;
+      dbState.activeHost = extractHost(url);
+      dbState.lastError = null;
+      console.log(`✅ Database connected (${dbState.activeHost})`);
+      return pool;
+    } catch (e) {
+      lastErr = e.message;
+    }
+  }
+  dbState.connected = false;
+  dbState.lastError = lastErr;
+  console.error(`❌ Database connection failed: ${lastErr}`);
+  throw new Error(lastErr);
+}
+
+async function query(text, params) {
+  const p = await ensurePool();
+  const client = await p.connect();
+  try {
+    return await client.query(text, params);
+  } catch (e) {
+    // DNS/refused = the cached pool points at a dead host: drop it so the
+    // next request re-probes (subject to cooldown) instead of failing forever.
+    if (/ENOTFOUND|EAI_AGAIN|ECONNREFUSED/.test(e.code || e.message)) {
+      if (pool === p) {
+        pool = null;
+        p.end().catch(() => {});
+      }
+    }
+    throw e;
+  } finally {
+    try { client.release(); } catch (_) { /* pool may be ended */ }
+  }
+}
+
+function getDbStatus() {
+  return {
+    configured: dbState.configured,
+    host: dbState.activeHost || dbState.host,
+    repaired: dbState.repaired,
+    connected: dbState.connected,
+    lastError: dbState.lastError,
+  };
+}
+
 async function initSchema() {
-  await pool.query(`
+  await query(`
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name VARCHAR(100) NOT NULL,
       email VARCHAR(150) UNIQUE NOT NULL,
       password VARCHAR(255) NOT NULL,
-      role VARCHAR(20) DEFAULT 'operator' CHECK (role IN ('admin','county_officer','operator','community')),
+      role VARCHAR(30) DEFAULT 'citizen' CHECK (role IN ('super_admin','county_admin','operator','technician','citizen','viewer','admin','county_officer','community')),
       county VARCHAR(100),
       phone VARCHAR(20),
+      tenant_id VARCHAR(100),
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
@@ -117,7 +232,7 @@ async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_alerts_node ON alerts(node_id);
     CREATE INDEX IF NOT EXISTS idx_alerts_resolved ON alerts(resolved);
   `);
-  const { rows } = await pool.query('SELECT COUNT(*) FROM nodes');
+  const { rows } = await query('SELECT COUNT(*) FROM nodes');
   if (parseInt(rows[0].count) === 0) {
     await seedDemo();
   }
@@ -126,14 +241,14 @@ async function seedDemo() {
   console.log('🌱 Seeding demo data…');
   const bcrypt = require('bcryptjs');
   const hash = await bcrypt.hash('admin123', 10);
-  await pool.query(`
+  await query(`
     INSERT INTO users (name, email, password, role, county) VALUES
     ('Admin User',   'admin@majismart.ke',    $1, 'admin',          'Nairobi'),
     ('Jane Wanjiku', 'county@majismart.ke',   $1, 'county_officer', 'Kiambu'),
     ('John Kamau',   'operator@majismart.ke', $1, 'operator',       'Machakos')
     ON CONFLICT (email) DO NOTHING
   `, [hash]);
-  await pool.query(`
+  await query(`
     INSERT INTO nodes (name, location, county, latitude, longitude, status, type, capacity_litres) VALUES
     ('Kiambu Borehole 1',  'Thika Road, Kiambu',     'Kiambu',   -1.0332, 36.8279, 'active',  'borehole',     15000),
     ('Machakos Tank A',    'Machakos Town Centre',    'Machakos', -1.5177, 37.2634, 'active',  'tank',         10000),
@@ -143,11 +258,11 @@ async function seedDemo() {
     ('Kisumu Intake',      'Winam Gulf, Kisumu',      'Kisumu',   -0.1022, 34.7617, 'offline', 'river_intake', 25000)
     ON CONFLICT DO NOTHING
   `);
-  const { rows: nodes } = await pool.query('SELECT id FROM nodes');
+  const { rows: nodes } = await query('SELECT id FROM nodes');
   for (const node of nodes) {
     for (let i = 48; i >= 0; i--) {
       const t = new Date(Date.now() - i * 3600 * 1000);
-      await pool.query(
+      await query(
         `INSERT INTO sensor_readings (node_id, water_level, flow_rate, turbidity, temperature, recorded_at)
          VALUES ($1,$2,$3,$4,$5,$6)`,
         [
@@ -166,7 +281,7 @@ async function seedDemo() {
   for (let i = 0; i < 30; i++) {
     const litres = [20, 40, 60, 100][Math.floor(Math.random() * 4)];
     const hoursAgo = Math.floor(Math.random() * 72);
-    await pool.query(
+    await query(
       `INSERT INTO payments (node_id, phone, amount_ksh, litres, mpesa_code, status, created_at, completed_at)
        VALUES ($1,$2,$3,$4,$5,'completed',
          NOW() - ($6 * interval '1 hour'),
@@ -190,7 +305,7 @@ async function seedDemo() {
   for (let i = 0; i < 8; i++) {
     const a = alertDefs[Math.floor(Math.random() * alertDefs.length)];
     const resolved = Math.random() > 0.5;
-    await pool.query(
+    await query(
       `INSERT INTO alerts (node_id, type, message, severity, resolved, resolved_at, created_at)
        VALUES ($1,$2,$3,$4,$5,$6, NOW() - ($7 * interval '1 hour'))`,
       [
@@ -204,4 +319,11 @@ async function seedDemo() {
   }
   console.log('✅ Demo data seeded');
 }
-module.exports = { query, initSchema, pool };
+module.exports = {
+  query,
+  initSchema,
+  getDbStatus,
+  candidateUrls,
+  RENDER_PG_DOMAINS,
+  get pool() { return pool; },
+};

@@ -159,7 +159,14 @@ app.get('/', (req, res) => {
 app.get('/api/health', async (req, res) => {
   let dbOk = false;
   try { await db.query('SELECT 1'); dbOk = true; } catch (e) { dbOk = false; }
-  res.json({ status: dbOk ? 'ok' : 'degraded', timestamp: new Date().toISOString(), version: VERSION, service: 'MajiSmart API', db: dbOk ? 'up' : 'down' });
+  res.json({
+    status: dbOk ? 'ok' : 'degraded',
+    timestamp: new Date().toISOString(),
+    version: VERSION,
+    service: 'MajiSmart API',
+    db: dbOk ? 'up' : 'down',
+    database: typeof db.getDbStatus === 'function' ? db.getDbStatus() : undefined,
+  });
 });
 
 app.get('/api/config', (req, res) => {
