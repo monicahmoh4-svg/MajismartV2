@@ -61,7 +61,7 @@ export default function Payments() {
           <p style={{ color: '#5f6368', marginTop: 4 }}>M-Pesa water payment transactions</p>
         </div>
         {writer && (
-        <button className="btn btn-success" onClick={() => setShowForm(!showForm)}>
+        <button className="btn btn-money" onClick={() => setShowForm(!showForm)}>
           <Plus size={16} /> Initiate Payment
         </button>
         )}
@@ -107,13 +107,13 @@ export default function Payments() {
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Litres</label>
                 <select value={form.litres} onChange={e => setForm(f => ({...f, litres: parseInt(e.target.value)}))}>
-                  {[20,40,60,100,200].map(l => <option key={l} value={l}>{l}L — Ksh {(l*0.1).toFixed(2)}</option>)}
+                  {[20,40,60,100,200].map(l => <option key={l} value={l}>{l}L — Ksh {(l*0.125).toFixed(2)}</option>)}
                 </select>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center' }}>
-              <button type="submit" className="btn btn-success" disabled={submitting}>
-                {submitting ? 'Sending STK Push…' : `Pay Ksh ${(form.litres*0.1).toFixed(2)}`}
+              <button type="submit" className="btn btn-money" disabled={submitting}>
+                {submitting ? 'Sending STK Push…' : `Pay Ksh ${(form.litres*0.125).toFixed(2)}`}
               </button>
               <span style={{ fontSize: 13, color: '#9aa0a6' }}>M-Pesa prompt will appear on phone</span>
             </div>

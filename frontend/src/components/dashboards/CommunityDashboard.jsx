@@ -143,7 +143,7 @@ export default function CommunityDashboard() {
                   </select>
                 </div>
               </div>
-              <button type="submit" disabled={paying} style={{ background: paying ? '#9aa0a6' : '#0d9e75', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: paying ? 'not-allowed' : 'pointer', marginTop: 14 }}>
+              <button type="submit" disabled={paying} className="btn-money" style={{ padding: '10px 20px', fontSize: 14, cursor: paying ? 'not-allowed' : 'pointer', marginTop: 14 }}>
                 {paying ? 'Sending M-Pesa prompt…' : `Pay Ksh ${(payForm.litres * 0.125).toFixed(2)}`}
               </button>
             </form>

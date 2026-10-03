@@ -67,6 +67,8 @@ export default function Landing() {
     return () => observer.disconnect()
   }, [])
 
+  const [showAnnounce, setShowAnnounce] = useState(true)
+
   const scrollToSection = (id) => {
     const element = document.getElementById(id)
     if (element) {
@@ -76,11 +78,22 @@ export default function Landing() {
   }
 
   return (
-    <div style={{ 
-      fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif', 
-      color: '#1e293b', overflowX: 'hidden', background: '#f8fafc',
+    <div style={{
+      fontFamily: 'var(--font-sans)',
+      color: 'var(--ink)', overflowX: 'hidden', background: 'var(--bone)',
       minHeight: '100vh'
     }}>
+
+      {showAnnounce && (
+        <div className="announce-bar">
+          <span>Now live: M-Pesa prepaid tokens + WASREB KPIs across all 47 counties</span>
+          <a href="/register">Get started</a>
+          <button onClick={() => setShowAnnounce(false)} aria-label="Dismiss"
+            style={{ background: 'none', border: 'none', color: 'var(--bone)', cursor: 'pointer', padding: 4, display: 'flex' }}>
+            <X style={{ width: 14, height: 14 }} />
+          </button>
+        </div>
+      )}
 
       <style>{`
         @keyframes float { 0%,100%{ transform:translateY(0px); } 50%{ transform:translateY(-20px); } }
@@ -479,6 +492,22 @@ export default function Landing() {
           </div>
         )}
       </section>
+
+      {/* Live facts ticker — obsidian band, honest static facts */}
+      <div className="ticker" aria-label="MajiSmart facts">
+        <div className="ticker-track">
+          {[0, 1].map(copy => (
+            <span key={copy} style={{ display: 'inline-flex' }} aria-hidden={copy === 1}>
+              <span className="ticker-item"><span className="k">Non-revenue water</span><span className="v v-hi">48% nationally</span></span>
+              <span className="ticker-item"><span className="k">Collection</span><span className="v">M-Pesa native</span></span>
+              <span className="ticker-item"><span className="k">Fallback</span><span className="v">*384*99# USSD</span></span>
+              <span className="ticker-item"><span className="k">Coverage</span><span className="v">47 counties</span></span>
+              <span className="ticker-item"><span className="k">Standard</span><span className="v">WASREB-aligned KPIs</span></span>
+              <span className="ticker-item"><span className="k">Tariff</span><span className="v v-hi">Ksh 2.50 / 20L</span></span>
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* Stats Section */}
       <section id="stats" className="animate-on-scroll" style={{

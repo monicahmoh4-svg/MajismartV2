@@ -3,11 +3,15 @@
   --teal: #0d9e75; --teal-light: #e1f5ee;
   --amber: #e8a020; --amber-light: #fef3d8;
   --red: #d93025; --red-light: #fce8e6;
-  --gray-50: #f8f9fa; --gray-100: #f1f3f4; --gray-200: #e8eaed;
-  --gray-400: #9aa0a6; --gray-600: #5f6368; --gray-800: #202124;
+  --gray-50: #f4f2f0; --gray-100: #eceae7; --gray-200: #e5e7eb;
+  --gray-400: #9aa0a6; --gray-600: #6d6c6b; --gray-800: #1c1917;
   --white: #ffffff;
   --shadow-sm: 0 1px 3px rgba(0,0,0,.08); --shadow-md: 0 4px 16px rgba(0,0,0,.10);
-  --radius: 12px; --radius-sm: 8px;
+  --radius: 12px; --radius-sm: 6px;
+  /* --- Editorial finance desk (Refero: Ramp) --- */
+  --ink: #0c0a08; --obsidian: #1a1919; --paper: #ffffff; --bone: #f4f2f0;
+  --ash: #6d6c6b; --hairline: #e5e7eb; --smoke: #d3d3d3;
+  --hi: #e4f222; /* highlighter: ONLY where money moves (pay CTAs, live counters) */
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --glass-brd: rgba(255, 255, 255, 0.22);
@@ -268,12 +272,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--blue); }
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 .stat-card {
-  background: var(--white); border: 1px solid var(--gray-200);
-  border-radius: 14px; padding: 16px; box-shadow: var(--shadow-sm);
-  display: flex; gap: 12px; align-items: center; position: relative;
-  overflow: hidden; transition: transform .18s ease, box-shadow .18s ease;
+  background: var(--paper); border: 1px solid var(--hairline);
+  border-radius: 14px; padding: 16px; display: flex; gap: 12px; align-items: center; position: relative;
+  overflow: hidden; transition: transform .18s ease, border-color .18s ease;
 }
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-card:hover { transform: translateY(-2px); border-color: var(--smoke); }
 .stat-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   background: var(--blue);
@@ -385,8 +388,8 @@ table.tbl tr:hover td { background: #fafbfc; }
   border-radius: 20px;
   overflow: hidden;
 }
-.glass-card::after {
-  /* travelling specular sheen */
+/* Opt-in travelling specular sheen (add alongside .glass-card) */
+.glass-card.sheen::after {
   content: ''; position: absolute; inset: -40%;
   background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.16) 50%, transparent 58%);
   transform: translateX(-60%);
@@ -476,6 +479,68 @@ table.tbl tr:hover td { background: #fafbfc; }
   background: linear-gradient(180deg, #1a7fd4, #0d9e75);
   border-radius: 99px; border: 2px solid transparent; background-clip: padding-box;
 }
+
+/* ============================================================
+   EDITORIAL FINANCE DESK (Refero: Ramp template)
+   Bone canvas · hairline borders (never shadows) · tabular
+   numerals · micro-labels · one highlighter reserved for money.
+   ============================================================ */
+.micro-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--ash);
+}
+.tnum, .stat-num, table.tbl td {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1;
+}
+.ledger-card {
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+.ledger-hr { border: none; border-top: 1px solid var(--hairline); margin: 16px 0; }
+/* Highlighter action: ink text on chartreuse. Money moves ONLY here. */
+.btn-money {
+  background: var(--hi) !important; color: var(--ink) !important;
+  border: none; border-radius: 6px; font-weight: 800;
+  box-shadow: none;
+  transition: filter .15s ease, transform .15s ease;
+}
+.btn-money:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.btn-money:active { transform: translateY(0) scale(.99); }
+.btn-money:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+/* Live counter ticker: full-bleed obsidian band, ash labels, paper values */
+.ticker {
+  background: var(--obsidian); color: var(--paper);
+  overflow: hidden; white-space: nowrap; position: relative;
+}
+.ticker-track {
+  display: inline-flex; gap: 0; padding: 10px 0;
+  animation: ms-ticker 28s linear infinite;
+  will-change: transform;
+}
+.ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-item {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  padding: 0 28px; border-right: 1px solid rgba(255,255,255,.12);
+  font-size: 13px;
+}
+.ticker-item .k {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--ash);
+}
+.ticker-item .v { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ticker-item .v-hi { color: var(--hi); }
+@keyframes ms-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+/* Announcement bar: slim ink strip above the nav */
+.announce-bar {
+  background: var(--ink); color: var(--bone);
+  font-size: 12.5px; text-align: center; padding: 9px 16px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.announce-bar a { color: var(--hi); font-weight: 700; text-decoration: none; }
+.announce-bar a:hover { text-decoration: underline; }
 
 /* Global loaders / motion (referenced across pages) */
 .page-loader { min-height: 60vh; display: flex; align-items: center; justify-content: center; background: transparent; }
