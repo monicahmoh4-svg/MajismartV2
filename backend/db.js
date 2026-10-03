@@ -1,7 +1,29 @@
 const { Pool } = require('pg');
-if (!process.env.DATABASE_URL) {
-  console.warn('⚠️  DATABASE_URL not set — database features will fail');
+
+// Validate DATABASE_URL at boot so dashboard misconfiguration is obvious.
+// Render failure seen in the wild: host `dpg-xxxx-a` with no domain means the
+// value was pasted truncated — Postgres then fails with ENOTFOUND.
+function checkDatabaseUrl() {
+  const url = process.env.DATABASE_URL || '';
+  if (!url) {
+    console.warn('⚠️  DATABASE_URL not set — database features will fail (API still boots degraded)');
+    return;
+  }
+  const m = url.match(/@([^/:?#]+)/);
+  const host = m && m[1];
+  if (!host) {
+    console.error('❌ DATABASE_URL has no host part — fix it on the Render dashboard (Environment → DATABASE_URL)');
+    return;
+  }
+  if (!host.includes('.')) {
+    console.error(`❌ DATABASE_URL host "${host}" has no domain — it looks TRUNCATED. ` +
+      `On Render: open the PostgreSQL instance → Info tab → copy the FULL "Internal Database URL" ` +
+      `(it ends with .oregon-postgres.render.com/<dbname>) into the Web Service Environment.`);
+    return;
+  }
+  console.log(`ℹ️  Database host: ${host}`);
 }
+checkDatabaseUrl();
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

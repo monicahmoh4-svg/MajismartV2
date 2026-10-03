@@ -47,6 +47,16 @@ function authMiddleware(req, res, next) {
   return authenticateToken(req, res, next);
 }
 
+// Legacy compat: a few older routes import { requireRole } from '../middleware/auth'.
+// Deferred require (not top-level) avoids a require-cycle with rbac.js,
+// which itself requires ./auth for normalizeRole.
+function requireRole(...allowed) {
+  return require('./rbac').requireRole(...allowed);
+}
+function requirePermission(resource, action) {
+  return require('./rbac').requirePermission(resource, action);
+}
+
 function optionalAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -71,4 +81,4 @@ function optionalAuth(req, res, next) {
   }
 }
 
-module.exports = { authenticateToken, authMiddleware, optionalAuth, normalizeRole, ROLE_ALIASES };
+module.exports = { authenticateToken, authMiddleware, optionalAuth, normalizeRole, ROLE_ALIASES, requireRole, requirePermission };

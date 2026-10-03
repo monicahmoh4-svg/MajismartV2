@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 router.get('/', authMiddleware, requireRole('admin','county_officer'), async (req, res) => {
   try {
     const { rows } = await db.query('SELECT id,name,email,role,county,phone,created_at FROM users ORDER BY created_at DESC');

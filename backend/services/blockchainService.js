@@ -16,7 +16,18 @@
  *   CUSD_ADDRESS
  */
 
-const { ethers } = require('ethers');
+// ethers is optional: the platform must boot and serve traffic even when the
+// package is not installed (e.g. minimal Render installs). init() below
+// returns false in that case and all public getters degrade to null.
+let ethers = null;
+try {
+  const mod = require('ethers');
+  ethers = mod.ethers || mod.default || mod;
+  if (!ethers || !ethers.JsonRpcProvider) throw new Error('incompatible ethers build');
+} catch (e) {
+  console.warn("⚠️  'ethers' not available — blockchain features disabled (run `npm i ethers` + set CELO_* env vars to enable)");
+  ethers = null;
+}
 const db = require('../db');
 
 // ── ABIs (minimal — only functions we call from backend) ─────────────────
@@ -77,6 +88,10 @@ const STATUS_LABELS = ['SAFE', 'BOIL_FIRST', 'UNSAFE', 'UNKNOWN'];
 // ── Initialise ───────────────────────────────────────────────────────────
 
 async function init() {
+  if (!ethers) {
+    console.log('⚠️  Blockchain disabled: ethers not installed (platform runs normally)');
+    return false;
+  }
   const {
     CELO_RPC_URL, DEPLOYER_PRIVATE_KEY,
     MAJI_TOKEN_ADDRESS, WATER_PAYMENT_ADDRESS,

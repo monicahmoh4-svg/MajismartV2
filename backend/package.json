@@ -1,6 +1,6 @@
 {
   "name": "majismart-backend",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "description": "MajiSmart OS — Kenya Digital Water Utility Operating System (NRW recovery + M-Pesa collection)",
   "main": "server.js",
   "scripts": {
@@ -18,6 +18,7 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "ethers": "^6.13.0",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",

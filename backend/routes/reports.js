@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 
 router.post('/', authMiddleware, async (req, res) => {
   try {

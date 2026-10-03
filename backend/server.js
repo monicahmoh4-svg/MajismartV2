@@ -5,7 +5,17 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const VERSION = '6.0.0';
+const VERSION = '6.0.1';
+
+// Fail-fast env self-check: Render log showed NODE_ENV=development in prod
+// (leaks stacks, disables prod SSL). This makes the misconfig unmissable.
+if (process.env.NODE_ENV !== 'production') {
+  console.warn(`⚠️  NODE_ENV=${process.env.NODE_ENV || '(unset)'} — set NODE_ENV=production on Render ` +
+    `(Dashboard → Environment). Prod mode enables secure cookies/SSL and hides error stacks.`);
+}
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  JWT_SECRET not set — set a 64-char random string on Render (all logins will break on restart without it)');
+}
 
 // ---- Security headers (zero-dependency fallback if helmet missing) ----
 let helmetMw = (req, res, next) => {
