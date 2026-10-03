@@ -1,10 +1,12 @@
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { dashboardFor, normalizeUiRole } from '../lib/roles'
 
 // Dashboard Components
 import AdminDashboard from '../components/dashboards/AdminDashboard'
 import CountyDashboard from '../components/dashboards/CountyDashboard'
 import OperatorDashboard from '../components/dashboards/OperatorDashboard'
+import TechnicianDashboard from '../components/dashboards/TechnicianDashboard'
 import CommunityDashboard from '../components/dashboards/CommunityDashboard'
 import CitizenDashboard from './CitizenDashboard'
 
@@ -16,15 +18,25 @@ import CitizenReports from './CitizenReports'
 import AIAnalyticsDashboard from './AIAnalyticsDashboard'
 import WorkOrderManagement from './WorkOrderManagement'
 
+// Role key (from lib/roles dashboardFor) -> component. Every key returned by
+// dashboardFor() MUST exist here (verified by consistency test).
+const DASHBOARDS = {
+  admin: AdminDashboard,
+  county: CountyDashboard,
+  operator: OperatorDashboard,
+  technician: TechnicianDashboard,
+  'community-mgr': CommunityDashboard,
+  citizen: CitizenDashboard,
+  viewer: CitizenDashboard,
+}
+
 export default function Dashboard() {
   const { user, loading } = useAuth()
   const [searchParams] = useSearchParams()
-  
+
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-        <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #0891b2', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-      </div>
+      <div className="page-loader"><div className="spinner" /></div>
     )
   }
 
@@ -32,23 +44,19 @@ export default function Dashboard() {
     return <Navigate to="/login" replace />
   }
 
-  const dashboards = {
-    admin: <AdminDashboard />,
-    county_officer: <CountyDashboard />,
-    operator: <OperatorDashboard />,
-    community: <CitizenDashboard />,
-    community_manager: <CommunityDashboard />,
-  }
-  
   const viewMode = searchParams.get('view')
-  
+
   if (viewMode === 'reports-citizen') {
     return <CitizenReports />
   }
-  
+
+  // Enterprise module views: staff with operational scope only.
+  // Roles are normalized so canonical (super_admin/county_admin) and legacy
+  // (admin/county_officer) role names both pass.
   const authorizedRoles = ['admin', 'county_officer', 'operator']
-  
-  if (viewMode && authorizedRoles.includes(user?.role)) {
+  const uiRole = normalizeUiRole(user?.role)
+
+  if (viewMode && authorizedRoles.includes(uiRole)) {
     switch (viewMode) {
       case 'gis':
         return <GISDashboard />
@@ -64,6 +72,8 @@ export default function Dashboard() {
         break
     }
   }
-  
-  return dashboards[user?.role] || <CitizenDashboard />
+
+  const key = dashboardFor(user?.role)
+  const Component = DASHBOARDS[key] || CitizenDashboard
+  return <Component />
 }
