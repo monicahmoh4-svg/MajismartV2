@@ -23,6 +23,8 @@ export default function TechnicianDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(null)
+  const [notingId, setNotingId] = useState(null)
+  const [note, setNote] = useState('')
 
   const load = async () => {
     setLoading(true); setError('')
@@ -56,10 +58,13 @@ export default function TechnicianDashboard() {
     done: myOrders.filter((o) => ['completed', 'verified'].includes(o.status)).length,
   }), [myOrders])
 
-  const setStatus = async (id, status) => {
+  const setStatus = async (id, status, completionNotes) => {
     setBusy(id)
     try {
-      await api.put(`/workorders/${id}`, { status })
+      const payload = { status };
+      if (completionNotes) payload.completion_notes = completionNotes;
+      await api.put(`/workorders/${id}`, payload)
+      setNotingId(null); setNote('')
       await load()
     } catch (e) {
       setError(e.message || 'Update failed')
@@ -129,6 +134,25 @@ export default function TechnicianDashboard() {
                   )}
                 </div>
                 {o.description && <p className="task-desc">{o.description}</p>}
+                {o.completion_notes && (
+                  <p className="task-desc" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 10px' }}>
+                    <strong>Field notes:</strong> {o.completion_notes}
+                  </p>
+                )}
+                {notingId === o.id && (
+                  <div style={{ marginTop: 8 }}>
+                    <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}
+                      placeholder="What was done? parts replaced, readings, follow-up needed…"
+                      style={{ width: '100%', resize: 'vertical' }} />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                      <button className="btn btn-success btn-sm" disabled={busy === o.id}
+                        onClick={() => setStatus(o.id, 'completed', note.trim() || undefined)}>
+                        {busy === o.id ? 'Saving…' : 'Confirm completion'}
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => { setNotingId(null); setNote('') }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="task-actions">
                 {['open', 'pending', 'assigned'].includes(o.status) && (
@@ -137,9 +161,9 @@ export default function TechnicianDashboard() {
                     <Play size={14} /> {busy === o.id ? '…' : 'Start job'}
                   </button>
                 )}
-                {o.status === 'in_progress' && (
+                {o.status === 'in_progress' && notingId !== o.id && (
                   <button className="btn btn-success btn-sm" disabled={busy === o.id}
-                    onClick={() => setStatus(o.id, 'completed')}>
+                    onClick={() => setNotingId(o.id)}>
                     <CheckCircle2 size={14} /> {busy === o.id ? '…' : 'Mark done'}
                   </button>
                 )}

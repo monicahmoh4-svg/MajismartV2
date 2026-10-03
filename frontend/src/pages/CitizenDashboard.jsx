@@ -13,7 +13,7 @@ import {
   Home, Settings, HelpCircle, User
 } from 'lucide-react'
 
-export default function CitizenDashboard() {
+export default function CitizenDashboard({ readOnly = false }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('overview')
@@ -827,9 +827,11 @@ export default function CitizenDashboard() {
                 <motion.div variants={fadeInUp}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>My Reports</h2>
+                    {!readOnly && (
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowReportModal(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <FileText style={{ width: '18px', height: '18px' }} /> New Report
                     </motion.button>
+                    )}
                   </div>
                   <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
                     {myReports.length > 0 ? myReports.map((report, i) => {
@@ -853,7 +855,9 @@ export default function CitizenDashboard() {
                         <FileText style={{ width: '64px', height: '64px', color: '#cbd5e1', margin: '0 auto 16px' }} />
                         <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>No Reports Yet</h4>
                         <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#64748b' }}>You haven't submitted any reports yet.</p>
+                        {!readOnly && (
                         <button onClick={() => setShowReportModal(true)} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Create Your First Report</button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -897,9 +901,11 @@ export default function CitizenDashboard() {
                 <motion.div variants={fadeInUp}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>Community Reports</h2>
+                    {!readOnly && (
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowReportModal(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #0891b2, #06b6d4)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <MessageSquare style={{ width: '18px', height: '18px' }} /> Report Issue
                     </motion.button>
+                    )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {communityReports.length > 0 ? communityReports.map((report, i) => {

@@ -42,6 +42,9 @@ export default function OperatorDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
+  const [nodes, setNodes] = useState([])
+  const [alerts, setAlerts] = useState([])
+  const [resolving, setResolving] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -51,14 +54,30 @@ export default function OperatorDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/operator/dashboard-stats')
-      setData(response)
+      const q = user?.county ? `?county=${encodeURIComponent(user.county)}` : ''
+      const [stats, n, a] = await Promise.all([
+        api.get('/operator/dashboard-stats'),
+        api.get(`/nodes${q}`).catch(() => []),
+        api.get('/alerts?resolved=false&limit=10').catch(() => []),
+      ])
+      setData(stats)
+      setNodes(Array.isArray(n) ? n : [])
+      setAlerts(Array.isArray(a) ? a.filter(x => !user?.county || !x.county || x.county === user.county) : [])
     } catch (err) {
       console.error('Operator dashboard fetch error:', err)
       setData({ water_points: 0, active_nodes: 0, active_alerts: 0, work_orders: 0, maintenance_tasks: 0 })
     } finally {
       setLoading(false)
     }
+  }
+
+  const resolveAlert = async (id) => {
+    setResolving(id)
+    try {
+      await api.patch(`/alerts/${id}/resolve`, {})
+      setAlerts(list => list.filter(a => a.id !== id))
+    } catch (e) { console.error('Resolve failed:', e.message) }
+    finally { setResolving(null) }
   }
 
   if (loading) return <Loading message="Loading operator dashboard..." />
@@ -120,6 +139,48 @@ export default function OperatorDashboard() {
           <StatCard title="Active Alerts" value={data?.active_alerts || 0} icon={AlertTriangle} color="#ef4444" />
           <StatCard title="Open Work Orders" value={data?.work_orders || 0} icon={FileText} color="#8b5cf6" />
           <StatCard title="Maintenance Tasks" value={data?.maintenance_tasks || 0} icon={Wrench} color="#f59e0b" />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
+              My Network{user?.county ? ` — ${user.county}` : ''}
+            </h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>Live levels from your water points</p>
+            {nodes.length === 0 && <p style={{ fontSize: '14px', color: '#94a3b8' }}>No nodes assigned in your county yet.</p>}
+            {nodes.slice(0, 6).map(n => {
+              const level = n.water_level ?? 0
+              const color = level < 20 ? '#ef4444' : level < 40 ? '#f59e0b' : '#10b981'
+              return (
+                <div key={n.id} style={{ padding: '10px 0', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} onClick={() => navigate(`/app/nodes/${n.id}`)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{n.name}</span>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color }}>{level}%</span>
+                  </div>
+                  <div style={{ height: '7px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${level}%`, background: color, borderRadius: '4px' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Open Alerts ({alerts.length})</h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>Acknowledge and clear field alerts</p>
+            {alerts.length === 0 && <p style={{ fontSize: '14px', color: '#94a3b8' }}>All clear — no open alerts.</p>}
+            {alerts.slice(0, 6).map(a => (
+              <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+                <AlertTriangle size={16} color={a.severity === 'critical' ? '#ef4444' : '#f59e0b'} style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#0f172a' }}>{a.node_name || a.type?.replace(/_/g, ' ')}</div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>{a.message}</div>
+                </div>
+                <button className="btn btn-success btn-sm" disabled={resolving === a.id} onClick={() => resolveAlert(a.id)}>
+                  {resolving === a.id ? '…' : 'Resolve'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -75,5 +75,6 @@ export default function Dashboard() {
 
   const key = dashboardFor(user?.role)
   const Component = DASHBOARDS[key] || CitizenDashboard
-  return <Component />
+  // Viewers are strictly read-only: hide every submit/action affordance.
+  return <Component readOnly={key === 'viewer'} />
 }

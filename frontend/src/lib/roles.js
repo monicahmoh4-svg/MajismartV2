@@ -131,3 +131,12 @@ export function tenantLabel(user) {
   if (ROLES[role].scope === 'all') return 'All counties · System';
   return user?.county ? `${user.county} County` : 'County not set';
 }
+
+// Expertise gates: viewer is strictly read-only; only staff mutate
+// infrastructure (nodes, alerts, assets, user admin).
+export function canWrite(role) {
+  return normalizeUiRole(role) !== 'viewer';
+}
+export function canManageNodes(role) {
+  return ['admin', 'county_officer', 'operator', 'technician'].includes(normalizeUiRole(role));
+}

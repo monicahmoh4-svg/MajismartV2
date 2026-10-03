@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { CreditCard, Search, Plus, X, CheckCircle, Clock, XCircle } from 'lucide-react'
 import api from '../api'
+import { useTenant } from '../hooks/useTenant'
+import { canWrite } from '../lib/roles'
 export default function Payments() {
+  const { role } = useTenant()
+  const writer = canWrite(role)
   const [payments, setPayments] = useState([])
   const [nodes, setNodes] = useState([])
   const [stats, setStats] = useState(null)
@@ -56,9 +60,11 @@ export default function Payments() {
           </h1>
           <p style={{ color: '#5f6368', marginTop: 4 }}>M-Pesa water payment transactions</p>
         </div>
+        {writer && (
         <button className="btn btn-success" onClick={() => setShowForm(!showForm)}>
           <Plus size={16} /> Initiate Payment
         </button>
+        )}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 24 }}>
         {[
@@ -73,7 +79,7 @@ export default function Payments() {
           </div>
         ))}
       </div>
-      {showForm && (
+      {showForm && writer && (
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
             <h3 style={{ fontWeight: 700 }}>Initiate M-Pesa Payment</h3>

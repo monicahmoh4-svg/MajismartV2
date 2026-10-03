@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Bell, AlertTriangle, CheckCircle, Info, Filter } from 'lucide-react'
 import api from '../api'
+import { useTenant } from '../hooks/useTenant'
+import { canManageNodes } from '../lib/roles'
 export default function Alerts() {
+  const { role } = useTenant()
+  const staff = canManageNodes(role)
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('open')
@@ -96,7 +100,7 @@ export default function Alerts() {
                 {a.resolved && a.resolved_at && <span>Resolved: {new Date(a.resolved_at).toLocaleString()}</span>}
               </div>
             </div>
-            {!a.resolved && (
+            {!a.resolved && staff && (
               <button className="btn btn-success" style={{ padding: '6px 14px', fontSize: 13, flexShrink: 0 }}
                 onClick={() => resolve(a.id)} disabled={resolving === a.id}>
                 {resolving === a.id ? '…' : 'Resolve'}

@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Wifi, Plus, Search, MapPin, Droplets, ChevronRight, X } from 'lucide-react'
 import api from '../api'
+import { useTenant } from '../hooks/useTenant'
+import { canManageNodes } from '../lib/roles'
 const STATUS_COLOR = { active:'#0d9e75', warning:'#e8a020', offline:'#9aa0a6', maintenance:'#6f42c1' }
 const TYPE_ICON = { borehole:'🕳️', tank:'🗄️', kiosk:'', river_intake:'🌊' }
 export default function Nodes() {
+  const { role } = useTenant()
+  const staff = canManageNodes(role)
   const [nodes, setNodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -43,9 +47,11 @@ export default function Nodes() {
           </h1>
           <p style={{ color: '#5f6368', marginTop: 4 }}>{nodes.length} nodes across Kenya</p>
         </div>
+        {staff && (
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
           <Plus size={16} /> Add Node
         </button>
+        )}
       </div>
       {msg && <div className={`alert-bar ${msg.includes('!') ? 'alert-bar-success' : 'alert-bar-error'}`}>{msg}</div>}
       {showForm && (

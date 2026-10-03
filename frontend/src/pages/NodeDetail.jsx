@@ -3,8 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Wifi, Droplets, Thermometer, Eye, Activity, AlertTriangle, Save, Shield } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import api from '../api'
+import { useTenant } from '../hooks/useTenant'
+import { canManageNodes } from '../lib/roles'
 
 export default function NodeDetail() {
+  const { role } = useTenant()
+  const staff = canManageNodes(role)
   const { id } = useParams()
   const navigate = useNavigate()
   const [node, setNode] = useState(null)
@@ -81,7 +85,7 @@ export default function NodeDetail() {
             )}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            {editing ? <><button className="btn btn-success" onClick={saveEdit}><Save size={15} />Save</button><button className="btn btn-ghost" onClick={() => setEditing(false)}>Cancel</button></> : <button className="btn btn-outline" onClick={() => setEditing(true)}>Edit Node</button>}
+            {staff && (editing ? <><button className="btn btn-success" onClick={saveEdit}><Save size={15} />Save</button><button className="btn btn-ghost" onClick={() => setEditing(false)}>Cancel</button></> : <button className="btn btn-outline" onClick={() => setEditing(true)}>Edit Node</button>)}
           </div>
         </div>
 

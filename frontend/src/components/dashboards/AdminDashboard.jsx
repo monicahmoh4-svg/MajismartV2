@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
+  const [health, setHealth] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -78,8 +79,12 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await api.get('/admin/dashboard-stats')
-      setData(response)
+      const [stats, h] = await Promise.all([
+        api.get('/admin/dashboard-stats'),
+        api.get('/health').catch(() => null),
+      ])
+      setData(stats)
+      setHealth(h && h.service ? h : null)
       setLastUpdated(new Date())
     } catch (err) {
       console.error('Admin dashboard fetch error:', err)
@@ -156,23 +161,35 @@ export default function AdminDashboard() {
         </motion.div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-          <StatCard title="Total Users" value={data?.total_users || 0} icon={Users} color="#0891b2" trend={12} />
-          <StatCard title="Active Nodes" value={data?.active_nodes || 0} icon={Activity} color="#10b981" trend={5} />
-          <StatCard title="Water Points" value={data?.water_points || 0} icon={MapPin} color="#06b6d4" trend={8} />
+          <StatCard title="Total Users" value={data?.total_users || 0} icon={Users} color="#0891b2" />
+          <StatCard title="Active Nodes" value={data?.active_nodes || 0} icon={Activity} color="#10b981" />
+          <StatCard title="Water Points" value={data?.water_points || 0} icon={MapPin} color="#06b6d4" />
           <StatCard title="Active Alerts" value={data?.active_alerts || 0} icon={AlertTriangle} color="#ef4444" />
           <StatCard title="Total Reports" value={data?.total_reports || 0} icon={FileText} color="#8b5cf6" />
-          <StatCard title="Monthly Revenue" value={`KES ${(data?.monthly_revenue || 0).toLocaleString()}`} icon={Wallet} color="#f59e0b" trend={15} />
+          <StatCard title="Monthly Revenue" value={`KES ${(data?.monthly_revenue || 0).toLocaleString()}`} icon={Wallet} color="#f59e0b" />
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '16px', border: '1px solid #d1fae5' }}>
-          <div style={{ width: '48px', height: '48px', background: '#d1fae5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CheckCircle size={24} color="#10b981" />
+        {(() => {
+          const dbUp = health ? health.db === 'up' : (data?.system_health !== 'down');
+          const tone = dbUp ? { bg: '#d1fae5', iconBg: '#d1fae5', icon: '#10b981', border: '#d1fae5' }
+                            : { bg: '#fef2f2', iconBg: '#fecaca', icon: '#dc2626', border: '#fecaca' };
+          return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '16px', border: `1px solid ${tone.border}` }}>
+          <div style={{ width: '48px', height: '48px', background: tone.iconBg, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckCircle size={24} color={tone.icon} />
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>System Status: Operational</h3>
-            <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>All systems are running normally. Last health check: {new Date().toLocaleString()}</p>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>
+              System Status: {dbUp ? 'Operational' : 'Degraded — database unreachable'}
+            </h3>
+            <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+              API {health?.version ? `v${health.version}` : ''} · Database {health?.database?.host || 'unknown host'}
+              {health?.database?.repaired ? ' (auto-repaired host)' : ''} · Checked {new Date().toLocaleString()}
+            </p>
           </div>
         </motion.div>
+          );
+        })()}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>

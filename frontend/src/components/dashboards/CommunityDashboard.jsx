@@ -118,12 +118,12 @@ export default function CommunityDashboard() {
                 </div>
                 <div><label style={{ fontSize: 13, fontWeight: 500, color: '#5f6368' }}>Litres</label>
                   <select value={payForm.litres} onChange={e => setPayForm(f => ({ ...f, litres: parseInt(e.target.value) }))} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e8eaed', borderRadius: 8, fontSize: 14, marginTop: 4 }}>
-                    {[20, 40, 60, 100, 200].map(l => <option key={l} value={l}>{l}L — Ksh {(l * 0.1).toFixed(2)}</option>)}
+                    {[20, 40, 60, 100, 200].map(l => <option key={l} value={l}>{l}L — Ksh {(l * 0.125).toFixed(2)}</option>)}
                   </select>
                 </div>
               </div>
               <button type="submit" disabled={paying} style={{ background: paying ? '#9aa0a6' : '#0d9e75', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: paying ? 'not-allowed' : 'pointer', marginTop: 14 }}>
-                {paying ? 'Sending M-Pesa prompt…' : `Pay Ksh ${(payForm.litres * 0.1).toFixed(2)}`}
+                {paying ? 'Sending M-Pesa prompt…' : `Pay Ksh ${(payForm.litres * 0.125).toFixed(2)}`}
               </button>
             </form>
           </div>
