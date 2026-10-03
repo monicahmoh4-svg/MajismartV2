@@ -5,7 +5,12 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const VERSION = '6.0.1';
+const VERSION = '6.0.2';
+
+// Render terminates TLS at its edge proxy: trust it so req.ip is the real
+// client IP. WITHOUT this, express-rate-limit sees every user as one IP and
+// normal traffic trips the global bucket (production 429 outage).
+app.set('trust proxy', 1);
 
 // Fail-fast env self-check: Render log showed NODE_ENV=development in prod
 // (leaks stacks, disables prod SSL). This makes the misconfig unmissable.
@@ -31,11 +36,21 @@ try {
 } catch (e) { console.warn('helmet not installed, using minimal headers'); }
 app.use(helmetMw);
 
-// ---- Rate limiting (fallback if package missing) ----
+// ---- Rate limiting (per-IP buckets; health/config never count) ----
 let apiLimiter = (req, res, next) => next();
 try {
   const rateLimit = require('express-rate-limit');
-  apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 600, standardHeaders: true, legacyHeaders: false });
+  apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 600, // per IP per window — ample for dashboard polling
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Load-balancer / uptime probes must never consume user quota.
+    skip: (req) => req.path === '/health' || req.path === '/config' || req.path === '/',
+    handler: (req, res) => res.status(429).json({
+      error: 'Too many requests — please wait a minute and retry.',
+    }),
+  });
 } catch (e) { console.warn('express-rate-limit not installed, skipping'); }
 
 // ============================================
