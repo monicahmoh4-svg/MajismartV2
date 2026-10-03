@@ -56,12 +56,17 @@ export const ROLES = {
 
 // Icon is a string key resolved to lucide components in Layout.jsx.
 // Every `to` MUST exist as a route in App.jsx (verified by consistency test).
+// Navs hold DAILY essentials per role; deeper enterprise modules live behind
+// dashboard shortcut buttons (same role scope).
 export const NAV_BY_ROLE = {
   admin: [
     { to: '/app/dashboard', icon: 'dashboard', label: 'Dashboard' },
     { to: '/app/nodes', icon: 'nodes', label: 'All Nodes' },
     { to: '/app/payments', icon: 'payments', label: 'Payments' },
-    { to: '/app/maintenance', icon: 'maintenance', label: 'Work Orders' },
+    { to: '/app/reports', icon: 'reports', label: 'Reports' },
+    { to: '/app/workorders', icon: 'workorders', label: 'Work Orders' },
+    { to: '/app/assets', icon: 'assets', label: 'Assets' },
+    { to: '/app/gis', icon: 'gis', label: 'GIS Map' },
     { to: '/app/alerts', icon: 'alerts', label: 'Alerts' },
     { to: '/app/ai-insights', icon: 'ai', label: 'AI Insights' },
     { to: '/app/analytics', icon: 'analytics', label: 'Analytics' },
@@ -72,7 +77,10 @@ export const NAV_BY_ROLE = {
     { to: '/app/dashboard', icon: 'dashboard', label: 'Dashboard' },
     { to: '/app/nodes', icon: 'nodes', label: 'County Nodes' },
     { to: '/app/payments', icon: 'payments', label: 'Revenue' },
-    { to: '/app/maintenance', icon: 'maintenance', label: 'Work Orders' },
+    { to: '/app/reports', icon: 'reports', label: 'Reports' },
+    { to: '/app/workorders', icon: 'workorders', label: 'Work Orders' },
+    { to: '/app/assets', icon: 'assets', label: 'Assets' },
+    { to: '/app/gis', icon: 'gis', label: 'GIS Map' },
     { to: '/app/alerts', icon: 'alerts', label: 'Alerts' },
     { to: '/app/ai-insights', icon: 'ai', label: 'AI Insights' },
     { to: '/app/analytics', icon: 'analytics', label: 'Analytics' },
@@ -83,14 +91,15 @@ export const NAV_BY_ROLE = {
     { to: '/app/dashboard', icon: 'dashboard', label: 'Dashboard' },
     { to: '/app/nodes', icon: 'nodes', label: 'My Nodes' },
     { to: '/app/payments', icon: 'payments', label: 'Payments' },
-    { to: '/app/maintenance', icon: 'maintenance', label: 'Maintenance' },
+    { to: '/app/workorders', icon: 'workorders', label: 'Work Orders' },
+    { to: '/app/maintenance', icon: 'maintenance', label: 'Log Fix' },
     { to: '/app/alerts', icon: 'alerts', label: 'Alerts' },
     { to: '/app/ai-insights', icon: 'ai', label: 'AI Insights' },
     { to: '/app/settings', icon: 'settings', label: 'Settings' },
   ],
   technician: [
     { to: '/app/dashboard', icon: 'dashboard', label: 'My Tasks' },
-    { to: '/app/maintenance', icon: 'maintenance', label: 'Work Orders' },
+    { to: '/app/maintenance', icon: 'maintenance', label: 'Log Fix' },
     { to: '/app/nodes', icon: 'nodes', label: 'Water Points' },
     { to: '/app/alerts', icon: 'alerts', label: 'Alerts' },
     { to: '/app/settings', icon: 'settings', label: 'Settings' },
@@ -100,6 +109,7 @@ export const NAV_BY_ROLE = {
     { to: '/app/nodes', icon: 'nodes', label: 'Water Points' },
     { to: '/app/my-water', icon: 'mywater', label: 'My Water' },
     { to: '/app/payments', icon: 'payments', label: 'Pay for Water' },
+    { to: '/app/community-reports', icon: 'reports', label: 'All Reports' },
     { to: '/app/report', icon: 'report', label: 'Report Issue' },
     { to: '/app/alerts', icon: 'alerts', label: 'Alerts' },
     { to: '/app/settings', icon: 'settings', label: 'Settings' },

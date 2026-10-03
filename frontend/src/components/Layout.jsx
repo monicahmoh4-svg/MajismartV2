@@ -1,17 +1,19 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTenant } from '../hooks/useTenant'
-import { NAV_BY_ROLE, ROLES, normalizeUiRole, tenantLabel } from '../lib/roles'
+import { NAV_BY_ROLE, ROLES, normalizeUiRole, tenantLabel, dashboardFor } from '../lib/roles'
 import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Wifi, CreditCard, Bell, BarChart3,
   Settings, LogOut, Menu, X, Droplets, Users, Wrench, Brain, Flag, MapPin,
+  FileText, Package, Map, ClipboardList,
 } from 'lucide-react'
 
 const ICONS = {
   dashboard: LayoutDashboard, nodes: Wifi, payments: CreditCard,
   mywater: Droplets, report: Flag, alerts: Bell, ai: Brain,
   analytics: BarChart3, users: Users, maintenance: Wrench, settings: Settings,
+  reports: FileText, assets: Package, gis: Map, workorders: ClipboardList,
 }
 
 function useIsDesktop(breakpoint = 960) {
@@ -49,6 +51,13 @@ export default function Layout() {
   }, [isDesktop, mobileOpen])
 
   const handleLogout = () => { logout(); navigate('/') }
+
+  // Citizen roles ship their own complete chrome inside CitizenDashboard
+  // (header + section tabs). Rendering the app sidebar as well would double
+  // every navigation control — so citizen dashboards go full-bleed.
+  if (dashboardFor(user?.role) === 'citizen') {
+    return <Outlet />
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--gray-50)' }}>

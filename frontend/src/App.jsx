@@ -21,6 +21,13 @@ const Settings = lazy(() => import('./pages/Settings'))
 const FindWater = lazy(() => import('./pages/FindWater'))
 const MyWater = lazy(() => import('./pages/MyWater'))
 const ReportIssue = lazy(() => import('./pages/ReportIssue'))
+const CitizenReports = lazy(() => import('./pages/CitizenReports'))
+const CommunityReports = lazy(() => import('./pages/CommunityReports'))
+const ReportManagement = lazy(() => import('./pages/ReportManagement'))
+const AssetManagement = lazy(() => import('./pages/AssetManagement'))
+const GISDashboard = lazy(() => import('./pages/GISDashboard'))
+const AIAnalyticsDashboard = lazy(() => import('./pages/AIAnalyticsDashboard'))
+const WorkOrderManagement = lazy(() => import('./pages/WorkOrderManagement'))
 
 // UI-role based access: null = any authenticated user.
 // Roles: admin, county_officer, operator, technician, community, viewer
@@ -29,8 +36,15 @@ const ReportIssue = lazy(() => import('./pages/ReportIssue'))
 const ROUTE_ROLES = {
   users: ['admin', 'county_officer'],
   maintenance: ['admin', 'county_officer', 'operator', 'technician'],
+  workorders: ['admin', 'county_officer', 'operator'],
   'ai-insights': ['admin', 'county_officer', 'operator'],
+  'ai-analytics': ['admin', 'county_officer', 'operator'],
   analytics: ['admin', 'county_officer', 'viewer'],
+  reports: ['admin', 'county_officer'],
+  'field-reports': ['admin', 'county_officer', 'operator'],
+  'community-reports': ['community', 'admin', 'county_officer'],
+  assets: ['admin', 'county_officer'],
+  gis: ['admin', 'county_officer'],
   report: ['admin', 'county_officer', 'operator', 'technician', 'community'],
 }
 
@@ -87,12 +101,8 @@ function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/find-water" element={<FindWater />} />
 
-        {/* Legacy dashboard (query-param switcher) */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
+        {/* Legacy dashboard URL now lives inside the app shell */}
+        <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
 
         {/* Role-based app shell */}
         <Route path="/app" element={
@@ -111,6 +121,13 @@ function AppRoutes() {
           <Route path="analytics" element={<RoleRoute element={<Analytics />} roles={ROUTE_ROLES.analytics} />} />
           <Route path="users" element={<RoleRoute element={<Users />} roles={ROUTE_ROLES.users} />} />
           <Route path="maintenance" element={<RoleRoute element={<Maintenance />} roles={ROUTE_ROLES.maintenance} />} />
+          <Route path="workorders" element={<RoleRoute element={<WorkOrderManagement />} roles={ROUTE_ROLES.workorders} />} />
+          <Route path="reports" element={<RoleRoute element={<ReportManagement />} roles={ROUTE_ROLES.reports} />} />
+          <Route path="field-reports" element={<RoleRoute element={<CommunityReports />} roles={ROUTE_ROLES['field-reports']} />} />
+          <Route path="community-reports" element={<RoleRoute element={<CitizenReports />} roles={ROUTE_ROLES['community-reports']} />} />
+          <Route path="assets" element={<RoleRoute element={<AssetManagement />} roles={ROUTE_ROLES.assets} />} />
+          <Route path="gis" element={<RoleRoute element={<GISDashboard />} roles={ROUTE_ROLES.gis} />} />
+          <Route path="ai-analytics" element={<RoleRoute element={<AIAnalyticsDashboard />} roles={ROUTE_ROLES['ai-analytics']} />} />
           <Route path="settings" element={<Settings />} />
           <Route path="report" element={<RoleRoute element={<ReportIssue />} roles={ROUTE_ROLES.report} />} />
         </Route>
