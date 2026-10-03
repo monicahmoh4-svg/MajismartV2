@@ -129,7 +129,47 @@ async function ensureProductionTables() {
   await db.query(`ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS location VARCHAR(200)`);
   await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS location VARCHAR(200)`);
   await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS quality_index INTEGER`);
+
+  await ensureBootstrapAccounts();
+
   console.log('Production tables ensured');
+}
+
+// Guaranteed login accounts, recreated on every boot (idempotent).
+// Why: the one-time seed only runs on empty DBs, so demo logins silently
+// went missing in production ("Invalid credentials"). These upserts reset
+// the four dashboard accounts to KNOWN passwords each boot, so access below
+// always works. Override via env; disable entirely with
+// DISABLE_BOOTSTRAP_ACCOUNTS=true once real staff accounts exist.
+async function ensureBootstrapAccounts() {
+  if (String(process.env.DISABLE_BOOTSTRAP_ACCOUNTS || '').toLowerCase() === 'true') {
+    console.log('Bootstrap accounts disabled via env');
+    return;
+  }
+  const bcrypt = require('bcryptjs');
+  const accounts = [
+    { name: 'Admin User', email: 'admin@majismart.ke', password: process.env.BOOTSTRAP_ADMIN_PASSWORD || 'admin123', county: 'Nairobi', role: 'admin' },
+    { name: 'County Officer', email: 'county@majismart.ke', password: process.env.BOOTSTRAP_COUNTY_PASSWORD || 'county123', county: 'Kiambu', role: 'county_officer' },
+    { name: 'Operator', email: 'operator@majismart.ke', password: process.env.BOOTSTRAP_OPERATOR_PASSWORD || 'operator123', county: 'Machakos', role: 'operator' },
+    { name: 'Citizen Demo', email: 'citizen@majismart.ke', password: process.env.BOOTSTRAP_CITIZEN_PASSWORD || 'citizen123', county: 'Nairobi', role: 'community' },
+  ];
+  for (const a of accounts) {
+    const hash = await bcrypt.hash(String(a.password), 10);
+    // eslint-disable-next-line no-await-in-loop
+    await db.query(
+      `INSERT INTO users (name, email, password, county, role, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $4)
+       ON CONFLICT (email) DO UPDATE SET
+         password = EXCLUDED.password,
+         name = EXCLUDED.name,
+         county = EXCLUDED.county,
+         role = EXCLUDED.role,
+         tenant_id = EXCLUDED.tenant_id,
+         updated_at = NOW()`,
+      [a.name, a.email.toLowerCase().trim(), hash, a.county, a.role]
+    );
+  }
+  console.log(`✅ Bootstrap accounts ensured: ${accounts.map((a) => `${a.email} [${a.role}]`).join(', ')}`);
 }
 
 module.exports = { ensureProductionTables };
