@@ -176,7 +176,7 @@ export default function Landing() {
               fontSize: '15px'
             }} onMouseEnter={(e) => { e.target.style.background = '#0891b2'; e.target.style.color = 'white'; }}
               onMouseLeave={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#0891b2'; }}>Sign In</button>
-            <button onClick={() => navigate('/register')} className="btn-primary" style={{
+            <button onClick={() => navigate('/register')} className="btn btn-primary" style={{
               padding: '12px 24px',
               color: 'white',
               border: 'none',
@@ -279,14 +279,13 @@ export default function Landing() {
         </AnimatePresence>
       </motion.nav>
 
-      {/* Hero Section */}
-      <section style={{
+      {/* Hero Section — real photography + liquid glass */}
+      <section className="mesh-dark" style={{
         position: 'relative',
-        minHeight: isMobile ? '90vh' : '90vh',
+        minHeight: isMobile ? '92vh' : '94vh',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
-        background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)',
         padding: isMobile ? '80px 20px 60px' : '0'
       }}>
         <div style={{
@@ -295,11 +294,18 @@ export default function Landing() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: 'url("https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=2574&auto=format&fit=crop")',
+          backgroundImage: 'url("/images/landing-hero.jpg")',
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 0.2,
-          filter: 'blur(2px)'
+          backgroundPosition: 'center 30%',
+          opacity: 0.5
+        }} role="img" aria-label="Glass of clean drinking water"></div>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(100deg, rgba(6,18,31,0.95) 15%, rgba(6,18,31,0.62) 55%, rgba(11,59,63,0.30) 100%)'
         }}></div>
         
         <div style={{
@@ -333,11 +339,14 @@ export default function Landing() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.12)',
                 padding: '8px 16px',
                 borderRadius: '50px',
                 marginBottom: isMobile ? '20px' : '24px',
-                backdropFilter: 'blur(10px)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25)',
                 animation: 'fadeInDown 0.8s ease'
               }}
             >
@@ -351,10 +360,12 @@ export default function Landing() {
               transition={{ duration: 0.6, delay: 0.2 }}
               style={{
                 margin: '0 0 24px 0',
-                fontSize: isMobile ? 'clamp(32px, 8vw, 48px)' : 'clamp(40px, 8vw, 72px)',
-                fontWeight: '900',
-                lineHeight: '1.1',
+                fontSize: isMobile ? 'clamp(34px, 8vw, 50px)' : 'clamp(44px, 7vw, 76px)',
+                fontWeight: '600',
+                lineHeight: '1.06',
                 color: 'white',
+                fontFamily: "'Fraunces', Georgia, serif",
+                letterSpacing: '-0.01em',
               }}
             >
               Smart Water Intelligence for{' '}
@@ -389,7 +400,7 @@ export default function Landing() {
               transition={{ duration: 0.6, delay: 0.6 }}
               style={{ display: 'flex', gap: isMobile ? '12px' : '20px', flexWrap: 'wrap' }}
             >
-              <button onClick={() => navigate('/register')} className="btn-primary" style={{
+              <button onClick={() => navigate('/register')} className="btn btn-glow" style={{
                 padding: isMobile ? '14px 28px' : '18px 40px',
                 background: 'white',
                 color: '#0891b2',

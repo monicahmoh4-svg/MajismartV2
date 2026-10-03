@@ -8,18 +8,25 @@
   --white: #ffffff;
   --shadow-sm: 0 1px 3px rgba(0,0,0,.08); --shadow-md: 0 4px 16px rgba(0,0,0,.10);
   --radius: 12px; --radius-sm: 8px;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --glass-brd: rgba(255, 255, 255, 0.22);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
-body { 
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
-  background: var(--gray-50); 
-  color: var(--gray-800); 
-  line-height: 1.6; 
-  font-size: 15px; 
+body {
+  font-family: var(--font-sans);
+  background: var(--gray-50);
+  color: var(--gray-800);
+  line-height: 1.6;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+.font-display { font-family: var(--font-display); }
 
 a { color: var(--blue); text-decoration: none; } 
 a:hover { text-decoration: underline; }
@@ -353,6 +360,121 @@ table.tbl tr:hover td { background: #fafbfc; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001s !important; transition-duration: .001s !important; }
+}
+
+/* ============================================================
+   LIQUID GLASS design system — frosted surfaces, specular light,
+   ambient depth. Inspired by classic glassmorphism craft.
+   ============================================================ */
+.glass {
+  background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--glass-brd);
+  box-shadow: var(--glass-hi), 0 12px 32px rgba(2, 12, 27, 0.22);
+}
+.glass-dark {
+  background: linear-gradient(135deg, rgba(10, 25, 47, 0.55), rgba(13, 60, 80, 0.35));
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: var(--glass-hi), 0 16px 40px rgba(2, 12, 27, 0.35);
+}
+.glass-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.glass-card::after {
+  /* travelling specular sheen */
+  content: ''; position: absolute; inset: -40%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.16) 50%, transparent 58%);
+  transform: translateX(-60%);
+  animation: ms-sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+.glass-btn {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,.08));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-brd);
+  box-shadow: var(--glass-hi), 0 8px 24px rgba(2, 12, 27, 0.25);
+  color: white;
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.glass-btn:hover { transform: translateY(-2px); box-shadow: var(--glass-hi), 0 14px 34px rgba(2, 12, 27, 0.32); }
+.glass-btn:active { transform: translateY(0) scale(.98); }
+.glass-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid var(--glass-brd);
+  box-shadow: var(--glass-hi);
+  border-radius: 99px;
+  color: white;
+}
+
+/* Deep-water gradient mesh used behind glass surfaces */
+.mesh-dark {
+  background:
+    radial-gradient(1100px 500px at 85% -10%, rgba(34, 211, 238, 0.28), transparent 60%),
+    radial-gradient(900px 480px at 8% 110%, rgba(13, 158, 117, 0.30), transparent 60%),
+    radial-gradient(700px 420px at 50% 50%, rgba(26, 127, 212, 0.20), transparent 65%),
+    linear-gradient(150deg, #06121f 0%, #0a2536 55%, #0b3b3f 100%);
+}
+.orb {
+  position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none;
+  animation: ms-drift 11s ease-in-out infinite alternate;
+}
+
+/* Motion */
+@keyframes ms-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes ms-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(34px, -26px) scale(1.12); }
+}
+@keyframes ms-sheen { 0%, 55% { transform: translateX(-60%); } 90%, 100% { transform: translateX(60%); } }
+@keyframes ms-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes ms-shimmer {
+  0% { background-position: -200% 0; } 100% { background-position: 200% 0; }
+}
+.animate-ms-rise { animation: ms-rise .7s cubic-bezier(.2,.7,.2,1) both; }
+.text-shimmer {
+  background: linear-gradient(110deg, #fff 30%, #a5f3fc 45%, #fde68a 55%, #fff 70%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: ms-shimmer 6s linear infinite;
+}
+
+/* App chrome: frosted chips over the sticky white header */
+.tenant-chip, .role-chip {
+  background: rgba(255, 255, 255, 0.72) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(2, 12, 27, 0.08);
+}
+
+/* Landing hero stats become floating glass tiles */
+.hero-stats { gap: 16px; }
+.hero-stats .stat-item {
+  background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--glass-brd);
+  box-shadow: var(--glass-hi), 0 10px 28px rgba(2, 12, 27, 0.25);
+  border-radius: 16px;
+  padding: 16px 12px;
+}
+
+/* Premium document details */
+::selection { background: rgba(26, 127, 212, 0.25); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1a7fd4, #0d9e75);
+  border-radius: 99px; border: 2px solid transparent; background-clip: padding-box;
 }
 
 /* Global loaders / motion (referenced across pages) */
