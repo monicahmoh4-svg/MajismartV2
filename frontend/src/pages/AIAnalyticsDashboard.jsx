@@ -73,7 +73,7 @@ export default function AIAnalyticsDashboard() {
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{ margin: '0 0 8px', fontSize: '28px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Brain size={32} color="#8b5cf6" /> AI Analytics & Predictive Maintenance
+              <Brain size={32} color="#8b5cf6" /> Predictive Maintenance
             </h1>
             <p style={{ margin: 0, fontSize: '15px', color: '#64748b' }}>
               Machine learning insights to predict failures and optimize water utility operations.

@@ -61,6 +61,13 @@ const INTENTS = [
     topics: ['pay', 'roles'],
   },
   {
+    id: 'password',
+    match: ['forgot password', 'reset password', 'forgot my password', 'locked out', 'cant log in', "can't log in", 'forgot', 'reset'],
+    answer: () => `Locked out? If you remember your old password, change it any time in Settings → Security. Otherwise your county admin can issue you a fresh temporary password from the Users page — or message support from Settings and the admin team will reply as a notification.`,
+    topics: ['account', 'roles'],
+    actions: [{ label: 'Log in', link: '/login' }],
+  },
+  {
     id: 'account',
     match: ['account', 'akaunti', 'sign up', 'signup', 'register', 'create account', 'login', 'log in', 'sign in', 'password', 'nywila', 'invalid', 'credentials', 'forgot password', 'stuck', 'timeout', 'cannot log'],
     answer: () => `Tap Register, enter your name, email, a 6+ character password, your county and your role — you're in immediately. If login says "invalid", double-check the email spelling (logins are exact). If the app hangs then reports a timeout, your connection dropped mid-request: reconnect and retry once — and if a signup timed out but the email "already exists", just log in with the same password; the account was created.`,

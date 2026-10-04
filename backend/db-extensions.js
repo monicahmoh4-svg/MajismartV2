@@ -250,23 +250,27 @@ async function ensureBootstrapAccounts() {
   const accounts = [
     { name: 'Admin User', email: 'admin@majismart.ke', password: process.env.BOOTSTRAP_ADMIN_PASSWORD || 'admin123', county: 'Nairobi', role: 'admin' },
     { name: 'County Officer', email: 'county@majismart.ke', password: process.env.BOOTSTRAP_COUNTY_PASSWORD || 'county123', county: 'Kiambu', role: 'county_officer' },
-    { name: 'Operator', email: 'operator@majismart.ke', password: process.env.BOOTSTRAP_OPERATOR_PASSWORD || 'operator123', county: 'Machakos', role: 'operator' },
+    // Demo base coords so GIS dispatch pairing demonstrably works out of the box.
+    { name: 'Operator', email: 'operator@majismart.ke', password: process.env.BOOTSTRAP_OPERATOR_PASSWORD || 'operator123', county: 'Machakos', role: 'operator', base_latitude: -1.5177, base_longitude: 37.2634, base_location: 'Machakos Town depot (demo)' },
     { name: 'Citizen Demo', email: 'citizen@majismart.ke', password: process.env.BOOTSTRAP_CITIZEN_PASSWORD || 'citizen123', county: 'Nairobi', role: 'community' },
   ];
   for (const a of accounts) {
     const hash = await bcrypt.hash(String(a.password), 10);
     // eslint-disable-next-line no-await-in-loop
     await db.query(
-      `INSERT INTO users (name, email, password, county, role, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $4)
+      `INSERT INTO users (name, email, password, county, role, tenant_id, base_latitude, base_longitude, base_location)
+       VALUES ($1, $2, $3, $4, $5, $4, $6, $7, $8)
        ON CONFLICT (email) DO UPDATE SET
          password = EXCLUDED.password,
          name = EXCLUDED.name,
          county = EXCLUDED.county,
          role = EXCLUDED.role,
          tenant_id = EXCLUDED.tenant_id,
+         base_latitude = COALESCE(EXCLUDED.base_latitude, users.base_latitude),
+         base_longitude = COALESCE(EXCLUDED.base_longitude, users.base_longitude),
+         base_location = COALESCE(EXCLUDED.base_location, users.base_location),
          updated_at = NOW()`,
-      [a.name, a.email.toLowerCase().trim(), hash, a.county, a.role]
+      [a.name, a.email.toLowerCase().trim(), hash, a.county, a.role, a.base_latitude ?? null, a.base_longitude ?? null, a.base_location ?? null]
     );
   }
   console.log(`✅ Bootstrap accounts ensured: ${accounts.map((a) => `${a.email} [${a.role}]`).join(', ')}`);

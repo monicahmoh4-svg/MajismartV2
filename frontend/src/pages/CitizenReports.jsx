@@ -56,6 +56,7 @@ export default function CitizenReports() {
   const [activeTab, setActiveTab] = useState('all')
   const [commentText, setCommentText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitMsg, setSubmitMsg] = useState(null)
 
   const [newReport, setNewReport] = useState({
     title: '', description: '', category: 'leak', priority: 'medium',
@@ -106,17 +107,14 @@ export default function CitizenReports() {
     
     setSubmitting(true)
     try {
-      console.log('📡 Sending report to backend:', newReport)
-      
       const response = await api.post('/reports-enhanced', {
         ...newReport,
         latitude: newReport.latitude ? parseFloat(newReport.latitude) : null,
         longitude: newReport.longitude ? parseFloat(newReport.longitude) : null
       })
-      
-      console.log('✅ Backend response:', response)
-      alert(`✅ Report submitted successfully!\n\nYour report number is: ${response.report_number}\n\nPlease save this number for tracking.`)
-      
+
+      setSubmitMsg({ ok: true, text: `Report submitted! Your report number is ${response.report_number || ''}. Save it for tracking.` })
+
       setShowSubmitModal(false)
       setNewReport({
         title: '', description: '', category: 'leak', priority: 'medium',
@@ -127,9 +125,6 @@ export default function CitizenReports() {
       fetchReports()
       fetchStats()
     } catch (err) {
-      console.error('❌ Report submission error:', err)
-      console.error('❌ Full error object:', JSON.stringify(err, null, 2))
-      
       let errorMessage = 'Unknown error'
       if (err.response) {
         errorMessage = err.response.data?.message || err.response.data?.error || err.response.data?.details || `Server error: ${err.response.status}`
@@ -138,8 +133,8 @@ export default function CitizenReports() {
       } else {
         errorMessage = err.message
       }
-      
-      alert(`❌ Failed to submit report:\n\n${errorMessage}\n\nPlease open Browser Console (F12) for full details.`)
+
+      setSubmitMsg({ ok: false, text: `Failed to submit report: ${errorMessage}` })
     } finally {
       setSubmitting(false)
     }
@@ -538,9 +533,13 @@ export default function CitizenReports() {
                   )}
                 </div>
 
+                {submitMsg && (
+                  <div className={`alert-bar ${submitMsg.ok ? 'alert-bar-success' : 'alert-bar-error'}`} style={{ marginTop: 4 }}>
+                    {submitMsg.text}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                   <button type="button" onClick={() => setShowSubmitModal(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
-                  
                   <button 
                     type="submit" 
                     disabled={submitting}

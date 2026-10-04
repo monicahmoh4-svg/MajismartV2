@@ -3,6 +3,7 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { requireRole, requireVerified } = require('../middleware/rbac');
 const { logAudit } = require('../services/audit');
+const { rankStaff } = require('../services/dispatch');
 
 const STAFF = ['admin', 'county_officer', 'operator', 'technician'];
 
@@ -18,32 +19,21 @@ const SERVICE_FEES = {
 
 const CATEGORIES = Object.keys(SERVICE_FEES);
 
-function haversineKm(aLat, aLng, bLat, bLng) {
-  const R = 6371;
-  const dLat = ((bLat - aLat) * Math.PI) / 180;
-  const dLng = ((bLng - aLng) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((aLat * Math.PI) / 180) *
-      Math.cos((bLat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 // GIS + availability matching: nearest VERIFIED field staff in the county
-// with live coords, ranked by (distance, open workload). Staff without
-// coords or over capacity are skipped — never fake-matched.
+// with live coords, ranked by (distance, open workload). If nobody has
+// coordinates, fall back to least-loaded verified county staff (county
+// match) rather than dead-ending the citizen. Staff without coords, over
+// capacity, or unverified are never matched.
 async function matchTechnician({ county, lat, lng }) {
   const { rows: staff } = await db.query(
     `SELECT id, name, email, phone, role, county, base_latitude, base_longitude
      FROM users
      WHERE role IN ('technician','operator')
        AND (kyc_status IS NULL OR kyc_status = 'verified')
-       AND county = $1
-       AND base_latitude IS NOT NULL AND base_longitude IS NOT NULL`,
+       AND county = $1`,
     [county]
   );
-  if (!staff.length) return { match: null, reason: 'no verified staff with base location in county' };
+  if (!staff.length) return { match: null, method: 'queued', reason: 'no verified field staff in county' };
   const { rows: load } = await db.query(
     `SELECT assigned_to, COUNT(*) FILTER (WHERE status IN ('open','pending','assigned','in_progress')) as open_jobs
      FROM work_orders WHERE assigned_to IS NOT NULL GROUP BY assigned_to`
@@ -51,24 +41,18 @@ async function matchTechnician({ county, lat, lng }) {
   const openByName = {};
   for (const r of load) openByName[String(r.assigned_to).toLowerCase()] = parseInt(r.open_jobs) || 0;
 
-  const ranked = staff
-    .map((s) => {
-      const dist =
-        lat != null && lng != null
-          ? haversineKm(Number(lat), Number(lng), Number(s.base_latitude), Number(s.base_longitude))
-          : null;
-      const open = openByName[(s.name || '').toLowerCase()] ?? openByName[(s.email || '').toLowerCase()] ?? 0;
-      return { ...s, distance_km: dist != null ? Math.round(dist * 10) / 10 : null, open_jobs: open };
-    })
-    .filter((s) => s.open_jobs < 10)
-    .sort((a, b) => {
-      if (a.distance_km != null && b.distance_km != null && Math.abs(a.distance_km - b.distance_km) > 2) {
-        return a.distance_km - b.distance_km;
-      }
-      return a.open_jobs - b.open_jobs;
-    });
-  if (!ranked.length) return { match: null, reason: 'all nearby staff at capacity' };
-  return { match: ranked[0], reason: null };
+  const withCoords = staff.filter((s) => s.base_latitude != null && s.base_longitude != null);
+  const geo = lat != null && lng != null && withCoords.length
+    ? rankStaff(withCoords, openByName, lat, lng)
+    : { ranked: [], method: 'county' };
+  if (geo.ranked.length) {
+    return { match: geo.ranked[0], method: 'gps', reason: null };
+  }
+  const countyTier = rankStaff(staff, openByName, null, null);
+  if (countyTier.ranked.length) {
+    return { match: countyTier.ranked[0], method: 'county', reason: null };
+  }
+  return { match: null, method: 'queued', reason: 'all nearby staff at capacity' };
 }
 
 // POST /api/services/request — citizen requests a service (geolocated)
@@ -100,7 +84,7 @@ router.post('/request', authMiddleware, async (req, res) => {
     const request = sr[0];
 
     // Dispatch: match + create linked work order, or queue for the county.
-    const { match, reason } = await matchTechnician({ county: userCounty, lat, lng });
+    const { match, method, reason } = await matchTechnician({ county: userCounty, lat, lng });
     if (match) {
       const woNumber = `WO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       try {
@@ -133,7 +117,10 @@ router.post('/request', authMiddleware, async (req, res) => {
         assigned_to: match.id,
         assigned_name: match.name,
         distance_km: match.distance_km,
-        message: `${match.name} (${match.role}) is ${match.distance_km != null ? match.distance_km + ' km away' : 'nearby'} and has your job.`,
+        match_method: method,
+        message: method === 'gps' && match.distance_km != null
+          ? `${match.name} (${match.role}) is ${match.distance_km} km away and has your job.`
+          : `${match.name} (${match.role}) from ${userCounty} has your job.`,
       });
     }
 

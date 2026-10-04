@@ -391,7 +391,8 @@ export default function Landing() {
           backgroundImage: 'url("/images/landing-hero.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center 30%',
-          opacity: 0.5
+          opacity: 0.5,
+          animation: 'ms-kenburns 32s ease-in-out infinite alternate'
         }} role="img" aria-label="Glass of clean drinking water"></div>
         <div style={{
           position: 'absolute',
@@ -686,6 +687,40 @@ export default function Landing() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Field gallery — real photography from water work */}
+      <section style={{
+        padding: isMobile ? '60px 20px' : '100px 24px',
+        background: 'white',
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <span className="micro-label">From the field</span>
+          <h2 className="font-display" style={{ margin: '8px 0 12px 0', fontSize: isMobile ? '30px' : '44px', fontWeight: '600', color: 'var(--ink)', lineHeight: 1.1 }}>
+            Built where the water flows
+          </h2>
+          <p style={{ margin: '0 0 32px 0', fontSize: isMobile ? '15px' : '17px', color: 'var(--ash)', maxWidth: '640px' }}>
+            Yard taps, vendor storage and safe handling — the everyday infrastructure MajiSmart keeps visible and billable.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '16px' : '24px' }}>
+            {[
+              { src: '/images/field-tap.jpg', alt: 'Person drawing water from a yard tap', caption: 'Yard taps & kiosk points' },
+              { src: '/images/field-vendor.jpg', alt: 'Vendor with stored water barrels', caption: 'Vendors & licensed resellers' },
+              { src: '/images/field-hands.jpg', alt: 'Hands receiving clean poured water', caption: 'Safe water at point of use' },
+            ].map((g) => (
+              <figure key={g.src} style={{ margin: 0, borderRadius: 16, overflow: 'hidden', position: 'relative', height: isMobile ? 200 : 240, border: '1px solid var(--hairline)' }}>
+                <img src={g.src} alt={g.alt} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <figcaption style={{
+                  position: 'absolute', left: 0, right: 0, bottom: 0, padding: '28px 16px 14px',
+                  background: 'linear-gradient(transparent, rgba(6,18,31,0.82))',
+                  color: 'white', fontSize: 14, fontWeight: 700,
+                }}>
+                  {g.caption}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </section>
 

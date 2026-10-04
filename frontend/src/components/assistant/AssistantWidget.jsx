@@ -24,6 +24,24 @@ export default function AssistantWidget() {
   const [greeted, setGreeted] = useState(false)
   const scrollRef = useRef(null)
   const navigate = useNavigate()
+  const askRef = useRef(null)
+
+  // External triggers: window.dispatchEvent(new CustomEvent('maji:ask', {detail: 'text'}))
+  // opens the console and sends the message (used by Forgot password, help links).
+  useEffect(() => {
+    const onOpen = () => setOpen(true)
+    const onAsk = (e) => {
+      setOpen(true)
+      const text = e && e.detail ? String(e.detail) : ''
+      if (text && askRef.current) setTimeout(() => askRef.current(text), 400)
+    }
+    window.addEventListener('maji:open', onOpen)
+    window.addEventListener('maji:ask', onAsk)
+    return () => {
+      window.removeEventListener('maji:open', onOpen)
+      window.removeEventListener('maji:ask', onAsk)
+    }
+  }, [])
 
   // Load live topics + greeting on first open
   useEffect(() => {
@@ -86,6 +104,8 @@ export default function AssistantWidget() {
     setOpen(false)
     navigate(link)
   }
+
+  askRef.current = ask
 
   return (
     <>

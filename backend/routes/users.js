@@ -94,4 +94,29 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// PATCH /api/users/:id/password — admin resets any account password
+// (account recovery path for locked-out users). Returns nothing sensitive;
+// share the temp password with the user over a trusted channel.
+router.patch('/:id/password', authMiddleware, requireRole('admin','county_officer'), async (req, res) => {
+  try {
+    const { new_password } = req.body || {};
+    if (!new_password || String(new_password).length < 6) {
+      return res.status(400).json({ error: 'new_password (min 6 chars) is required' });
+    }
+    const bcrypt = require('bcryptjs');
+    const hash = await bcrypt.hash(String(new_password), 10);
+    const { rows } = await db.query(
+      `UPDATE users SET password=$1, updated_at=NOW() WHERE id=$2 RETURNING id,name,email,role`,
+      [hash, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'User not found' });
+    try {
+      const { logAudit } = require('../services/audit');
+      logAudit(req.user.id, 'user.password.reset', 'users', rows[0].id, {});
+    } catch (_) { /* audit never blocks */ }
+    res.json({ message: `Password reset for ${rows[0].email}. Share it with them securely.`, user: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = router;

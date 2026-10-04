@@ -208,8 +208,7 @@ export default function AssetManagement() {
   const handleExportCSV = async () => {
     try {
       setExporting(true)
-      console.log('📥 Starting CSV export...')
-      
+
       const response = await api.get('/assets/export/csv', {
         responseType: 'blob'
       })
@@ -224,8 +223,7 @@ export default function AssetManagement() {
       link.click()
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-      
-      console.log('✅ CSV export successful')
+
     } catch (err) {
       console.error('❌ CSV export error:', err)
       const errorMessage = err?.response?.data?.message || err?.message || 'Unknown error'

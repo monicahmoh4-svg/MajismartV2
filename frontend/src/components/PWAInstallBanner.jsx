@@ -67,7 +67,7 @@ export default function PWAInstallBanner() {
     try {
       deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
-      if (outcome === 'accepted') console.log('✅ User accepted installation')
+      if (outcome === 'accepted') setShowInstallBanner(false)
       setDeferredPrompt(null)
       setShowInstallBanner(false)
     } catch (error) {

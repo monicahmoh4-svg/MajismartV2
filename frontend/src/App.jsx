@@ -3,8 +3,7 @@ import { Suspense, lazy } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { normalizeUiRole } from './lib/roles'
 import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Register from './pages/Register'
+import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import Layout from './components/Layout'
 import PWAInstallBanner from './components/PWAInstallBanner'
@@ -102,8 +101,10 @@ function AppRoutes() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Auth initialView="signin" />} />
+        <Route path="/register" element={<Auth initialView="signup" />} />
+        {/* Admin console lives ONLY here — never linked from public auth */}
+        <Route path="/admin" element={<Auth initialView="admin" />} />
         <Route path="/find-water" element={<FindWater />} />
 
         {/* Legacy dashboard URL now lives inside the app shell */}

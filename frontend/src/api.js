@@ -7,6 +7,22 @@ import {
   WINNER_STORAGE_KEY,
 } from './lib/apiResolve'
 
+function readToken() {
+  try {
+    return window.localStorage.getItem('token') || window.sessionStorage.getItem('token')
+  } catch (e) {
+    return null
+  }
+}
+
+function clearSession() {
+  try {
+    window.localStorage.removeItem('token')
+    window.localStorage.removeItem('user')
+    window.sessionStorage.removeItem('token')
+    window.sessionStorage.removeItem('user')
+  } catch (e) { /* private mode */ }
+}
 function safeGet(k) {
   try { return window.localStorage.getItem(k) } catch (e) { return null }
 }
@@ -98,7 +114,7 @@ api.interceptors.request.use(
     } catch (e) {
       config.baseURL = getConfiguredApiUrl()
     }
-    const token = safeGet('token')
+    const token = readToken()
     if (token) config.headers.Authorization = `Bearer ${token}`
     return config
   },
@@ -134,10 +150,7 @@ api.interceptors.response.use(
         new Error('Cannot reach MajiSmart server. Check your connection and retry.')
       )
     if (error.response.status === 401) {
-      try {
-        window.localStorage.removeItem('token')
-        window.localStorage.removeItem('user')
-      } catch (e) { /* ignore */ }
+      clearSession()
     }
     const msg = error.response.data?.error || error.message
     return Promise.reject(new Error(msg))

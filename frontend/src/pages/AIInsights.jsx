@@ -102,7 +102,7 @@ export default function AIInsights() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <Brain size={22} color="#6f42c1" />
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#6f42c1' }}>AI Insights</h1>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#6f42c1' }}>Smart Insights</h1>
           </div>
           <p style={{ color: '#5f6368', fontSize: 14 }}>Leak detection, forecasting, anomalies and recommendations powered by live sensor data</p>
         </div>

@@ -1,34 +1,52 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import api from '../api'
 
+function readStoredSession() {
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const userRaw = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (!token || !userRaw) return null;
+    return { token, user: JSON.parse(userRaw), persistent: !!localStorage.getItem('token') };
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeSession(token, user, remember) {
+  const store = remember ? localStorage : sessionStorage;
+  const other = remember ? sessionStorage : localStorage;
+  store.setItem('token', token);
+  store.setItem('user', JSON.stringify(user));
+  other.removeItem('token');
+  other.removeItem('user');
+}
+
+function clearSession() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  try {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+  } catch (e) { /* private mode */ }
+}
+
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Load user from localStorage on mount, then refresh from the server so
-  // role, county, phone and KYC status are never stale (e.g. approved while
-  // the app was closed). A failed refresh keeps the cached session.
+  // Load session (persistent or this-tab-only) on mount, then refresh
+  // from the server so role, county, phone and KYC status never go stale.
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    const storedToken = localStorage.getItem('token')
-
-    if (storedUser && storedToken) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch (err) {
-        console.error('Failed to parse stored user:', err)
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
-        setLoading(false)
-        return
-      }
+    const session = readStoredSession()
+    if (session) {
+      setUser(session.user)
       api.get('/auth/me')
         .then((fresh) => {
           if (fresh && fresh.id) {
             setUser(fresh)
-            localStorage.setItem('user', JSON.stringify(fresh))
+            writeSession(localStorage.getItem('token') || sessionStorage.getItem('token'), fresh, session.persistent)
           }
         })
         .catch(() => {})
@@ -38,26 +56,22 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const login = async (email, password) => {
+  const login = async (email, password, remember = true) => {
     try {
       const response = await api.post('/auth/login', { email, password })
-      
+
       if (response && response.token && response.user) {
-        localStorage.setItem('token', response.token)
-        localStorage.setItem('user', JSON.stringify(response.user))
+        writeSession(response.token, response.user, remember)
         setUser(response.user)
-        
-        console.log('✅ Login successful, user set:', response.user.email)
+
         return { success: true, user: response.user }
       } else {
-        console.error('❌ Invalid response structure:', response)
         throw new Error('Invalid response from server')
       }
     } catch (error) {
-      console.error('Login error:', error)
-      return { 
-        success: false, 
-        error: error?.message || error?.error || 'Login failed. Please check your credentials.' 
+      return {
+        success: false,
+        error: error?.message || error?.error || 'Login failed. Please check your credentials.'
       }
     }
   }
@@ -67,14 +81,11 @@ export function AuthProvider({ children }) {
       const response = await api.post('/auth/register', userData)
       
       if (response && response.token && response.user) {
-        localStorage.setItem('token', response.token)
-        localStorage.setItem('user', JSON.stringify(response.user))
+        writeSession(response.token, response.user, true)
         setUser(response.user)
-        
-        console.log('✅ Registration successful, user set:', response.user.email)
+
         return { success: true, user: response.user }
       } else {
-        console.error('❌ Invalid response structure:', response)
         throw new Error('Invalid response from server')
       }
     } catch (error) {
@@ -97,8 +108,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    clearSession()
     setUser(null)
   }
 

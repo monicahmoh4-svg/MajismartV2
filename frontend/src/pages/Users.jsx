@@ -107,7 +107,7 @@ export default function Users() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: '#f8f9fa', borderBottom: '1px solid #e8eaed' }}>
-                {['User', 'Email', 'Role', 'County', 'Phone', 'Joined'].map(h => (
+                {['User', 'Email', 'Role', 'County', 'Phone', 'Joined', 'Access'].map(h => (
                   <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: 600, color: '#5f6368', fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
@@ -136,6 +136,26 @@ export default function Users() {
                   </td>
                   <td style={{ padding: '11px 14px', color: '#9aa0a6', fontFamily: 'monospace', fontSize: 12 }}>{u.phone || '—'}</td>
                   <td style={{ padding: '11px 14px', color: '#9aa0a6' }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
+                    <button
+                      onClick={async () => {
+                        const temp = 'MS-' + Math.random().toString(36).slice(2, 10).toUpperCase()
+                        if (!window.confirm(`Reset password for ${u.email} to:\n\n${temp}\n\nShare it with them over a trusted channel.`)) return
+                        try {
+                          await api.patch(`/users/${u.id}/password`, { new_password: temp })
+                          setMsg(`Password reset for ${u.email} — temp password shown above.`)
+                        } catch (err) {
+                          setMsg(err.message || 'Reset failed')
+                        } finally {
+                          setTimeout(() => setMsg(''), 6000)
+                        }
+                      }}
+                      style={{ background: 'none', border: '1px solid #e8eaed', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, color: '#1a7fd4', cursor: 'pointer' }}
+                      title="Issue a temporary password"
+                    >
+                      Reset PW
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

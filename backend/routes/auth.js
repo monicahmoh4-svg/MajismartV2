@@ -164,6 +164,76 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/admin-login — the ONLY admin entry point (serves /admin).
+// Same credential check as login, but non-admin roles are rejected here
+// (no token is issued to them) and the attempt is audited.
+router.post('/admin-login', async (req, res) => {
+  try {
+    await ensureUserSchema();
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const { rows } = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const user = rows[0];
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const { normalizeRole } = require('../middleware/auth');
+    if (normalizeRole(user.role) !== 'super_admin') {
+      try {
+        const { logAudit } = require('../services/audit');
+        logAudit(user.id, 'auth.admin_login.denied', 'users', user.id, { role: user.role });
+      } catch (_) { /* audit never blocks */ }
+      return res.status(403).json({ error: 'Admin access only. Staff and citizens use the main login.' });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'admin',
+        tenant_id: user.tenant_id || user.county || 'system',
+        county: user.county
+      },
+      JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+
+    try {
+      const { logAudit } = require('../services/audit');
+      logAudit(user.id, 'auth.admin_login', 'users', user.id, {});
+    } catch (_) { /* audit never blocks */ }
+
+    res.json({
+      message: 'Admin login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        county: user.county,
+        role: user.role || 'admin',
+        phone: user.phone || null,
+        kyc_status: user.kyc_status || 'verified'
+      }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
 // POST /api/auth/change-password - rotate own password (verifies current)
 router.post('/change-password', authenticateToken, async (req, res) => {
   try {
