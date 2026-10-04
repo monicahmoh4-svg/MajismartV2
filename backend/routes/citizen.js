@@ -96,4 +96,74 @@ router.get('/my-spending', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /citizen/iot-readings?county= — county sensor snapshot (real averages
+// over the last 4h). Optional probe columns (tds/chlorine/...) are returned
+// only when the readings table actually has them; otherwise null (never fake).
+router.get('/iot-readings', async (req, res) => {
+  try {
+    const { county } = req.query;
+    if (!county) return res.status(400).json({ error: 'county is required' });
+    const { rows: cols } = await db.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_name='sensor_readings'`);
+    const have = new Set(cols.map((r) => r.column_name));
+    const avg = (c) => have.has(c) ? `ROUND(AVG(sr.${c})::numeric,2) as ${c}` : `NULL as ${c}`;
+    const { rows } = await db.query(
+      `SELECT COUNT(DISTINCT sr.node_id) as nodes,
+              MAX(sr.recorded_at) as updated_at,
+              ${avg('ph')}, ${avg('turbidity')}, ${avg('temperature')},
+              ${avg('tds')}, ${avg('chlorine')},
+              ${have.has('conductivity') ? 'ROUND(AVG(sr.conductivity)::numeric,0) as conductivity' : 'NULL as conductivity'},
+              ${have.has('dissolved_oxygen') ? 'ROUND(AVG(sr.dissolved_oxygen)::numeric,2) as dissolved_oxygen' : 'NULL as dissolved_oxygen'}
+       FROM sensor_readings sr JOIN nodes n ON n.id=sr.node_id
+       WHERE n.county=$1 AND sr.recorded_at > NOW() - interval '4 hours'`,
+      [county]);
+    const r = rows[0] || {};
+    const num = (v) => (v === null || v === undefined ? null : Number(v));
+    res.json({
+      ph: num(r.ph), turbidity: num(r.turbidity), temperature: num(r.temperature),
+      tds: r.tds != null ? Math.round(Number(r.tds)) : null,
+      chlorine: num(r.chlorine), conductivity: num(r.conductivity),
+      dissolved_oxygen: num(r.dissolved_oxygen),
+      node_count: parseInt(r.nodes) || 0,
+      has_data: (parseInt(r.nodes) || 0) > 0,
+      updated_at: r.updated_at || null,
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /citizen/water-quality?county= — WHO-style county summary from live
+// readings: share of tested nodes within 5 NTU, 0-100 safety score.
+router.get('/water-quality', async (req, res) => {
+  try {
+    const { county } = req.query;
+    if (!county) return res.status(400).json({ error: 'county is required' });
+    const { rows } = await db.query(
+      `WITH latest AS (
+         SELECT DISTINCT ON (sr.node_id) sr.node_id, sr.turbidity, sr.ph, sr.chlorine, sr.recorded_at
+         FROM sensor_readings sr JOIN nodes n ON n.id=sr.node_id
+         WHERE n.county=$1 AND sr.recorded_at > NOW() - interval '24 hours'
+         ORDER BY sr.node_id, sr.recorded_at DESC
+       )
+       SELECT COUNT(*) as tested,
+              COUNT(*) FILTER (WHERE turbidity IS NOT NULL AND turbidity <= 5) as safe,
+              ROUND(AVG(turbidity)::numeric,2) as avg_turbidity,
+              ROUND(AVG(chlorine)::numeric,2) as avg_chlorine
+       FROM latest`, [county]);
+    const r = rows[0] || {};
+    const tested = parseInt(r.tested) || 0;
+    const safe = parseInt(r.safe) || 0;
+    const purity = tested ? Math.round((safe / tested) * 100) : null;
+    const avgT = r.avg_turbidity != null ? Number(r.avg_turbidity) : null;
+    const safety = avgT == null ? null : Math.max(0, Math.min(100, Math.round(100 - avgT * 12)));
+    res.json({
+      purity_level: purity,
+      safety_score: safety,
+      treatment_status: r.avg_chlorine != null ? (Number(r.avg_chlorine) >= 0.2 ? 'Treated' : 'Untreated') : null,
+      nodes_tested: tested,
+      avg_turbidity: avgT,
+      has_data: tested > 0,
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

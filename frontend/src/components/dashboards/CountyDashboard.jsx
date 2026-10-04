@@ -47,6 +47,9 @@ export default function CountyDashboard() {
   const [creports, setCreports] = useState([])
   const [balance, setBalance] = useState(null)
   const [deciding, setDeciding] = useState(null)
+  const [showVendorForm, setShowVendorForm] = useState(false)
+  const [vendorForm, setVendorForm] = useState({ name: '', phone: '', ward: '', tariff_ksh_per_20l: 2.0 })
+  const [savingVendor, setSavingVendor] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -81,8 +84,7 @@ export default function CountyDashboard() {
 
   if (loading) return <Loading message="Loading county dashboard..." />
 
-  const decideVendor = async (id, status) => {
-    setDeciding(id)
+  const decideVendor = async (id, status) => {    setDeciding(id)
     try {
       await api.patch(`/wasreb/vendors/${id}`, { status })
       const v = await api.get('/wasreb/vendors').catch(() => [])
@@ -92,6 +94,30 @@ export default function CountyDashboard() {
       console.error('Vendor decision failed:', err.message)
     } finally {
       setDeciding(null)
+    }
+  }
+
+  const registerVendor = async (e) => {
+    e.preventDefault()
+    if (!vendorForm.name.trim() || !vendorForm.phone.trim()) return
+    setSavingVendor(true)
+    try {
+      await api.post('/wasreb/vendors', {
+        name: vendorForm.name.trim(),
+        phone: vendorForm.phone.trim(),
+        county: user?.county || '',
+        ward: vendorForm.ward.trim() || undefined,
+        tariff_ksh_per_20l: Number(vendorForm.tariff_ksh_per_20l) || 2.0,
+      })
+      setVendorForm({ name: '', phone: '', ward: '', tariff_ksh_per_20l: 2.0 })
+      setShowVendorForm(false)
+      const v = await api.get('/wasreb/vendors').catch(() => [])
+      const county = user?.county || ''
+      setVendors(Array.isArray(v) ? v.filter(x => !county || x.county === county) : [])
+    } catch (err) {
+      console.error('Vendor registration failed:', err.message)
+    } finally {
+      setSavingVendor(false)
     }
   }
 
@@ -195,6 +221,18 @@ export default function CountyDashboard() {
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Licensed Vendors ({vendors.length})</h2>
             <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>Water Services Regulations 2025 · Sec.74 permits</p>
+            <button className="btn btn-outline btn-sm" style={{ marginBottom: 12 }} onClick={() => setShowVendorForm(!showVendorForm)}>
+              {showVendorForm ? 'Close form' : '+ Register vendor'}
+            </button>
+            {showVendorForm && (
+              <form onSubmit={registerVendor} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 8, marginBottom: 12, padding: 12, background: '#f8fafc', borderRadius: 10 }}>
+                <input required value={vendorForm.name} onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })} placeholder="Vendor name *" />
+                <input required value={vendorForm.phone} onChange={(e) => setVendorForm({ ...vendorForm, phone: e.target.value })} placeholder="Phone *" inputMode="tel" />
+                <input value={vendorForm.ward} onChange={(e) => setVendorForm({ ...vendorForm, ward: e.target.value })} placeholder="Ward" />
+                <input type="number" min="0" step="0.5" value={vendorForm.tariff_ksh_per_20l} onChange={(e) => setVendorForm({ ...vendorForm, tariff_ksh_per_20l: e.target.value })} placeholder="Ksh/20L" title="Tariff Ksh per 20L" />
+                <button type="submit" className="btn btn-primary btn-sm" disabled={savingVendor}>{savingVendor ? '…' : 'Submit for approval'}</button>
+              </form>
+            )}
             {vendors.length === 0 && <p style={{ fontSize: '14px', color: '#94a3b8' }}>No vendors registered in {user?.county || 'this county'} yet.</p>}
             {vendors.slice(0, 6).map(v => (
               <div key={v.id} style={{ padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>

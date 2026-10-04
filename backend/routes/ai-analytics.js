@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const ai = require('../services/aiService');
+const brain = require('../services/assistantBrain');
+const { authMiddleware } = require('../middleware/auth');
 
 // Helper: Calculate predictive risk score (0-100)
 async function calculateRiskScore(asset) {
@@ -201,6 +204,95 @@ router.get('/recommendations', async (req, res) => {
   } catch (error) {
     console.error('Recommendations error:', error);
     res.status(500).json({ error: 'Failed to fetch recommendations', message: error.message });
+  }
+});
+
+// GET /api/ai/insights — system rollup the AI Insights page renders.
+// Leak scan capped to the 15 most-recent nodes to bound DB load; revenue
+// forecast is an OLS extrapolation of the last 14 days of M-Pesa revenue.
+router.get('/insights', async (req, res) => {
+  try {
+    const { rows: nodes } = await db.query(
+      `SELECT id, name FROM nodes ORDER BY last_reading DESC NULLS LAST, created_at DESC LIMIT 15`);
+    const leaks = [];
+    for (const n of nodes) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const r = await ai.detectLeak(n.id);
+        if (r.leak_detected) leaks.push({ node_id: n.id, node_name: n.name, leak_probability: Math.round(r.confidence) });
+      } catch (e) { /* per-node failure must not sink the rollup */ }
+    }
+    leaks.sort((a, b) => b.leak_probability - a.leak_probability);
+    const [{ rows: cnt }] = [await db.query('SELECT COUNT(*) as total FROM nodes')];
+    const { rows: daily } = await db.query(
+      `SELECT DATE(created_at) as d, COALESCE(SUM(amount_ksh),0) as revenue
+       FROM payments WHERE status='completed' AND created_at > NOW() - interval '14 days'
+       GROUP BY DATE(created_at) ORDER BY d ASC`);
+    const rev = daily.map((r) => Number(r.revenue));
+    let slope = 0;
+    if (rev.length >= 2) {
+      const n = rev.length;
+      let sx = 0, sy = 0, sxy = 0, sxx = 0;
+      for (let i = 0; i < n; i++) { sx += i; sy += rev[i]; sxy += i * rev[i]; sxx += i * i; }
+      const den = n * sxx - sx * sx;
+      slope = den ? (n * sxy - sx * sy) / den : 0;
+    }
+    const last = rev.length ? rev[rev.length - 1] : 0;
+    const revenue_forecast_7d = [];
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(); d.setDate(d.getDate() + i);
+      revenue_forecast_7d.push({
+        date: d.toISOString().split('T')[0],
+        predicted_revenue: Math.max(0, Math.round(last + slope * i)),
+      });
+    }
+    res.json({
+      leak_risks: leaks.slice(0, 5),
+      total_nodes: parseInt(cnt[0].total) || 0,
+      total_nodes_at_risk: leaks.length,
+      revenue_forecast_7d: rev.length >= 3 ? revenue_forecast_7d : [],
+      generated_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('AI insights error:', error);
+    res.status(500).json({ error: 'Failed to fetch insights', message: error.message });
+  }
+});
+
+// GET /api/ai/forecast/:nodeId — consumption forecast (mapped to UI shape)
+router.get('/forecast/:nodeId', async (req, res) => {
+  try {
+    const days = Math.min(Math.max(parseInt(req.query.days) || 7, 1), 30);
+    const f = await ai.forecastConsumption(req.params.nodeId, days);
+    res.json({
+      forecast: (f.forecast || []).map((p) => ({ date: p.date, predicted_litres: Math.round(p.predicted) })),
+      trend: f.trend,
+      confidence: f.confidence,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/ai/recommendations/:nodeId — node-scoped actions
+router.get('/recommendations/:nodeId', async (req, res) => {
+  try {
+    res.json(await ai.getRecommendations(req.params.nodeId));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/ai/chat — staff assistant with full project knowledge
+// (same brain as the public Maji widget, authenticated here).
+router.post('/chat', authMiddleware, async (req, res) => {
+  try {
+    const { message } = req.body || {};
+    if (!message || !String(message).trim()) return res.status(400).json({ error: 'message is required' });
+    const out = await brain.answer(String(message).trim());
+    res.json({ reply: out.reply, topics: out.topics, actions: out.actions, source: out.source });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

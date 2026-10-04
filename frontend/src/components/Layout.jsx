@@ -6,14 +6,14 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Wifi, CreditCard, Bell, BarChart3,
   Settings, LogOut, Menu, X, Droplets, Users, Wrench, Brain, Flag, MapPin,
-  FileText, Package, Map, ClipboardList, Cpu,
+  FileText, Package, Map, ClipboardList, Cpu, Building2,
 } from 'lucide-react'
 
 const ICONS = {
   dashboard: LayoutDashboard, nodes: Wifi, payments: CreditCard,
   mywater: Droplets, report: Flag, alerts: Bell, ai: Brain,
   analytics: BarChart3, users: Users, maintenance: Wrench, settings: Settings,
-  reports: FileText, assets: Package, gis: Map, workorders: ClipboardList, devices: Cpu,
+  reports: FileText, assets: Package, gis: Map, workorders: ClipboardList, devices: Cpu, estates: Building2,
 }
 
 function useIsDesktop(breakpoint = 960) {

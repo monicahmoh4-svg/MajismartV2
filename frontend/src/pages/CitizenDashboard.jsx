@@ -40,28 +40,32 @@ export default function CitizenDashboard({ readOnly = false }) {
   const [communityReports, setCommunityReports] = useState([])
   const [alerts, setAlerts] = useState([])
   
-  // IoT & Sensor Data
+  // IoT & Sensor Data — null until live county telemetry arrives (never faked)
   const [iotReadings, setIotReadings] = useState({
-    ph: 7.2,
-    turbidity: 1.2,
-    tds: 150,
-    dissolved_oxygen: 8.5,
-    conductivity: 320,
-    chlorine: 0.4,
-    last_updated: new Date()
+    ph: null,
+    turbidity: null,
+    tds: null,
+    dissolved_oxygen: null,
+    conductivity: null,
+    chlorine: null,
+    has_data: false,
+    last_updated: null
   })
   
-  // Water Quality Metrics
+  // Water Quality Metrics — null until live county telemetry arrives
   const [waterQuality, setWaterQuality] = useState({
-    purity_level: 92,
-    safety_score: 88,
-    potability: 'Safe',
+    purity_level: null,
+    safety_score: null,
+    potability: null,
     contaminants: [],
-    treatment_status: 'Treated'
+    treatment_status: null
   })
-  
+
   // UI States
   const [showReportModal, setShowReportModal] = useState(false)
+  const [reportMsg, setReportMsg] = useState(null)
+  const [voteBusy, setVoteBusy] = useState(null)
+  const [voteThanks, setVoteThanks] = useState(null)
   const [reportForm, setReportForm] = useState({ title: '', description: '', category: 'leak', location: '' })
   const [submitting, setSubmitting] = useState(false)
   const [selectedPoint, setSelectedPoint] = useState(null)
@@ -164,13 +168,33 @@ export default function CitizenDashboard({ readOnly = false }) {
       })
       setShowReportModal(false)
       setReportForm({ title: '', description: '', category: 'leak', location: '' })
+      setReportMsg({ ok: true, text: 'Report submitted successfully! Track it under My Reports.' })
       fetchAllData()
-      alert('✅ Report submitted successfully!')
-    } catch (err) { 
-      console.error('Report error:', err) 
-      alert('❌ Failed to submit report: ' + (err.response?.data?.message || err.message))
-    } finally { 
-      setSubmitting(false) 
+    } catch (err) {
+      console.error('Report error:', err)
+      setReportMsg({ ok: false, text: 'Failed to submit report: ' + (err.message || 'please try again') })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Crowd availability vote: "is water flowing here right now?"
+  const vote = async (point, isAvailable) => {
+    const key = `${point.id}-${isAvailable ? 'yes' : 'no'}`
+    setVoteBusy(key)
+    try {
+      await api.post('/citizen/availability-report', {
+        county: user?.county || point.county,
+        area: point.location || point.name,
+        is_available: isAvailable,
+      })
+      setVoteThanks(key)
+      setTimeout(() => setVoteThanks(null), 4000)
+      fetchAllData()
+    } catch (err) {
+      console.error('Vote failed:', err.message)
+    } finally {
+      setVoteBusy(null)
     }
   }
 
@@ -709,14 +733,19 @@ export default function CitizenDashboard({ readOnly = false }) {
               {activeSection === 'iot-monitoring' && (
                 <motion.div variants={fadeInUp}>
                   <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>IoT Sensor Monitoring</h2>
+                  {!iotReadings.has_data && (
+                    <div style={{ background: 'white', borderRadius: '16px', padding: '40px 20px', textAlign: 'center', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>No live sensors reporting in {user?.county || 'your county'} yet. Readings appear here automatically once field devices connect.</p>
+                    </div>
+                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                     {[
-                      { label: 'pH Level', value: iotReadings.ph, unit: '', icon: Droplet, color: '#0891b2', status: iotReadings.ph >= 6.5 && iotReadings.ph <= 8.5 ? 'Optimal' : 'Alert' },
-                      { label: 'Turbidity', value: iotReadings.turbidity, unit: 'NTU', icon: Waves, color: '#06b6d4', status: iotReadings.turbidity < 5 ? 'Clear' : 'Cloudy' },
-                      { label: 'TDS', value: iotReadings.tds, unit: 'ppm', icon: Database, color: '#10b981', status: iotReadings.tds < 300 ? 'Safe' : 'Elevated' },
-                      { label: 'Dissolved Oxygen', value: iotReadings.dissolved_oxygen, unit: 'mg/L', icon: Wind, color: '#3b82f6', status: iotReadings.dissolved_oxygen >= 6 ? 'Good' : 'Low' },
-                      { label: 'Conductivity', value: iotReadings.conductivity, unit: 'μS/cm', icon: Zap, color: '#f59e0b', status: 'Normal' },
-                      { label: 'Free Chlorine', value: iotReadings.chlorine, unit: 'mg/L', icon: CloudRain, color: '#ef4444', status: iotReadings.chlorine >= 0.2 && iotReadings.chlorine <= 1.0 ? 'Treated' : 'Check' }
+                      { label: 'pH Level', value: iotReadings.ph, unit: '', icon: Droplet, color: '#0891b2', status: iotReadings.ph == null ? 'No data' : (iotReadings.ph >= 6.5 && iotReadings.ph <= 8.5 ? 'Optimal' : 'Alert') },
+                      { label: 'Turbidity', value: iotReadings.turbidity, unit: 'NTU', icon: Waves, color: '#06b6d4', status: iotReadings.turbidity == null ? 'No data' : (iotReadings.turbidity < 5 ? 'Clear' : 'Cloudy') },
+                      { label: 'TDS', value: iotReadings.tds, unit: 'ppm', icon: Database, color: '#10b981', status: iotReadings.tds == null ? 'No data' : (iotReadings.tds < 300 ? 'Safe' : 'Elevated') },
+                      { label: 'Dissolved Oxygen', value: iotReadings.dissolved_oxygen, unit: 'mg/L', icon: Wind, color: '#3b82f6', status: iotReadings.dissolved_oxygen == null ? 'No data' : (iotReadings.dissolved_oxygen >= 6 ? 'Good' : 'Low') },
+                      { label: 'Conductivity', value: iotReadings.conductivity, unit: 'μS/cm', icon: Zap, color: '#f59e0b', status: iotReadings.conductivity == null ? 'No data' : 'Normal' },
+                      { label: 'Free Chlorine', value: iotReadings.chlorine, unit: 'mg/L', icon: CloudRain, color: '#ef4444', status: iotReadings.chlorine == null ? 'No data' : (iotReadings.chlorine >= 0.2 && iotReadings.chlorine <= 1.0 ? 'Treated' : 'Check') }
                     ].map((metric, i) => (
                       <motion.div key={i} variants={scaleIn} whileHover={{ y: -4 }} className="card-hover" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
@@ -728,10 +757,10 @@ export default function CitizenDashboard({ readOnly = false }) {
                               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>{metric.label}</h3>
                             </div>
                           </div>
-                          <span style={{ padding: '6px 12px', background: metric.status === 'Optimal' || metric.status === 'Clear' || metric.status === 'Safe' || metric.status === 'Good' || metric.status === 'Normal' || metric.status === 'Treated' ? '#d1fae5' : '#fef3c7', color: metric.status === 'Optimal' || metric.status === 'Clear' || metric.status === 'Safe' || metric.status === 'Good' || metric.status === 'Normal' || metric.status === 'Treated' ? '#059669' : '#d97706', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{metric.status}</span>
+                          <span style={{ padding: '6px 12px', background: metric.status === 'No data' ? '#f1f5f9' : (metric.status === 'Optimal' || metric.status === 'Clear' || metric.status === 'Safe' || metric.status === 'Good' || metric.status === 'Normal' || metric.status === 'Treated' ? '#d1fae5' : '#fef3c7'), color: metric.status === 'No data' ? '#94a3b8' : (metric.status === 'Optimal' || metric.status === 'Clear' || metric.status === 'Safe' || metric.status === 'Good' || metric.status === 'Normal' || metric.status === 'Treated' ? '#059669' : '#d97706'), borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{metric.status}</span>
                         </div>
                         <div style={{ fontSize: '36px', fontWeight: '800', color: '#0f172a' }}>
-                          {metric.value}<span style={{ fontSize: '14px', color: '#64748b', marginLeft: '4px' }}>{metric.unit}</span>
+                          {metric.value ?? '—'}<span style={{ fontSize: '14px', color: '#64748b', marginLeft: '4px' }}>{metric.unit}</span>
                         </div>
                       </motion.div>
                     ))}
@@ -746,15 +775,15 @@ export default function CitizenDashboard({ readOnly = false }) {
                   <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
                       <div style={{ textAlign: 'center', padding: '20px', background: '#f0f9ff', borderRadius: '12px' }}>
-                        <div style={{ fontSize: '48px', fontWeight: '800', color: '#0891b2', marginBottom: '8px' }}>{waterQuality.purity_level}%</div>
+                        <div style={{ fontSize: '48px', fontWeight: '800', color: '#0891b2', marginBottom: '8px' }}>{waterQuality.purity_level != null ? `${waterQuality.purity_level}%` : '—'}</div>
                         <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Purity Level</p>
                       </div>
                       <div style={{ textAlign: 'center', padding: '20px', background: '#f0fdf4', borderRadius: '12px' }}>
-                        <div style={{ fontSize: '48px', fontWeight: '800', color: '#10b981', marginBottom: '8px' }}>{waterQuality.safety_score}</div>
+                        <div style={{ fontSize: '48px', fontWeight: '800', color: '#10b981', marginBottom: '8px' }}>{waterQuality.safety_score ?? '—'}</div>
                         <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Safety Score</p>
                       </div>
                       <div style={{ textAlign: 'center', padding: '20px', background: '#fef3c7', borderRadius: '12px' }}>
-                        <div style={{ fontSize: '24px', fontWeight: '800', color: '#f59e0b', marginBottom: '8px' }}>{waterQuality.treatment_status || 'Treated'}</div>
+                        <div style={{ fontSize: '24px', fontWeight: '800', color: '#f59e0b', marginBottom: '8px' }}>{waterQuality.treatment_status ?? '—'}</div>
                         <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Treatment Status</p>
                       </div>
                     </div>
@@ -808,6 +837,27 @@ export default function CitizenDashboard({ readOnly = false }) {
                               <p style={{ margin: '2px 0 0 0', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{point.flow_rate || 0} L/m</p>
                             </div>
                           </div>
+                          {!readOnly && (
+                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
+                              <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Is water flowing here right now?</p>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); vote(point, true) }}
+                                  disabled={voteBusy === `${point.id}-yes`}
+                                  style={{ flex: 1, padding: '8px', background: '#d1fae5', color: '#059669', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', opacity: voteBusy === `${point.id}-yes` ? 0.6 : 1 }}
+                                >
+                                  {voteThanks === `${point.id}-yes` ? '✓ Thanks!' : 'Yes, flowing'}
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); vote(point, false) }}
+                                  disabled={voteBusy === `${point.id}-no`}
+                                  style={{ flex: 1, padding: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', opacity: voteBusy === `${point.id}-no` ? 0.6 : 1 }}
+                                >
+                                  {voteThanks === `${point.id}-no` ? '✓ Thanks!' : "No, it's dry"}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </motion.div>
                       )
                     })}
@@ -833,6 +883,11 @@ export default function CitizenDashboard({ readOnly = false }) {
                     </motion.button>
                     )}
                   </div>
+                  {reportMsg && (
+                    <div className={`alert-bar ${reportMsg.ok ? 'alert-bar-success' : 'alert-bar-error'}`} style={{ marginBottom: 16 }}>
+                      {reportMsg.text}
+                    </div>
+                  )}
                   <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
                     {myReports.length > 0 ? myReports.map((report, i) => {
                       const status = getReportStatus(report.status)
@@ -955,10 +1010,22 @@ export default function CitizenDashboard({ readOnly = false }) {
                       <p style={{ margin: 0, fontSize: '36px', fontWeight: '800', color: '#0f172a' }}>{(mySpending?.transactions || []).length}</p>
                     </div>
                   </div>
-                  <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '80px 20px', textAlign: 'center' }}>
-                    <Wallet style={{ width: '64px', height: '64px', color: '#cbd5e1', margin: '0 auto 16px' }} />
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Transaction History</h4>
-                    <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Your detailed spending history will appear here.</p>
+                  <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '8px 20px' }}>
+                    {!(mySpending?.history || []).length ? (
+                      <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                        <Wallet style={{ width: '64px', height: '64px', color: '#cbd5e1', margin: '0 auto 16px' }} />
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Transaction History</h4>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Your M-Pesa water purchases will appear here automatically.</p>
+                      </div>
+                    ) : mySpending.history.map((p, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 0', borderBottom: i < mySpending.history.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.node_name || 'Water point'}</div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>{p.litres}L{p.mpesa_code ? ` · ${p.mpesa_code}` : ''} · {new Date(p.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', flexShrink: 0 }}>KES {Number(p.amount_ksh).toLocaleString()}</div>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}
