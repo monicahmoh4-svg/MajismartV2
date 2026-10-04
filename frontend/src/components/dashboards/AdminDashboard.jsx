@@ -71,6 +71,16 @@ export default function AdminDashboard() {
   const [revenue14d, setRevenue14d] = useState([])
   const [critical, setCritical] = useState([])
   const [pendingVendors, setPendingVendors] = useState([])
+  // Command center: KYC queue, inbox, activity, notifications
+  const [kycQueue, setKycQueue] = useState([])
+  const [inbox, setInbox] = useState([])
+  const [activity, setActivity] = useState([])
+  const [attention, setAttention] = useState({})
+  const [staffUsers, setStaffUsers] = useState([])
+  const [notifyForm, setNotifyForm] = useState({ scope: 'broadcast', user_id: '', title: '', message: '' })
+  const [replyTo, setReplyTo] = useState(null)
+  const [replyText, setReplyText] = useState('')
+  const [cmdBusy, setCmdBusy] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -83,18 +93,27 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
       setError(null)
-      const [stats, h, rev, critAlerts, vendors] = await Promise.all([
+      const [stats, h, rev, critAlerts, vendors, kyc, msgs, act, users] = await Promise.all([
         api.get('/admin/dashboard-stats'),
         api.get('/health').catch(() => null),
         api.get('/dashboard/revenue-chart?days=14').catch(() => []),
         api.get('/alerts?resolved=false&severity=critical&limit=5').catch(() => []),
         api.get('/wasreb/vendors').catch(() => []),
+        api.get('/users/kyc-pending').catch(() => []),
+        api.get('/messages/inbox').catch(() => []),
+        api.get('/admin/activity').catch(() => null),
+        api.get('/users').catch(() => []),
       ])
       setData(stats)
       setHealth(h && h.service ? h : null)
       setRevenue14d(Array.isArray(rev) ? rev : [])
       setCritical(critAlerts || [])
       setPendingVendors((Array.isArray(vendors) ? vendors : []).filter(v => v.status === 'pending'))
+      setKycQueue(Array.isArray(kyc) ? kyc : [])
+      setInbox(Array.isArray(msgs) ? msgs : [])
+      setActivity(act?.activity || [])
+      setAttention(act?.attention || {})
+      setStaffUsers(Array.isArray(users) ? users : [])
       setLastUpdated(new Date())
     } catch (err) {
       console.error('Admin dashboard fetch error:', err)
@@ -113,6 +132,60 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const decideKyc = async (id, status) => {
+    setCmdBusy(id + status)
+    try {
+      await api.patch(`/users/${id}/kyc`, { status })
+      const q = await api.get('/users/kyc-pending').catch(() => [])
+      setKycQueue(Array.isArray(q) ? q : [])
+      fetchData()
+    } catch (e) { console.error('KYC decision failed:', e.message) }
+    finally { setCmdBusy(null) }
+  }
+
+  const markMsgRead = async (id) => {
+    try {
+      await api.patch(`/messages/${id}/read`, {})
+      setInbox((list) => list.map((m) => (m.id === id ? { ...m, is_read: true } : m)))
+    } catch (e) { console.error('Mark read failed:', e.message) }
+  }
+
+  const sendReply = async (m) => {
+    if (!replyText.trim()) return
+    setCmdBusy('reply-' + m.id)
+    try {
+      await api.post('/notifications', {
+        user_id: m.sender_id,
+        title: `Re: ${m.subject || 'your message'}`,
+        message: replyText.trim(),
+      })
+      await api.patch(`/messages/${m.id}/read`, {}).catch(() => {})
+      setReplyText('')
+      setReplyTo(null)
+      const fresh = await api.get('/messages/inbox').catch(() => [])
+      setInbox(Array.isArray(fresh) ? fresh : [])
+    } catch (e) { console.error('Reply failed:', e.message) }
+    finally { setCmdBusy(null) }
+  }
+
+  const sendNotification = async (e) => {
+    e.preventDefault()
+    if (!notifyForm.title.trim() || !notifyForm.message.trim()) return
+    if (notifyForm.scope === 'user' && !notifyForm.user_id) return
+    setCmdBusy('notify')
+    try {
+      await api.post('/notifications', {
+        title: notifyForm.title.trim(),
+        message: notifyForm.message.trim(),
+        broadcast: notifyForm.scope === 'broadcast',
+        user_id: notifyForm.scope === 'user' ? notifyForm.user_id : undefined,
+      })
+      setNotifyForm({ scope: 'broadcast', user_id: '', title: '', message: '' })
+      fetchData()
+    } catch (err) { console.error('Notify failed:', err.message) }
+    finally { setCmdBusy(null) }
   }
 
   if (loading) return <Loading message="Loading admin dashboard..." />
@@ -242,6 +315,129 @@ export default function AdminDashboard() {
                 ({pendingVendors.slice(0, 3).map(v => v.county).filter(Boolean).join(', ') || 'various counties'}).
               </div>
             )}
+          </motion.div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+          {/* KYC review queue */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
+              KYC Review ({kycQueue.length})
+            </h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>Verify IDs & certifications to unlock field jobs</p>
+            {kycQueue.length === 0 && <p style={{ fontSize: '14px', color: '#94a3b8' }}>Queue clear — no pending verifications.</p>}
+            {kycQueue.slice(0, 5).map((k) => (
+              <div key={k.id} style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{k.name}</div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>{k.email} · {k.role} · {k.county} · ID {k.national_id || '—'}</div>
+                    <div style={{ fontSize: '12px', marginTop: 4, display: 'flex', gap: 10 }}>
+                      {k.id_document && <a href={k.id_document} target="_blank" rel="noreferrer">View ID</a>}
+                      {k.certifications && <a href={k.certifications} target="_blank" rel="noreferrer">View certs</a>}
+                      {k.base_location && <span style={{ color: '#64748b' }}>📍 {k.base_location}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button className="btn btn-success btn-sm" disabled={cmdBusy === k.id + 'verified'} onClick={() => decideKyc(k.id, 'verified')}>
+                    {cmdBusy === k.id + 'verified' ? '…' : 'Approve'}
+                  </button>
+                  <button className="btn btn-ghost btn-sm" disabled={cmdBusy === k.id + 'rejected'} onClick={() => decideKyc(k.id, 'rejected')}>
+                    {cmdBusy === k.id + 'rejected' ? '…' : 'Reject'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* User inbox */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
+              User Messages ({inbox.filter((m) => !m.is_read).length} unread)
+            </h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>Support requests from citizens & staff — reply lands as a notification</p>
+            {inbox.length === 0 && <p style={{ fontSize: '14px', color: '#94a3b8' }}>Inbox empty.</p>}
+            {inbox.slice(0, 5).map((m) => (
+              <div key={m.id} style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9', opacity: m.is_read ? 0.75 : 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
+                    {!m.is_read && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626', marginRight: 6 }} />}
+                    {m.subject || '(no subject)'}
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', flexShrink: 0 }}>{new Date(m.created_at).toLocaleDateString()}</span>
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>
+                  {m.sender_name || 'Unknown'} ({m.sender_role || 'user'}{m.sender_county ? ` · ${m.sender_county}` : ''})
+                </div>
+                <p style={{ fontSize: '13px', color: '#334155', margin: '6px 0' }}>{m.body}</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {!m.is_read && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => markMsgRead(m.id)}>Mark read</button>
+                  )}
+                  {m.sender_id && (
+                    <button className="btn btn-outline btn-sm" onClick={() => { setReplyTo(replyTo === m.id ? null : m.id); setReplyText('') }}>
+                      {replyTo === m.id ? 'Cancel' : 'Reply'}
+                    </button>
+                  )}
+                </div>
+                {replyTo === m.id && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Write a reply…" style={{ flex: 1 }} />
+                    <button className="btn btn-primary btn-sm" disabled={cmdBusy === 'reply-' + m.id} onClick={() => sendReply(m)}>
+                      {cmdBusy === 'reply-' + m.id ? '…' : 'Send'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+          {/* Notifications composer */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Notify users</h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>Broadcast to everyone or message one account</p>
+            <form onSubmit={sendNotification} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className={`chip${notifyForm.scope === 'broadcast' ? ' chip-on' : ''}`} onClick={() => setNotifyForm({ ...notifyForm, scope: 'broadcast' })}>Everyone</button>
+                <button type="button" className={`chip${notifyForm.scope === 'user' ? ' chip-on' : ''}`} onClick={() => setNotifyForm({ ...notifyForm, scope: 'user' })}>One user</button>
+              </div>
+              {notifyForm.scope === 'user' && (
+                <select value={notifyForm.user_id} onChange={(e) => setNotifyForm({ ...notifyForm, user_id: e.target.value })} required>
+                  <option value="">Select user…</option>
+                  {staffUsers.slice(0, 200).map((u) => (
+                    <option key={u.id} value={u.id}>{u.name} — {u.email} ({u.role})</option>
+                  ))}
+                </select>
+              )}
+              <input value={notifyForm.title} onChange={(e) => setNotifyForm({ ...notifyForm, title: e.target.value })} required placeholder="Title" maxLength={200} />
+              <textarea value={notifyForm.message} onChange={(e) => setNotifyForm({ ...notifyForm, message: e.target.value })} required placeholder="Message…" rows={3} maxLength={2000} />
+              <button type="submit" className="btn btn-primary btn-sm" disabled={cmdBusy === 'notify'}>
+                {cmdBusy === 'notify' ? 'Sending…' : 'Send notification'}
+              </button>
+            </form>
+          </motion.div>
+
+          {/* Whole-app activity */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Live activity</h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>Every important action across the platform</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+              <span className="chip">KYC pending: {attention.pending_kyc ?? '—'}</span>
+              <span className="chip">Unread messages: {attention.unread_messages ?? '—'}</span>
+              <span className="chip">Open services: {attention.open_services ?? '—'}</span>
+            </div>
+            {activity.length === 0 && <p style={{ fontSize: '14px', color: '#94a3b8' }}>No audited activity yet — actions appear here as staff work.</p>}
+            {activity.slice(0, 8).map((a) => (
+              <div key={a.id} style={{ padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
+                <strong>{a.actor_name || 'System'}</strong>{' '}
+                <span style={{ color: '#64748b' }}>{String(a.action || '').replace(/\./g, ' → ')}</span>{' '}
+                {a.entity && <span className="chip" style={{ fontSize: 11 }}>{a.entity}</span>}
+                <div style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(a.created_at).toLocaleString()}</div>
+              </div>
+            ))}
           </motion.div>
         </div>
 

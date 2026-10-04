@@ -70,8 +70,6 @@ export default function Landing() {
     return () => observer.disconnect()
   }, [])
 
-  const [showAnnounce, setShowAnnounce] = useState(true)
-
   const scrollToSection = (id) => {
     const element = document.getElementById(id)
     if (element) {
@@ -86,17 +84,6 @@ export default function Landing() {
       color: 'var(--ink)', overflowX: 'hidden', background: 'var(--bone)',
       minHeight: '100vh'
     }}>
-
-      {showAnnounce && (
-        <div className="announce-bar">
-          <span>Now live: M-Pesa prepaid tokens + WASREB KPIs across all 47 counties</span>
-          <a href="/register">Get started</a>
-          <button onClick={() => setShowAnnounce(false)} aria-label="Dismiss"
-            style={{ background: 'none', border: 'none', color: 'var(--bone)', cursor: 'pointer', padding: 4, display: 'flex' }}>
-            <X style={{ width: 14, height: 14 }} />
-          </button>
-        </div>
-      )}
 
       <style>{`
         @keyframes float { 0%,100%{ transform:translateY(0px); } 50%{ transform:translateY(-20px); } }

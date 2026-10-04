@@ -2,7 +2,7 @@ const router = require('express').Router();
 const crypto = require('crypto');
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requireVerified } = require('../middleware/rbac');
 const { logAudit } = require('../services/audit');
 
 const PROVISION_ROLES = ['admin', 'county_officer', 'operator'];
@@ -33,7 +33,7 @@ router.get('/', authMiddleware, requireRole(...PROVISION_ROLES), async (req, res
 });
 
 // POST /api/devices/register — provision a device; api_key shown ONCE
-router.post('/register', authMiddleware, requireRole(...PROVISION_ROLES), async (req, res) => {
+router.post('/register', authMiddleware, requireRole(...PROVISION_ROLES), requireVerified, async (req, res) => {
   try {
     const { device_id, node_id, name, kind, firmware } = req.body;
     if (!device_id || !name) return res.status(400).json({ error: 'device_id and name are required' });
@@ -67,7 +67,7 @@ router.post('/register', authMiddleware, requireRole(...PROVISION_ROLES), async 
 });
 
 // POST /api/devices/:id/rotate — replace a lost/compromised key
-router.post('/:id/rotate', authMiddleware, requireRole(...PROVISION_ROLES), async (req, res) => {
+router.post('/:id/rotate', authMiddleware, requireRole(...PROVISION_ROLES), requireVerified, async (req, res) => {
   try {
     const apiKey = 'msk_' + crypto.randomBytes(32).toString('hex');
     const { rows } = await db.query(
@@ -79,7 +79,7 @@ router.post('/:id/rotate', authMiddleware, requireRole(...PROVISION_ROLES), asyn
 });
 
 // PATCH /api/devices/:id — status/node/config/firmware (never the key)
-router.patch('/:id', authMiddleware, requireRole(...PROVISION_ROLES), async (req, res) => {
+router.patch('/:id', authMiddleware, requireRole(...PROVISION_ROLES), requireVerified, async (req, res) => {
   try {
     const allowed = ['status', 'node_id', 'firmware', 'config', 'name'];
     const updates = [];

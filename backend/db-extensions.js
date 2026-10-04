@@ -130,11 +130,73 @@ async function ensureProductionTables() {
   await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS location VARCHAR(200)`);
   await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS quality_index INTEGER`);
 
-  // IoT device registry: hardware authenticates with per-device API keys
-  // (sha256 of a 256-bit secret shown ONCE at provisioning). Telemetry from
-  // physical devices lands in sensor_readings with source='device';
-  // source='simulator' is reserved for the explicit test simulator so test
-  // data can never be mistaken for live data.
+  // Operator/technician KYC: identity + certification review before field work.
+  // kyc_status defaults to verified so pre-existing/seed accounts keep working;
+  // register() explicitly sets 'pending' for new operator/technician signups.
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS national_id VARCHAR(30)`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS id_document TEXT`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS certifications TEXT`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_status VARCHAR(20) DEFAULT 'verified'`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS base_latitude DECIMAL(10,7)`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS base_longitude DECIMAL(10,7)`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS base_location VARCHAR(200)`);
+
+  // Citizen service requests with GIS dispatch (citizen coords -> nearest
+  // verified field staff). assigned_to stores the technician/operator user id.
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS service_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      citizen_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      category VARCHAR(60) NOT NULL DEFAULT 'other',
+      description TEXT NOT NULL,
+      latitude DECIMAL(10,7),
+      longitude DECIMAL(10,7),
+      area VARCHAR(200),
+      county VARCHAR(100),
+      status VARCHAR(30) DEFAULT 'open' CHECK (status IN ('open','assigned','in_progress','completed','cancelled')),
+      assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+      assigned_name VARCHAR(150),
+      distance_km DECIMAL(8,2),
+      fee_ksh DECIMAL(10,2) DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_sr_status ON service_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_sr_assigned ON service_requests(assigned_to);
+    CREATE INDEX IF NOT EXISTS idx_sr_citizen ON service_requests(citizen_id);
+  `);
+
+  // Direct notifications: admin -> user (user_id set) or broadcast (NULL).
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      message TEXT NOT NULL,
+      created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+      is_read BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id, created_at DESC);
+  `);
+
+  // User -> admin support messages (recipient NULL = admin pool).
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      recipient_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      subject VARCHAR(200),
+      body TEXT NOT NULL,
+      is_read BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_msg_recipient ON messages(recipient_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_msg_sender ON messages(sender_id, created_at DESC);
+  `);
+
+  // Technician earnings: county-set payout per work order (county-settled).
+  await db.query(`ALTER TABLE work_orders ADD COLUMN IF NOT EXISTS payout_ksh DECIMAL(10,2) DEFAULT 0`);
   await db.query(`
     CREATE TABLE IF NOT EXISTS devices (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

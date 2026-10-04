@@ -49,4 +49,30 @@ function requirePermission(resource, action) {
   };
 }
 
-module.exports = { requireRole, requirePermission, hasPermission, ROLE_RANK, PERMISSIONS };
+// Field-work gate: operators/technicians with pending/rejected KYC cannot
+// take jobs, update work orders, provision devices or create nodes — until an
+// admin approves them. Everyone else passes through. Fresh kyc_status lookup
+// (not JWT) so approval takes effect without re-login. Unknown/query errors
+// fail OPEN to keep field ops running through transient DB hiccups.
+function requireVerified(req, res, next) {
+  const role = normalizeRole(req.user && req.user.role);
+  if (role !== 'operator' && role !== 'technician') return next();
+  try {
+    const db = require('../db');
+    db.query('SELECT kyc_status FROM users WHERE id=$1', [req.user.id])
+      .then(({ rows }) => {
+        const status = (rows[0] && rows[0].kyc_status) || 'verified';
+        if (status !== 'verified') {
+          return res.status(403).json({
+            error: 'Account pending verification — jobs unlock once an admin approves your ID and certifications.',
+          });
+        }
+        next();
+      })
+      .catch(() => next());
+  } catch (e) {
+    next();
+  }
+}
+
+module.exports = { requireRole, requirePermission, hasPermission, ROLE_RANK, PERMISSIONS, requireVerified };

@@ -1,6 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
+
+// GET /api/admin/activity — whole-app audit trail (newest first)
+router.get('/activity', authenticateToken, requireRole('super_admin', 'county_admin'), async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 100, 300);
+    const { rows } = await db.query(
+      `SELECT a.*, u.name as actor_name, u.email as actor_email, u.role as actor_role
+       FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id
+       ORDER BY a.created_at DESC LIMIT $1`,
+      [limit]
+    );
+    const { rows: counts } = await db.query(
+      `SELECT
+         (SELECT COUNT(*) FROM users WHERE kyc_status='pending' AND role IN ('operator','technician','county_officer','admin')) as pending_kyc,
+         (SELECT COUNT(*) FROM messages WHERE is_read=false) as unread_messages,
+         (SELECT COUNT(*) FROM service_requests WHERE status='open') as open_services`
+    ).catch(() => ({ rows: [{}] }));
+    res.json({ activity: rows, attention: counts[0] || {} });
+  } catch (e) {
+    // audit_logs may not exist on legacy installs yet
+    res.json({ activity: [], attention: {}, note: 'Audit table not yet migrated — run boot migration.' });
+  }
+});
 
 // GET /api/admin/dashboard-stats
 // Returns comprehensive statistics for the admin dashboard

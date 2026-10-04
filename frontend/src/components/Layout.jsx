@@ -8,6 +8,7 @@ import {
   Settings, LogOut, Menu, X, Droplets, Users, Wrench, Brain, Flag, MapPin,
   FileText, Package, Map, ClipboardList, Cpu, Building2,
 } from 'lucide-react'
+import api from '../api'
 
 const ICONS = {
   dashboard: LayoutDashboard, nodes: Wifi, payments: CreditCard,
@@ -51,6 +52,38 @@ export default function Layout() {
   }, [isDesktop, mobileOpen])
 
   const handleLogout = () => { logout(); navigate('/') }
+
+  // Notifications inbox (all roles): unread badge + dropdown, mark-read.
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifs, setNotifs] = useState([])
+  const unread = notifs.filter((n) => !n.is_read).length
+  useEffect(() => {
+    let alive = true
+    api.get('/notifications/mine?unread=1').then((r) => {
+      if (alive) setNotifs(Array.isArray(r) ? r : [])
+    }).catch(() => {})
+    const id = setInterval(() => {
+      api.get('/notifications/mine?unread=1').then((r) => {
+        if (alive) setNotifs(Array.isArray(r) ? r : [])
+      }).catch(() => {})
+    }, 60000)
+    return () => { alive = false; clearInterval(id) }
+  }, [])
+  const openInbox = async () => {
+    const next = !notifOpen
+    setNotifOpen(next)
+    if (next) {
+      try {
+        const full = await api.get('/notifications/mine')
+        setNotifs(Array.isArray(full) ? full : [])
+      } catch (e) { /* keep unread list */ }
+    }
+  }
+  const markAllRead = async () => {
+    const ids = notifs.filter((n) => !n.is_read).map((n) => n.id)
+    await Promise.all(ids.map((id) => api.patch(`/notifications/${id}/read`, {}).catch(() => {})))
+    setNotifs((list) => list.map((n) => ({ ...n, is_read: true })))
+  }
 
   // Citizen roles ship their own complete chrome inside CitizenDashboard
   // (header + section tabs). Rendering the app sidebar as well would double
@@ -166,6 +199,36 @@ export default function Layout() {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ position: 'relative' }}>
+              <button onClick={openInbox} aria-label="Notifications" title="Notifications"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 8, color: 'var(--gray-600)', position: 'relative' }}>
+                <Bell size={20} />
+                {unread > 0 && (
+                  <span style={{ position: 'absolute', top: 0, right: 0, minWidth: 17, height: 17, borderRadius: 99, background: '#d93025', color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
+                <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 'min(340px, 86vw)', maxHeight: 380, overflowY: 'auto', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 12, boxShadow: '0 16px 40px rgba(0,0,0,.16)', zIndex: 200 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--gray-200)' }}>
+                    <strong style={{ fontSize: 13 }}>Notifications</strong>
+                    {unread > 0 && <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: 'var(--blue)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Mark all read</button>}
+                  </div>
+                  {notifs.length === 0 && <p className="muted" style={{ padding: '16px 14px' }}>No notifications yet.</p>}
+                  {notifs.slice(0, 20).map((n) => (
+                    <div key={n.id} style={{ padding: '10px 14px', borderBottom: '1px solid var(--gray-100)', opacity: n.is_read ? 0.7 : 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {!n.is_read && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#d93025', flexShrink: 0 }} />}
+                        {n.title}
+                      </div>
+                      <div style={{ fontSize: 12.5, color: 'var(--gray-600)', marginTop: 2 }}>{n.message}</div>
+                      <div style={{ fontSize: 11, color: 'var(--gray-400)', marginTop: 2 }}>{new Date(n.created_at).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <span className="role-chip" style={{ background: rc.badge, color: rc.text }}>
               {roleLabel}
             </span>

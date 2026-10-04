@@ -10,7 +10,7 @@ import {
   ArrowRight, RefreshCw, Clock, Bell, Gauge, Thermometer,
   Wifi, Database, Zap, Eye, Filter, Search, Download,
   Droplet, Waves, CloudRain, Sun, Wind, Info, ChevronDown,
-  Home, Settings, HelpCircle, User
+  Home, Settings, HelpCircle, User, Wrench, Navigation
 } from 'lucide-react'
 
 export default function CitizenDashboard({ readOnly = false }) {
@@ -66,6 +66,76 @@ export default function CitizenDashboard({ readOnly = false }) {
   const [reportMsg, setReportMsg] = useState(null)
   const [voteBusy, setVoteBusy] = useState(null)
   const [voteThanks, setVoteThanks] = useState(null)
+  // Service requests (GIS dispatch to nearest verified technician)
+  const [svcFees, setSvcFees] = useState({ leak_repair: 1500, meter_issue: 800, new_connection: 2500, quality_test: 500, other: 500 })
+  const [svcForm, setSvcForm] = useState({ category: 'leak_repair', description: '', area: '', latitude: '', longitude: '' })
+  const [svcBusy, setSvcBusy] = useState(false)
+  const [svcLocating, setSvcLocating] = useState(false)
+  const [svcMsg, setSvcMsg] = useState(null)
+  const [myServices, setMyServices] = useState([])
+
+  const loadServices = async () => {
+    try {
+      const [fees, mine] = await Promise.all([
+        api.get('/services/fees').catch(() => null),
+        api.get('/services/mine').catch(() => []),
+      ])
+      if (fees && fees.fees) setSvcFees(fees.fees)
+      setMyServices(Array.isArray(mine) ? mine : [])
+    } catch (e) { console.error('Services load failed:', e.message) }
+  }
+
+  useEffect(() => { loadServices() }, [])
+
+  const detectSvcLocation = () => {
+    if (!navigator.geolocation) {
+      setSvcMsg({ ok: false, text: 'Geolocation not supported — describe your area instead.' })
+      return
+    }
+    setSvcLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setSvcForm((d) => ({
+          ...d,
+          latitude: pos.coords.latitude.toFixed(6),
+          longitude: pos.coords.longitude.toFixed(6),
+        }))
+        setSvcLocating(false)
+        setSvcMsg({ ok: true, text: 'Location detected — the nearest available technician will be matched.' })
+      },
+      () => {
+        setSvcLocating(false)
+        setSvcMsg({ ok: false, text: 'Could not detect location — describe your area instead.' })
+      },
+      { timeout: 15000 }
+    )
+  }
+
+  const submitService = async (e) => {
+    e.preventDefault()
+    if (!svcForm.description.trim() || svcForm.description.trim().length < 10) {
+      setSvcMsg({ ok: false, text: 'Please describe the problem (min 10 characters).' })
+      return
+    }
+    setSvcBusy(true)
+    setSvcMsg(null)
+    try {
+      const res = await api.post('/services/request', {
+        category: svcForm.category,
+        description: svcForm.description.trim(),
+        area: svcForm.area.trim() || undefined,
+        latitude: svcForm.latitude === '' ? undefined : Number(svcForm.latitude),
+        longitude: svcForm.longitude === '' ? undefined : Number(svcForm.longitude),
+      })
+      setSvcMsg({ ok: true, text: res.message || 'Request received.' })
+      setSvcForm({ category: 'leak_repair', description: '', area: '', latitude: '', longitude: '' })
+      loadServices()
+    } catch (err) {
+      setSvcMsg({ ok: false, text: err.message || 'Failed to submit request' })
+    } finally {
+      setSvcBusy(false)
+    }
+  }
   const [reportForm, setReportForm] = useState({ title: '', description: '', category: 'leak', location: '' })
   const [submitting, setSubmitting] = useState(false)
   const [selectedPoint, setSelectedPoint] = useState(null)
@@ -559,6 +629,7 @@ export default function CitizenDashboard({ readOnly = false }) {
                   { id: 'water-quality', label: 'Water Quality', icon: Droplet },
                   { id: 'water-points', label: 'Water Points', icon: MapPin },
                   { id: 'reports', label: 'My Reports', icon: FileText },
+                  { id: 'services', label: 'Services', icon: Wrench },
                   { id: 'community', label: 'Community', icon: MessageSquare },
                   { id: 'alerts', label: 'Alerts', icon: AlertTriangle, badge: alerts.length },
                   { id: 'spending', label: 'Spending', icon: Wallet }
@@ -916,6 +987,66 @@ export default function CitizenDashboard({ readOnly = false }) {
                       </div>
                     )}
                   </div>
+                </motion.div>
+              )}
+
+              {/* SERVICE REQUESTS SECTION */}
+              {activeSection === 'services' && (
+                <motion.div variants={fadeInUp}>
+                  <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '800', color: '#0f172a' }}>Request a Service</h2>
+                  <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#64748b' }}>
+                    A leak repair, meter issue, new connection or quality test — we detect your location and dispatch the nearest verified technician.
+                  </p>
+                  {svcMsg && (
+                    <div className={`alert-bar ${svcMsg.ok ? 'alert-bar-success' : 'alert-bar-error'}`} style={{ marginBottom: 16 }}>
+                      {svcMsg.text}
+                    </div>
+                  )}
+                  <form onSubmit={submitService} style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12, marginBottom: 12 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: 6 }}>Service</label>
+                        <select value={svcForm.category} onChange={(e) => setSvcForm({ ...svcForm, category: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white' }}>
+                          {Object.entries(svcFees).map(([k, v]) => (
+                            <option key={k} value={k}>{k.replace(/_/g, ' ')} — from Ksh {Number(v).toLocaleString()}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: 6 }}>Area / landmark</label>
+                        <input value={svcForm.area} onChange={(e) => setSvcForm({ ...svcForm, area: e.target.value })} placeholder="e.g. Near Kibera Market" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: 6 }}>Problem description *</label>
+                    <textarea required value={svcForm.description} onChange={(e) => setSvcForm({ ...svcForm, description: e.target.value })} rows={3} placeholder="Describe the problem in detail…" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', resize: 'vertical', boxSizing: 'border-box' }} />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <button type="button" onClick={detectSvcLocation} disabled={svcLocating} className="btn btn-ghost btn-sm">
+                        <Navigation size={14} /> {svcLocating ? 'Locating…' : svcForm.latitude ? `${svcForm.latitude}, ${svcForm.longitude} ✓` : 'Detect my location'}
+                      </button>
+                      <button type="submit" disabled={svcBusy} className="btn btn-primary" style={{ padding: '10px 22px' }}>
+                        {svcBusy ? 'Dispatching…' : 'Request service'}
+                      </button>
+                    </div>
+                  </form>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '17px', fontWeight: '800', color: '#0f172a' }}>My service requests</h3>
+                  {myServices.length === 0 && (
+                    <p style={{ fontSize: '14px', color: '#64748b' }}>No requests yet — your dispatched jobs and their status appear here.</p>
+                  )}
+                  {myServices.map((s) => (
+                    <div key={s.id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px', marginBottom: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: '14px' }}>{(s.category || '').replace(/_/g, ' ')} — {s.area || s.county}</strong>
+                        <span className={`badge badge-${s.status === 'completed' ? 'active' : s.status === 'cancelled' ? 'critical' : 'warning'}`}>{(s.status || 'open').replace('_', ' ')}</span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#475569', margin: '8px 0' }}>{s.description}</p>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        {s.assigned_name ? `Technician: ${s.assigned_name}` : 'Awaiting county assignment'}
+                        {s.distance_km != null ? ` · ${s.distance_km} km away` : ''}
+                        {s.tech_contact ? ` · Contact: ${s.tech_contact}` : ''}
+                        {s.created_at ? ` · ${new Date(s.created_at).toLocaleDateString()}` : ''}
+                      </div>
+                    </div>
+                  ))}
                 </motion.div>
               )}
 

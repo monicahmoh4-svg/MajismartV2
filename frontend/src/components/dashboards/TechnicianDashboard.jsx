@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Wrench, Play, CheckCircle2, Clock, MapPin, AlertTriangle, RefreshCw } from 'lucide-react'
+import { Wrench, Play, CheckCircle2, Clock, MapPin, AlertTriangle, RefreshCw, Wallet } from 'lucide-react'
 import api from '../../api'
 import { useTenant } from '../../hooks/useTenant'
 import { CountUp } from '../ui/TextAnimate'
@@ -34,12 +34,19 @@ export default function TechnicianDashboard() {
   const [notingId, setNotingId] = useState(null)
   const [note, setNote] = useState('')
   const [sortBy, setSortBy] = useState('priority')
+  const [services, setServices] = useState([])
+  const verified = !user?.kyc_status || user.kyc_status === 'verified'
 
   const load = async () => {
     setLoading(true); setError('')
     try {
-      const res = await api.get(withCounty('/workorders?limit=200'))
-      setOrders(Array.isArray(res) ? res : res?.data || [])
+      const [wo, sj] = await Promise.all([
+        api.get(withCounty('/workorders?limit=200')),
+        api.get('/services/assigned').catch(() => []),
+      ])
+      const list = Array.isArray(wo) ? wo : wo?.work_orders || wo?.data || []
+      setOrders(list)
+      setServices(Array.isArray(sj) ? sj : [])
     } catch (e) {
       setError(e.message || 'Could not load work orders')
     } finally {
@@ -80,6 +87,22 @@ export default function TechnicianDashboard() {
     o.completed_at && (Date.now() - new Date(o.completed_at).getTime()) < 7 * 86400000
   ).length, [myOrders])
 
+  const earnings = useMemo(() => myOrders
+    .filter((o) => ['completed', 'verified'].includes(o.status))
+    .reduce((s, o) => s + (Number(o.payout_ksh) || 0), 0), [myOrders])
+
+  const advanceService = async (id, status) => {
+    setBusy(id)
+    try {
+      await api.patch(`/services/${id}/status`, { status })
+      await load()
+    } catch (e) {
+      setError(e.message || 'Update failed')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const setStatus = async (id, status, completionNotes) => {
     setBusy(id)
     try {
@@ -109,6 +132,13 @@ export default function TechnicianDashboard() {
         </button>
       </div>
 
+      {!verified && (
+        <div className="alert-bar alert-bar-error" style={{ background: '#fef3d8', borderColor: '#fad99c', color: '#92400e' }}>
+          <strong>Unverified account.</strong> An admin is reviewing your ID and certifications.
+          You can explore your queue, but starting jobs unlocks after approval.
+        </div>
+      )}
+
       <div className="stats-grid">
         <div className="stat-card" data-tone="bad">
           <div className="stat-ic"><AlertTriangle size={18} /></div>
@@ -121,6 +151,10 @@ export default function TechnicianDashboard() {
         <div className="stat-card" data-tone="ok">
           <div className="stat-ic"><CheckCircle2 size={18} /></div>
           <div><div className="stat-num">{loading ? '…' : <CountUp value={counts.done} />}</div><div className="stat-lbl">Completed by me</div></div>
+        </div>
+        <div className="stat-card" data-tone="warn">
+          <div className="stat-ic"><Wallet size={18} /></div>
+          <div><div className="stat-num">Ksh {loading ? '…' : earnings.toLocaleString()}</div><div className="stat-lbl">Earned (county-settled)</div></div>
         </div>
       </div>
 
@@ -181,7 +215,8 @@ export default function TechnicianDashboard() {
                       placeholder="What was done? parts replaced, readings, follow-up needed…"
                       style={{ width: '100%', resize: 'vertical' }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                      <button className="btn btn-success btn-sm" disabled={busy === o.id}
+                      <button className="btn btn-success btn-sm" disabled={busy === o.id || !verified}
+                        title={verified ? '' : 'Unlocks after admin verification'}
                         onClick={() => setStatus(o.id, 'completed', note.trim() || undefined)}>
                         {busy === o.id ? 'Saving…' : 'Confirm completion'}
                       </button>
@@ -192,15 +227,54 @@ export default function TechnicianDashboard() {
               </div>
               <div className="task-actions">
                 {['open', 'pending', 'assigned'].includes(o.status) && (
-                  <button className="btn btn-primary btn-sm" disabled={busy === o.id}
+                  <button className="btn btn-primary btn-sm" disabled={busy === o.id || !verified}
+                    title={verified ? '' : 'Unlocks after admin verification'}
                     onClick={() => setStatus(o.id, 'in_progress')}>
                     <Play size={14} /> {busy === o.id ? '…' : 'Start job'}
                   </button>
                 )}
                 {o.status === 'in_progress' && notingId !== o.id && (
-                  <button className="btn btn-success btn-sm" disabled={busy === o.id}
+                  <button className="btn btn-success btn-sm" disabled={busy === o.id || !verified}
+                    title={verified ? '' : 'Unlocks after admin verification'}
                     onClick={() => setNotingId(o.id)}>
                     <CheckCircle2 size={14} /> {busy === o.id ? '…' : 'Mark done'}
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-h">
+          <h2><MapPin size={16} /> Citizen service jobs ({services.filter((s) => !['completed', 'cancelled'].includes(s.status)).length} active)</h2>
+        </div>
+        {services.length === 0 && (
+          <p className="muted">No citizen jobs dispatched to you yet. Matched requests appear here automatically.</p>
+        )}
+        <div className="task-list">
+          {services.map((s) => (
+            <article key={s.id} className="task-card">
+              <div className="task-main">
+                <div className="task-title">{(s.category || 'service').replace(/_/g, ' ')} — {s.area || s.county}</div>
+                <div className="task-meta">
+                  <span className={`badge badge-${['completed'].includes(s.status) ? 'active' : 'warning'}`}>{(s.status || 'open').replace('_', ' ')}</span>
+                  {s.distance_km != null && <span className="chip">{s.distance_km} km away</span>}
+                  {s.fee_ksh > 0 && <span className="chip">Ksh {Number(s.fee_ksh).toLocaleString()} job value</span>}
+                  {s.citizen_name && <span className="muted-sm">for {s.citizen_name}</span>}
+                </div>
+                {s.description && <p className="task-desc">{s.description}</p>}
+              </div>
+              <div className="task-actions">
+                {['open', 'assigned'].includes(s.status) && (
+                  <button className="btn btn-primary btn-sm" disabled={busy === s.id || !verified} onClick={() => advanceService(s.id, 'in_progress')}>
+                    {busy === s.id ? '…' : 'Accept job'}
+                  </button>
+                )}
+                {s.status === 'in_progress' && (
+                  <button className="btn btn-success btn-sm" disabled={busy === s.id || !verified} onClick={() => advanceService(s.id, 'completed')}>
+                    {busy === s.id ? '…' : 'Complete'}
                   </button>
                 )}
               </div>

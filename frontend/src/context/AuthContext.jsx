@@ -7,11 +7,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Load user from localStorage on mount
+  // Load user from localStorage on mount, then refresh from the server so
+  // role, county, phone and KYC status are never stale (e.g. approved while
+  // the app was closed). A failed refresh keeps the cached session.
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
     const storedToken = localStorage.getItem('token')
-    
+
     if (storedUser && storedToken) {
       try {
         setUser(JSON.parse(storedUser))
@@ -19,9 +21,21 @@ export function AuthProvider({ children }) {
         console.error('Failed to parse stored user:', err)
         localStorage.removeItem('user')
         localStorage.removeItem('token')
+        setLoading(false)
+        return
       }
+      api.get('/auth/me')
+        .then((fresh) => {
+          if (fresh && fresh.id) {
+            setUser(fresh)
+            localStorage.setItem('user', JSON.stringify(fresh))
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   const login = async (email, password) => {

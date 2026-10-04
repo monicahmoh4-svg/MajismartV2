@@ -10,20 +10,27 @@ const { requirePermission, requireRole } = require('../middleware/rbac');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'majismart-secret-key';
 
-// Self-healing: ensure users table has role and tenant_id columns
+// Self-healing: ensure users table carries auth + KYC columns
 async function ensureUserSchema() {
-  try {
-    const { rows: roleCheck } = await db.query(`
-      SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'role')
-    `);
-    
-    if (!roleCheck[0].exists) {
-      await db.query(`ALTER TABLE users ADD COLUMN role VARCHAR(30) DEFAULT 'citizen'`);
-      await db.query(`ALTER TABLE users ADD COLUMN tenant_id VARCHAR(100)`);
-      console.log('✅ Added role and tenant_id to users table');
+  const adds = [
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30) DEFAULT 'citizen'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100)`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS national_id VARCHAR(30)`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS id_document TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS certifications TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_status VARCHAR(20) DEFAULT 'verified'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS base_latitude DECIMAL(10,7)`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS base_longitude DECIMAL(10,7)`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS base_location VARCHAR(200)`,
+  ];
+  for (const ddl of adds) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await db.query(ddl);
+    } catch (error) {
+      console.error('Failed to ensure user schema:', error.message);
     }
-  } catch (error) {
-    console.error('Failed to ensure user schema:', error.message);
   }
 }
 
@@ -33,7 +40,9 @@ router.post('/register', async (req, res) => {
   try {
     await ensureUserSchema();
 
-    const { name, email, password, county, role } = req.body;
+    const { name, email, password, county, role,
+      phone, national_id, id_document, certifications,
+      base_latitude, base_longitude, base_location } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
@@ -52,10 +61,33 @@ router.post('/register', async (req, res) => {
     const SELF_SERVE_ROLES = ['citizen', 'operator', 'technician', 'viewer'];
     const safeRole = SELF_SERVE_ROLES.includes(role) ? role : 'citizen';
 
+    // Field staff (operator/technician) submit KYC and start UNVERIFIED —
+    // an admin reviews ID + certifications before they can take jobs.
+    const needsKyc = ['operator', 'technician'].includes(safeRole);
+    if (needsKyc && !national_id) {
+      return res.status(400).json({ error: 'National ID number is required for operator/technician accounts' });
+    }
+    for (const [label, doc] of [['ID document', id_document], ['certifications', certifications]]) {
+      if (doc && String(doc).length > 2_500_000) {
+        return res.status(413).json({ error: `${label} file too large (max ~2MB)` });
+      }
+    }
+    const lat = base_latitude != null && base_latitude !== '' ? Number(base_latitude) : null;
+    const lng = base_longitude != null && base_longitude !== '' ? Number(base_longitude) : null;
+    if ((lat != null && (!Number.isFinite(lat) || Math.abs(lat) > 90)) ||
+        (lng != null && (!Number.isFinite(lng) || Math.abs(lng) > 180))) {
+      return res.status(400).json({ error: 'Invalid base location coordinates' });
+    }
+
     const { rows } = await db.query(
-      `INSERT INTO users (name, email, password, county, role, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $4) RETURNING id, name, email, county, role, tenant_id`,
-      [name, email, hashedPassword, county || null, safeRole]
+      `INSERT INTO users (name, email, password, county, role, tenant_id, phone,
+          national_id, id_document, certifications,
+          base_latitude, base_longitude, base_location, kyc_status)
+       VALUES ($1,$2,$3,$4,$5,$4,$6,$7,$8,$9,$10,$11,$12,$13)
+       RETURNING id, name, email, county, role, tenant_id, phone, kyc_status`,
+      [name, email, hashedPassword, county || null, safeRole,
+        phone || null, national_id || null, id_document || null, certifications || null,
+        lat, lng, base_location || null, needsKyc ? 'pending' : 'verified']
     );
 
     const user = rows[0];
@@ -66,9 +98,11 @@ router.post('/register', async (req, res) => {
     );
 
     res.status(201).json({
-      message: 'Registration successful',
+      message: needsKyc
+        ? 'Account created — pending admin verification of your ID and certifications. You can explore your dashboard meanwhile.'
+        : 'Registration successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email, county: user.county, role: user.role }
+      user: { id: user.id, name: user.name, email: user.email, county: user.county, role: user.role, phone: user.phone, kyc_status: user.kyc_status }
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -114,12 +148,14 @@ router.post('/login', async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: { 
-        id: user.id, 
-        name: user.name, 
-        email: user.email, 
-        county: user.county, 
-        role: user.role || 'citizen' 
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        county: user.county,
+        role: user.role || 'citizen',
+        phone: user.phone || null,
+        kyc_status: user.kyc_status || 'verified'
       }
     });
   } catch (error) {
@@ -128,11 +164,38 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password - rotate own password (verifies current)
+router.post('/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body || {};
+    if (!current_password || !new_password) {
+      return res.status(400).json({ error: 'Current and new password are required' });
+    }
+    if (String(new_password).length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+    const { rows } = await db.query('SELECT password FROM users WHERE id=$1', [req.user.id]);
+    if (!rows.length) return res.status(404).json({ error: 'User not found' });
+    const ok = await bcrypt.compare(current_password, rows[0].password);
+    if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
+    const hash = await bcrypt.hash(new_password, 10);
+    await db.query('UPDATE users SET password=$1, updated_at=NOW() WHERE id=$2', [hash, req.user.id]);
+    try {
+      const { logAudit } = require('../services/audit');
+      logAudit(req.user.id, 'user.password.change', 'users', req.user.id, {});
+    } catch (_) { /* audit never blocks */ }
+    res.json({ message: 'Password updated. Use it on your next login.' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+});
+
 // GET /api/auth/me - Get current user
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const { rows } = await db.query(
-      'SELECT id, name, email, county, role, tenant_id FROM users WHERE id = $1',
+      'SELECT id, name, email, county, role, tenant_id, phone, kyc_status FROM users WHERE id = $1',
       [req.user.id]
     );
     

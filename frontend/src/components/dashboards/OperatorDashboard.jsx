@@ -48,6 +48,7 @@ export default function OperatorDashboard() {
   const [resolving, setResolving] = useState(null)
   const [escalating, setEscalating] = useState(null)
   const [loading, setLoading] = useState(true)
+  const verified = !user?.kyc_status || user?.kyc_status === 'verified'
 
   useEffect(() => {
     fetchData()
@@ -150,6 +151,12 @@ export default function OperatorDashboard() {
           <StatCard title="Maintenance Tasks" value={data?.maintenance_tasks || 0} icon={Wrench} color="#f59e0b" />
         </div>
 
+        {!verified && (
+          <div className="alert-bar" style={{ background: '#fef3d8', border: '1px solid #fad99c', color: '#92400e', marginBottom: 24 }}>
+            <strong>Unverified account.</strong> An admin is reviewing your documents. Resolving alerts and creating nodes unlock after approval.
+          </div>
+        )}
+
         {today && (
           <div style={{ background: 'linear-gradient(135deg, #0d6e56, #0891b2)', borderRadius: '16px', padding: '18px 24px', marginBottom: '24px', color: 'white', display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
             <div>
@@ -201,10 +208,10 @@ export default function OperatorDashboard() {
                   <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#0f172a' }}>{a.node_name || a.type?.replace(/_/g, ' ')}</div>
                   <div style={{ fontSize: '12px', color: '#64748b' }}>{a.message}</div>
                 </div>
-                <button className="btn btn-success btn-sm" disabled={resolving === a.id} onClick={() => resolveAlert(a.id)}>
+                <button className="btn btn-success btn-sm" disabled={resolving === a.id || !verified} title={verified ? '' : 'Unlocks after admin verification'} onClick={() => resolveAlert(a.id)}>
                   {resolving === a.id ? '…' : 'Resolve'}
                 </button>
-                <button className="btn btn-outline btn-sm" disabled={escalating === a.id} onClick={() => escalateAlert(a)} title="Create a work order from this alert">
+                <button className="btn btn-outline btn-sm" disabled={escalating === a.id || !verified} title={verified ? '' : 'Unlocks after admin verification'} onClick={() => escalateAlert(a)}>
                   {escalating === a.id ? '…' : 'Escalate'}
                 </button>
               </div>

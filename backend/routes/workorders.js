@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requireVerified } = require('../middleware/rbac');
 
 function generateWONumber() {
   const year = new Date().getFullYear();
@@ -184,14 +184,20 @@ router.post('/', authMiddleware, requireRole('admin', 'county_officer', 'operato
 });
 
 // PUT /api/workorders/:id - Update work order
-router.put('/:id', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), requireVerified, async (req, res) => {
   try {
     const updates = req.body;
+    // payout_ksh is county money: only county/admin staff may set it.
+    const { normalizeRole } = require('../middleware/auth');
+    const woRole = normalizeRole(req.user.role);
+    if (updates.payout_ksh !== undefined && !['super_admin', 'county_admin'].includes(woRole)) {
+      return res.status(403).json({ error: 'Only county staff can set payouts' });
+    }
     const setClauses = [];
     const values = [];
     let paramCount = 1;
 
-    const allowedFields = ['status', 'assigned_to', 'priority', 'completion_notes'];
+    const allowedFields = ['status', 'assigned_to', 'priority', 'completion_notes', 'payout_ksh'];
 
     for (const [key, value] of Object.entries(updates)) {
       if (allowedFields.includes(key)) {

@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const VERSION = '6.1.0';
+const VERSION = '6.2.0';
 
 // Render terminates TLS at its edge proxy: trust it so req.ip is the real
 // client IP. WITHOUT this, express-rate-limit sees every user as one IP and
@@ -149,6 +149,10 @@ const assistantRoutes = safeRequire('./routes/assistant');
 // IoT fleet: device registry + key-authenticated telemetry ingest
 const devicesRoutes = safeRequire('./routes/devices');
 const ingestRoutes = safeRequire('./routes/ingest');
+// Citizen service dispatch + admin messaging
+const servicesRoutes = safeRequire('./routes/services');
+const notifyRoutes = safeRequire('./routes/notify');
+const messagesRoutes = safeRequire('./routes/messages');
 
 // ============================================
 // PUBLIC META
@@ -232,6 +236,9 @@ if (tokensRoutes) app.use('/api/tokens', tokensRoutes);
 if (assistantRoutes) app.use('/api/assistant', assistantRoutes);
 if (devicesRoutes) app.use('/api/devices', devicesRoutes);
 if (ingestRoutes) app.use('/api/ingest', ingestRoutes);
+if (servicesRoutes) app.use('/api/services', servicesRoutes);
+if (notifyRoutes) app.use('/api/notifications', notifyRoutes);
+if (messagesRoutes) app.use('/api/messages', messagesRoutes);
 
 // ============================================
 // ERROR HANDLING (never leak stack in production)
