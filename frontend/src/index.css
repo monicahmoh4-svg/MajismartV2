@@ -12,6 +12,9 @@
   --ink: #0c0a08; --obsidian: #1a1919; --paper: #ffffff; --bone: #f4f2f0;
   --ash: #6d6c6b; --hairline: #e5e7eb; --smoke: #d3d3d3;
   --hi: #e4f222; /* highlighter: ONLY where money moves (pay CTAs, live counters) */
+  /* --- Prestige layer (Refero: academy navy + gold) --- */
+  --navy: #07152f; --navy-2: #0d1c39;
+  --gold: #d4af37; --gold-deep: #8a690f; --gold-soft: rgba(212, 175, 55, 0.14);
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --glass-brd: rgba(255, 255, 255, 0.22);
@@ -647,6 +650,24 @@ table.tbl tr:hover td { background: #fafbfc; }
 .ticker-item .v { font-weight: 700; font-variant-numeric: tabular-nums; }
 .ticker-item .v-hi { color: var(--hi); }
 @keyframes ms-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* Staged reveal cascade (academy-style sequencing) */
+.rise-1 { animation: ms-rise .7s cubic-bezier(.2,.7,.2,1) both; animation-delay: .05s; }
+.rise-2 { animation: ms-rise .7s cubic-bezier(.2,.7,.2,1) both; animation-delay: .18s; }
+.rise-3 { animation: ms-rise .7s cubic-bezier(.2,.7,.2,1) both; animation-delay: .31s; }
+
+/* Gold trust seal: verified people, licensed vendors, accredited counties */
+.seal-gold {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--gold-deep); background: var(--gold-soft);
+  border: 1px solid rgba(212, 175, 55, 0.45); border-radius: 6px; padding: 3px 9px;
+}
+.eyebrow-gold {
+  font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gold-deep); display: inline-flex; align-items: center; gap: 8px;
+}
+.eyebrow-gold::before { content: ''; width: 22px; height: 2px; background: var(--gold); display: inline-block; }
 /* Announcement bar: slim ink strip above the nav */
 .announce-bar {
   background: var(--ink); color: var(--bone);

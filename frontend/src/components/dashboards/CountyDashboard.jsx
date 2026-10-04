@@ -241,7 +241,7 @@ export default function CountyDashboard() {
                     <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{v.name}</div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>{v.ward || v.county} · {v.permit_no} · Ksh {v.tariff_ksh_per_20l}/20L</div>
                   </div>
-                  <span className={`badge badge-${v.status === 'approved' ? 'active' : v.status === 'rejected' ? 'critical' : 'warning'}`}>{v.status}</span>
+                  <span className={v.status === 'approved' ? 'seal-gold' : `badge badge-${v.status === 'rejected' ? 'critical' : 'warning'}`}>{v.status === 'approved' ? '✦ Licensed' : v.status}</span>
                 </div>
                 {v.status === 'pending' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

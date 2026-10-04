@@ -119,6 +119,89 @@ function FaqList({ isMobile }) {
   )
 }
 
+function CountySpotlight({ isMobile }) {
+  const [rows, setRows] = useState([])
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  useEffect(() => {
+    let alive = true
+    import('../api').then(({ default: api }) => {
+      api.get('/wasreb/water-balance').then((r) => {
+        if (!alive || !Array.isArray(r)) return
+        const top = [...r]
+          .sort((a, b) => Number(b.revenue_ksh || 0) - Number(a.revenue_ksh || 0))
+          .slice(0, 6)
+        if (top.length) setRows(top)
+      }).catch(() => {})
+    })
+    return () => { alive = false }
+  }, [])
+  useEffect(() => {
+    if (paused || rows.length < 2) return undefined
+    const id = setInterval(() => setIndex((i) => (i + 1) % rows.length), 4500)
+    return () => clearInterval(id)
+  }, [paused, rows.length])
+  if (!rows.length) {
+    return (
+      <div className="ledger-card">
+        <p style={{ margin: 0, fontSize: 14, color: 'var(--ash)' }}>
+          County figures appear here once utility data flows in.
+        </p>
+      </div>
+    )
+  }
+  const c = rows[index % rows.length]
+  return (
+    <div
+      className="ledger-card"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      style={{ padding: isMobile ? 20 : 28 }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <span className="micro-label">{c.county} county</span>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 28 : 38, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.1, marginTop: 6 }}>
+            Ksh {Number(c.revenue_ksh || 0).toLocaleString()}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ash)', marginTop: 4 }}>collected · {c.points || 0} water points</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 30, fontWeight: 800, color: Number(c.nrw_pct) > 25 ? '#d93025' : '#0d9e75' }} className="tnum">
+            {c.nrw_pct}%
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--ash)' }}>non-revenue water</div>
+        </div>
+      </div>
+      <div style={{ marginTop: 14, height: 8, background: 'var(--gray-100)', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', width: `${Math.max(0, Math.min(100, Number(c.nrw_pct) || 0))}%`,
+          background: Number(c.nrw_pct) > 25 ? '#d93025' : '#0d9e75', borderRadius: 99,
+          transition: 'width .6s ease',
+        }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {rows.map((r, i) => (
+            <button key={r.county + i} onClick={() => setIndex(i)} aria-label={`Show ${r.county}`}
+              style={{
+                width: i === index % rows.length ? 22 : 8, height: 8, borderRadius: 99, border: 'none',
+                cursor: 'pointer', background: i === index % rows.length ? 'var(--ink)' : 'var(--smoke)',
+                transition: 'all .25s ease', padding: 0,
+              }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setIndex((index - 1 + rows.length) % rows.length)} aria-label="Previous county"
+            style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--hairline)', background: 'white', cursor: 'pointer', fontSize: 15 }}>‹</button>
+          <button onClick={() => setIndex((index + 1) % rows.length)} aria-label="Next county"
+            style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--hairline)', background: 'white', cursor: 'pointer', fontSize: 15 }}>›</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Landing() {
   // Owner: replace with your real sales inbox. Used by every contact CTA.
   const CONTACT_EMAIL = 'info@majismart.co.ke'
@@ -724,6 +807,20 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* County spotlight — live water-balance carousel */}
+      <section style={{ padding: isMobile ? '60px 20px' : '96px 24px', background: 'var(--bone)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <span className="micro-label">Live network snapshot</span>
+          <h2 className="font-display" style={{ margin: '8px 0 12px 0', fontSize: isMobile ? '30px' : '44px', fontWeight: '600', color: 'var(--ink)', lineHeight: 1.1 }}>
+            Counties moving water today
+          </h2>
+          <p style={{ margin: '0 0 28px 0', fontSize: isMobile ? '15px' : '17px', color: 'var(--ash)', maxWidth: '620px' }}>
+            Real production vs billed volumes per county — refreshed from live utility data.
+          </p>
+          <CountySpotlight isMobile={isMobile} />
+        </div>
+      </section>
+
       {/* USSD Section */}
       <section id="ussd" className="animate-on-scroll" style={{
         padding: isMobile ? '60px 20px' : '100px 24px',
@@ -1093,6 +1190,17 @@ export default function Landing() {
             <p style={{ margin: 0, fontSize: isMobile ? '15px' : '17px', color: 'var(--ash)', maxWidth: '640px', marginLeft: 'auto', marginRight: 'auto' }}>
               Citizens always free. Estates and utilities pay from the cash the platform recovers — not from new budgets.
             </p>
+            <div style={{ marginTop: 18 }}>
+              <button
+                onClick={async () => {
+                  const { generatePilotProposal } = await import('../lib/pilotProposal')
+                  generatePilotProposal({ contactEmail: CONTACT_EMAIL })
+                }}
+                className="btn btn-outline btn-sm"
+              >
+                Download 90-day pilot proposal (PDF)
+              </button>
+            </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '16px' : '24px' }}>
             {[
@@ -1126,6 +1234,33 @@ export default function Landing() {
             <h2 className="font-display" style={{ margin: '8px 0 12px 0', fontSize: isMobile ? '30px' : '44px', fontWeight: '600', color: 'var(--ink)', lineHeight: 1.1 }}>Questions, answered honestly</h2>
           </div>
           <FaqList isMobile={isMobile} />
+        </div>
+      </section>
+
+      {/* Rollout process — dark navy band, gold numerals */}
+      <section style={{ background: 'var(--navy)', padding: isMobile ? '60px 20px' : '96px 24px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <span className="eyebrow-gold rise-1">How rollout works</span>
+          <h2 className="font-display rise-2" style={{ margin: '10px 0 12px 0', fontSize: isMobile ? '30px' : '44px', fontWeight: '600', color: 'white', lineHeight: 1.1 }}>
+            From first call to flowing revenue in weeks
+          </h2>
+          <p className="rise-3" style={{ margin: '0 0 40px 0', fontSize: isMobile ? '15px' : '17px', color: 'rgba(255,255,255,.65)', maxWidth: '620px' }}>
+            The same path behind every live deployment — scoped in days, proven in one DMA, then scaled county-wide.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: isMobile ? '14px' : '20px' }}>
+            {[
+              { n: '01', t: 'Scope', d: 'One call to agree the DMA, users and what is out of scope. Fixed written quote.' },
+              { n: '02', t: 'Pilot', d: '90-day paid pilot: billing, mobile reading, M-Pesa reconciliation, WASREB reports.' },
+              { n: '03', t: 'Prove', d: '−5 pts NRW in the pilot DMA in 90 days, or the SaaS fee is refunded.' },
+              { n: '04', t: 'Scale', d: 'Annual plan, more DMAs, gain-share on incremental collection. Handover included.' },
+            ].map((s, i) => (
+              <div key={s.n} className={`rise-${Math.min(i + 1, 3)}`} style={{ border: '1px solid rgba(255,255,255,.12)', borderRadius: 16, padding: 22, background: 'rgba(255,255,255,.03)' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 34, color: 'var(--gold)', lineHeight: 1 }}>{s.n}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'white', margin: '10px 0 6px 0' }}>{s.t}</div>
+                <div style={{ fontSize: 13.5, lineHeight: 1.6, color: 'rgba(255,255,255,.6)' }}>{s.d}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
