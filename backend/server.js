@@ -144,6 +144,8 @@ const blockchainRoutes = safeRequire('./routes/blockchain');
 const wasrebRoutes = safeRequire('./routes/wasreb');
 const estatesRoutes = safeRequire('./routes/estates');
 const tokensRoutes = safeRequire('./routes/tokens');
+// Maji support assistant (public: help before signup)
+const assistantRoutes = safeRequire('./routes/assistant');
 
 // ============================================
 // PUBLIC META
@@ -221,6 +223,7 @@ if (blockchainRoutes) app.use('/api/blockchain', blockchainRoutes);
 if (wasrebRoutes) app.use('/api/wasreb', wasrebRoutes);
 if (estatesRoutes) app.use('/api/estates', estatesRoutes);
 if (tokensRoutes) app.use('/api/tokens', tokensRoutes);
+if (assistantRoutes) app.use('/api/assistant', assistantRoutes);
 
 // ============================================
 // ERROR HANDLING (never leak stack in production)

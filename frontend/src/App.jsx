@@ -8,6 +8,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Layout from './components/Layout'
 import PWAInstallBanner from './components/PWAInstallBanner'
+import AssistantWidget from './components/assistant/AssistantWidget'
 
 const Nodes = lazy(() => import('./pages/Nodes'))
 const NodeDetail = lazy(() => import('./pages/NodeDetail'))
@@ -137,6 +138,7 @@ function AppRoutes() {
       </Routes>
       </Suspense>
       <PWAInstallBanner />
+      <AssistantWidget />
     </>
   )
 }

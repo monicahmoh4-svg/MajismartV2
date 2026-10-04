@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Wrench, Play, CheckCircle2, Clock, MapPin, AlertTriangle, RefreshCw } from 'lucide-react'
 import api from '../../api'
 import { useTenant } from '../../hooks/useTenant'
+import { CountUp } from '../ui/TextAnimate'
 
 const STATUS_TONE = {
   open: 'bad', pending: 'bad', assigned: 'warn',
@@ -111,15 +112,15 @@ export default function TechnicianDashboard() {
       <div className="stats-grid">
         <div className="stat-card" data-tone="bad">
           <div className="stat-ic"><AlertTriangle size={18} /></div>
-          <div><div className="stat-num">{loading ? '…' : counts.open}</div><div className="stat-lbl">Awaiting action</div></div>
+          <div><div className="stat-num">{loading ? '…' : <CountUp value={counts.open} />}</div><div className="stat-lbl">Awaiting action</div></div>
         </div>
         <div className="stat-card" data-tone="warn">
           <div className="stat-ic"><Clock size={18} /></div>
-          <div><div className="stat-num">{loading ? '…' : counts.doing}</div><div className="stat-lbl">In progress</div></div>
+          <div><div className="stat-num">{loading ? '…' : <CountUp value={counts.doing} />}</div><div className="stat-lbl">In progress</div></div>
         </div>
         <div className="stat-card" data-tone="ok">
           <div className="stat-ic"><CheckCircle2 size={18} /></div>
-          <div><div className="stat-num">{loading ? '…' : counts.done}</div><div className="stat-lbl">Completed by me</div></div>
+          <div><div className="stat-num">{loading ? '…' : <CountUp value={counts.done} />}</div><div className="stat-lbl">Completed by me</div></div>
         </div>
       </div>
 

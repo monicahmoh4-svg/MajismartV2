@@ -8,6 +8,7 @@ import {
   Wifi, ChevronRight, Play, Shield, Star, Quote, Building2, Menu, X
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { WordReveal } from '../components/ui/TextAnimate'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 50 },
@@ -381,7 +382,7 @@ export default function Landing() {
                 letterSpacing: '-0.01em',
               }}
             >
-              Smart Water Intelligence for{' '}
+              <WordReveal text="Smart Water Intelligence for" delay={0.35} />{' '}
               <span style={{
                 background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
                 WebkitBackgroundClip: 'text',
