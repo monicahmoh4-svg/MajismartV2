@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, AnimatePresence } from 'framer-motion'
 
 const prefersReduced = () =>
   typeof window !== 'undefined' &&
@@ -85,6 +85,35 @@ export function CountUp({ value, duration = 900, format, className = '', style }
   return (
     <span ref={ref} className={`tnum ${className}`} style={style}>
       {fmt(n)}
+    </span>
+  )
+}
+
+// Rotating capability line: cycles phrases with a blur-slide exchange,
+// portfolio style. Static first item when reduced motion is preferred.
+export function Rotator({ items, interval = 2600, className = '', style }) {
+  const list = Array.isArray(items) ? items.filter(Boolean) : []
+  const [i, setI] = useState(0)
+  useEffect(() => {
+    if (list.length < 2 || prefersReduced()) return undefined
+    const id = setInterval(() => setI((v) => (v + 1) % list.length), interval)
+    return () => clearInterval(id)
+  }, [list.length, interval])
+  if (!list.length) return null
+  return (
+    <span className={className} style={{ display: 'inline-flex', ...style }} aria-live="polite">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 12, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -12, filter: 'blur(4px)' }}
+          transition={{ duration: 0.35, ease: [0.2, 0.7, 0.2, 1] }}
+          style={{ display: 'inline-block', willChange: 'transform, opacity, filter' }}
+        >
+          {list[i]}
+        </motion.span>
+      </AnimatePresence>
     </span>
   )
 }

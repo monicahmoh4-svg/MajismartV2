@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Mail, Lock, Eye, EyeOff, AlertCircle, UserPlus, User, MapPin, Phone, FileUp, LocateFixed } from 'lucide-react'
+import LocationPicker from '../components/ui/LocationPicker'
 import { useAuth } from '../context/AuthContext'
 
 import { KENYA_COUNTIES, USER_ROLES } from '../lib/kenya'
@@ -22,7 +23,6 @@ export default function Register() {
     base_location: ''
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [locating, setLocating] = useState(false)
   const isFieldStaff = ['operator', 'technician'].includes(formData.role)
 
   const fileToData = (key) => (e) => {
@@ -37,28 +37,6 @@ export default function Register() {
     reader.readAsDataURL(f)
   }
 
-  const detectLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported on this device — enter coordinates manually.')
-      return
-    }
-    setLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setFormData((d) => ({
-          ...d,
-          base_latitude: pos.coords.latitude.toFixed(6),
-          base_longitude: pos.coords.longitude.toFixed(6),
-        }))
-        setLocating(false)
-      },
-      () => {
-        setError('Could not detect location — enter coordinates manually.')
-        setLocating(false)
-      },
-      { timeout: 15000 }
-    )
-  }
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
@@ -259,16 +237,21 @@ export default function Register() {
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
                   <LocateFixed size={14} style={{ display: 'inline', marginRight: 4 }} /> Work base location
                 </label>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  <input value={formData.base_latitude} onChange={(e) => setFormData({ ...formData, base_latitude: e.target.value })} placeholder="Latitude" inputMode="decimal" style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '14px', background: 'white', boxSizing: 'border-box' }} />
-                  <input value={formData.base_longitude} onChange={(e) => setFormData({ ...formData, base_longitude: e.target.value })} placeholder="Longitude" inputMode="decimal" style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '14px', background: 'white', boxSizing: 'border-box' }} />
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input value={formData.base_location} onChange={(e) => setFormData({ ...formData, base_location: e.target.value })} placeholder="Base description, e.g. Ruaka depot" style={{ flex: 2, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '14px', background: 'white', boxSizing: 'border-box' }} />
-                  <button type="button" onClick={detectLocation} disabled={locating} style={{ flex: 1, padding: '12px 8px', borderRadius: '12px', border: '1.5px solid #0891b2', background: 'white', color: '#0891b2', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                    {locating ? 'Locating…' : 'Detect me'}
-                  </button>
-                </div>
+                <LocationPicker
+                  compact
+                  onPick={(p) => {
+                    if (!p) return
+                    setFormData((d) => ({
+                      ...d,
+                      base_latitude: String(p.lat),
+                      base_longitude: String(p.lng),
+                      base_location: d.base_location || [p.name, p.details].filter(Boolean).join(', '),
+                    }))
+                  }}
+                />
+                {(formData.base_latitude !== '' || formData.base_location) && (
+                  <input value={formData.base_location} onChange={(e) => setFormData({ ...formData, base_location: e.target.value })} placeholder="Base description, e.g. Ruaka depot" style={{ width: '100%', marginTop: 8, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '14px', background: 'white', boxSizing: 'border-box' }} />
+                )}
                 <p style={{ fontSize: '12px', color: '#64748b', margin: '6px 0 0 0' }}>Jobs near your base are offered to you first.</p>
               </div>
             </div>

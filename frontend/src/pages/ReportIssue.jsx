@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Camera, MapPin, Send, X, CheckCircle, AlertTriangle, Droplets, Wrench, Zap, HelpCircle } from 'lucide-react'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
+import LocationPicker from '../components/ui/LocationPicker'
 
 const ISSUE_TYPES = [
   { value: 'leak',               label: 'Water Leak',            icon: Droplets,      color: '#1a7fd4', bg: '#e8f4fd' },
@@ -58,7 +59,6 @@ export default function ReportIssue() {
   const [photo, setPhoto] = useState(null)       // base64 string
   const [photoPreview, setPhotoPreview] = useState(null)
   const [gps, setGps] = useState(null)
-  const [gpsLoading, setGpsLoading] = useState(false)
   const [gpsError, setGpsError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -78,18 +78,6 @@ export default function ReportIssue() {
       setError('')
     }
     reader.readAsDataURL(file)
-  }
-
-  const detectGPS = () => {
-    if (!navigator.geolocation) { setGpsError('GPS not supported on this device'); return }
-    setGpsLoading(true); setGpsError('')
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setGpsLoading(false)
-      },
-      () => { setGpsError('Could not get location — you can still submit without it'); setGpsLoading(false) }
-    )
   }
 
   const handleSubmit = async () => {
@@ -125,7 +113,7 @@ export default function ReportIssue() {
             Thank you for reporting this issue. The responsible county water office has been notified and will follow up.
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" onClick={() => navigate('/app/community')}>View All Reports</button>
+            <button className="btn btn-primary" onClick={() => navigate('/app/community-reports')}>View All Reports</button>
             <button className="btn btn-ghost" onClick={() => { setSubmitted(false); setForm({ type:'', description:'', county: user?.county||'', location:'' }); setPhoto(null); setPhotoPreview(null); setGps(null) }}>
               Report Another
             </button>
@@ -193,24 +181,20 @@ export default function ReportIssue() {
         </div>
         <div>
           <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--gray-600)', display: 'block', marginBottom: 6 }}>
-            GPS coordinates (optional but recommended)
+            GPS location with place name (optional but recommended)
           </label>
-          {gps ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--teal-light)', borderRadius: 8, fontSize: 13 }}>
-              <MapPin size={15} color="#0d9e75" />
-              <span style={{ color: '#0a7a5c', fontWeight: 600 }}>
-                {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}
-              </span>
-              <button onClick={() => setGps(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}>
-                <X size={14} color="#0a7a5c" />
-              </button>
-            </div>
-          ) : (
-            <button className="btn btn-outline" onClick={detectGPS} disabled={gpsLoading} style={{ width: '100%' }}>
-              <MapPin size={15} />
-              {gpsLoading ? 'Getting your location…' : 'Detect my GPS location'}
-            </button>
-          )}
+          <LocationPicker
+            compact
+            initial={gps ? { lat: gps.lat, lng: gps.lng } : null}
+            onPick={(p) => {
+              if (!p) { setGps(null); return }
+              setGps({ lat: p.lat, lng: p.lng })
+              setGpsError('')
+              if (p.name && p.name !== 'Located point') {
+                set('location', form.location || `${p.name}${p.details ? ', ' + p.details : ''}`)
+              }
+            }}
+          />
           {gpsError && <div style={{ fontSize: 12, color: 'var(--gray-400)', marginTop: 6 }}>{gpsError}</div>}
         </div>
       </div>

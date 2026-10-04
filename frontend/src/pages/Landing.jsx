@@ -8,7 +8,7 @@ import {
   Wifi, ChevronRight, Play, Shield, Star, Quote, Building2, Menu, X
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { WordReveal } from '../components/ui/TextAnimate'
+import { WordReveal, Rotator, CountUp } from '../components/ui/TextAnimate'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 50 },
@@ -26,6 +26,97 @@ const staggerContainer = {
 const scaleIn = {
   hidden: { opacity: 0, scale: 0.85 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
+}
+
+// Animated impact figure: "50K+" counts 0→50 then keeps its suffix.
+function StatNumber({ value }) {  const m = String(value).match(/^([\d.]+)(.*)$/)
+  if (!m) return <>{value}</>
+  const target = Number(m[1])
+  const decimals = m[1].includes('.') ? 1 : 0
+  return (
+    <>
+      <CountUp
+        value={target}
+        duration={1400}
+        format={(v) => (decimals ? v.toFixed(1) : Math.round(v).toLocaleString('en-KE'))}
+      />
+      {m[2]}
+    </>
+  )
+}
+
+function FaqList({ isMobile }) {
+  const [open, setOpen] = useState(-1)
+  const items = [
+    {
+      q: 'How do I pay for water?',
+      a: 'Pick a water point, enter your Safaricom number and litres, then confirm the M-Pesa prompt on your phone. A 20-digit token appears instantly — type it on the meter keypad. One 20L jerrican costs about Ksh 2.50.',
+    },
+    {
+      q: 'What does it cost?',
+      a: 'Citizens pay per use (about Ksh 105/m³ piped, Ksh 2.50 per 20L at kiosks). Estates pay from Ksh 150 per meter per month; utilities from Ksh 45,000 per month. Exact tariffs follow each provider’s WASREB-approved schedule.',
+    },
+    {
+      q: 'I lost my token SMS. Now what?',
+      a: 'Open My Water → Token recovery, enter the same M-Pesa number, and your last 5 tokens reappear with one-tap copy. Tokens never expire until used.',
+    },
+    {
+      q: 'No smartphone?',
+      a: 'Dial *384*99# on any phone to buy water, check balances and get help over USSD and SMS. Nothing to install.',
+    },
+    {
+      q: 'Who sees my data and reports?',
+      a: 'Your county water office triages reports; technicians see only jobs assigned to them. Signup consent follows Kenya’s Data Protection Act, and location is used only to match you with nearby help.',
+    },
+    {
+      q: 'How do technicians join and earn?',
+      a: 'Operators and technicians sign up with national ID, documents and a work base. An admin verifies them before they can accept dispatched jobs, and completed jobs build a visible earnings record settled by the county.',
+    },
+  ]
+  return (
+    <div>
+      {items.map((item, i) => {
+        const isOpen = open === i
+        return (
+          <div key={i} style={{ borderBottom: '1px solid var(--hairline)' }}>
+            <button
+              onClick={() => setOpen(isOpen ? -1 : i)}
+              aria-expanded={isOpen}
+              style={{
+                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                gap: 16, padding: '18px 4px', background: 'none', border: 'none', cursor: 'pointer',
+                textAlign: 'left', fontSize: isMobile ? 15 : 17, fontWeight: 700, color: 'var(--ink)',
+              }}
+            >
+              {item.q}
+              <span style={{
+                width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                border: '1px solid var(--hairline)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease',
+              }}>
+                <ChevronRight size={16} style={{ transform: 'rotate(90deg)' }} />
+              </span>
+            </button>
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: [0.2, 0.7, 0.2, 1] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <p style={{ margin: '0 0 18px 0', fontSize: isMobile ? 14 : 15.5, lineHeight: 1.65, color: 'var(--ash)', maxWidth: '68ch' }}>
+                    {item.a}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 export default function Landing() {
@@ -386,7 +477,7 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               style={{
-                margin: '0 0 40px 0',
+                margin: '0 0 16px 0',
                 fontSize: isMobile ? '16px' : '22px',
                 opacity: '0.95',
                 lineHeight: '1.7',
@@ -396,6 +487,27 @@ export default function Landing() {
             >
               Real-time monitoring, transparent data, and community-driven water management. Access clean water information from any device — smartphone or feature phone.
             </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.55 }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 32px 0',
+                fontSize: isMobile ? '14px' : '16px', color: 'white', fontWeight: 600,
+              }}
+            >
+              <span style={{
+                fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+                color: '#0b3b3f', background: '#e4f222', borderRadius: 6, padding: '4px 10px',
+              }}>
+                Live now
+              </span>
+              <Rotator
+                items={['Leak detection', 'M-Pesa billing', 'NRW analytics', 'Prepaid tokens', 'Vendor permits', 'AI forecasting']}
+                style={{ color: '#fde68a' }}
+              />
+            </motion.div>
             
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -538,7 +650,7 @@ export default function Landing() {
                 onMouseLeave={(e) => { if (!isMobile) { e.currentTarget.style.transform = 'translateY(0)'; } }}
               >
                 <stat.icon style={{ width: isMobile ? '40px' : '48px', height: isMobile ? '40px' : '48px', color: stat.color, margin: '0 auto 20px' }} />
-                <p style={{ margin: '0 0 8px 0', fontSize: isMobile ? '36px' : '56px', fontWeight: '900', background: `linear-gradient(135deg, ${stat.color}, ${stat.color}88)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{stat.number}</p>
+                <p style={{ margin: '0 0 8px 0', fontSize: isMobile ? '36px' : '56px', fontWeight: '900', background: `linear-gradient(135deg, ${stat.color}, ${stat.color}88)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}><StatNumber value={stat.number} /></p>
                 <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', color: '#64748b', fontWeight: '600' }}>{stat.label}</p>
               </motion.div>
             ))}
@@ -965,6 +1077,20 @@ export default function Landing() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section — straight answers */}
+      <section id="faq" style={{
+        padding: isMobile ? '60px 20px' : '100px 24px',
+        background: 'white',
+      }}>
+        <div style={{ maxWidth: '820px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '28px' : '40px' }}>
+            <span className="micro-label">Straight answers</span>
+            <h2 className="font-display" style={{ margin: '8px 0 12px 0', fontSize: isMobile ? '30px' : '44px', fontWeight: '600', color: 'var(--ink)', lineHeight: 1.1 }}>Questions, answered honestly</h2>
+          </div>
+          <FaqList isMobile={isMobile} />
         </div>
       </section>
 

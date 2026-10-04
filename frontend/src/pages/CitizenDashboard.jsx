@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
+import LocationPicker from '../components/ui/LocationPicker'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Droplets, MapPin, Activity, Shield, BarChart3, TrendingUp, 
@@ -70,7 +71,6 @@ export default function CitizenDashboard({ readOnly = false }) {
   const [svcFees, setSvcFees] = useState({ leak_repair: 1500, meter_issue: 800, new_connection: 2500, quality_test: 500, other: 500 })
   const [svcForm, setSvcForm] = useState({ category: 'leak_repair', description: '', area: '', latitude: '', longitude: '' })
   const [svcBusy, setSvcBusy] = useState(false)
-  const [svcLocating, setSvcLocating] = useState(false)
   const [svcMsg, setSvcMsg] = useState(null)
   const [myServices, setMyServices] = useState([])
 
@@ -86,30 +86,6 @@ export default function CitizenDashboard({ readOnly = false }) {
   }
 
   useEffect(() => { loadServices() }, [])
-
-  const detectSvcLocation = () => {
-    if (!navigator.geolocation) {
-      setSvcMsg({ ok: false, text: 'Geolocation not supported — describe your area instead.' })
-      return
-    }
-    setSvcLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setSvcForm((d) => ({
-          ...d,
-          latitude: pos.coords.latitude.toFixed(6),
-          longitude: pos.coords.longitude.toFixed(6),
-        }))
-        setSvcLocating(false)
-        setSvcMsg({ ok: true, text: 'Location detected — the nearest available technician will be matched.' })
-      },
-      () => {
-        setSvcLocating(false)
-        setSvcMsg({ ok: false, text: 'Could not detect location — describe your area instead.' })
-      },
-      { timeout: 15000 }
-    )
-  }
 
   const submitService = async (e) => {
     e.preventDefault()
@@ -1019,10 +995,23 @@ export default function CitizenDashboard({ readOnly = false }) {
                     </div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: 6 }}>Problem description *</label>
                     <textarea required value={svcForm.description} onChange={(e) => setSvcForm({ ...svcForm, description: e.target.value })} rows={3} placeholder="Describe the problem in detail…" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', resize: 'vertical', boxSizing: 'border-box' }} />
+                    <div style={{ marginTop: 12 }}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', marginBottom: 6 }}>Job location (real place + map)</label>
+                      <LocationPicker
+                        compact
+                        onPick={(p) => {
+                          if (!p) return
+                          setSvcForm((d) => ({
+                            ...d,
+                            latitude: String(p.lat),
+                            longitude: String(p.lng),
+                            area: d.area || [p.name, p.details].filter(Boolean).join(', '),
+                          }))
+                          setSvcMsg({ ok: true, text: `Pinned at ${p.name} — the nearest available technician will be matched.` })
+                        }}
+                      />
+                    </div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <button type="button" onClick={detectSvcLocation} disabled={svcLocating} className="btn btn-ghost btn-sm">
-                        <Navigation size={14} /> {svcLocating ? 'Locating…' : svcForm.latitude ? `${svcForm.latitude}, ${svcForm.longitude} ✓` : 'Detect my location'}
-                      </button>
                       <button type="submit" disabled={svcBusy} className="btn btn-primary" style={{ padding: '10px 22px' }}>
                         {svcBusy ? 'Dispatching…' : 'Request service'}
                       </button>
