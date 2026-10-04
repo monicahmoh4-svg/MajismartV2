@@ -233,7 +233,9 @@ async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_alerts_resolved ON alerts(resolved);
   `);
   const { rows } = await query('SELECT COUNT(*) FROM nodes');
-  if (parseInt(rows[0].count) === 0) {
+  // Demo seed runs ONLY on empty databases, and never when explicitly
+  // disabled (SEED_DEMO=false) — production data is never mixed with fixtures.
+  if (parseInt(rows[0].count) === 0 && process.env.SEED_DEMO !== 'false') {
     await seedDemo();
   }
 }

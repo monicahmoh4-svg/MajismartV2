@@ -29,6 +29,8 @@ const scaleIn = {
 }
 
 export default function Landing() {
+  // Owner: replace with your real sales inbox. Used by every contact CTA.
+  const CONTACT_EMAIL = 'info@majismart.co.ke'
   const navigate = useNavigate()
   const [scrollY, setScrollY] = useState(0)
   const [isVisible, setIsVisible] = useState({})
@@ -445,7 +447,7 @@ export default function Landing() {
                 alignItems: 'center',
                 gap: '12px',
                 transition: 'all 0.3s'
-              }} onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.25)'; e.target.style.transform = 'translateY(-4px)'; }}
+              }} onClick={() => scrollToSection('features')} onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.25)'; e.target.style.transform = 'translateY(-4px)'; }}
                 onMouseLeave={(e) => { e.target.style.background = 'rgba(255,255,255,0.15)'; e.target.style.transform = 'translateY(0)'; }}>
                 <Play style={{ width: isMobile ? '16px' : '20px', height: isMobile ? '16px' : '20px', fill: 'white' }} /> Watch Demo
               </button>
@@ -945,6 +947,40 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Pricing Section — real commercial tiers */}
+      <section id="pricing" style={{
+        padding: isMobile ? '60px 20px' : '100px 24px',
+        background: 'var(--bone)',
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '32px' : '48px' }}>
+            <span className="micro-label">Commercial model</span>
+            <h2 className="font-display" style={{ margin: '8px 0 12px 0', fontSize: isMobile ? '30px' : '44px', fontWeight: '600', color: 'var(--ink)', lineHeight: 1.1 }}>Pays for itself in recovered revenue</h2>
+            <p style={{ margin: 0, fontSize: isMobile ? '15px' : '17px', color: 'var(--ash)', maxWidth: '640px', marginLeft: 'auto', marginRight: 'auto' }}>
+              Citizens always free. Estates and utilities pay from the cash the platform recovers — not from new budgets.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '16px' : '24px' }}>
+            {[
+              { name: 'Citizens', price: 'Free', per: 'forever', blurb: 'Find water, report issues, track spending, recover tokens — smartphone or USSD.', cta: 'Create free account', act: () => navigate('/register'), featured: false },
+              { name: 'Estates & Landlords', price: 'Ksh 150', per: '/ meter / month', blurb: 'Prepaid meters, Paybill auto-split, tenant tokens, zero-arrears billing. Hardware from Ksh 11,500 installed.', cta: 'Talk to sales', act: () => { window.location.href = `mailto:${CONTACT_EMAIL}?subject=Estate%20onboarding` }, featured: false },
+              { name: 'Utilities & Counties', price: 'Ksh 45,000', per: '/ month', blurb: 'NRW analytics, WASREB KPIs, vendor permits, work orders. NRW Pro with 15% gain-share pilots.', cta: 'Talk to sales', act: () => { window.location.href = `mailto:${CONTACT_EMAIL}?subject=Utility%20pilot` }, featured: true },
+            ].map(t => (
+              <div key={t.name} className="ledger-card" style={t.featured ? { border: '2px solid var(--ink)', position: 'relative' } : undefined}>
+                {t.featured && (
+                  <span style={{ position: 'absolute', top: 16, right: 16, background: 'var(--hi)', color: 'var(--ink)', fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 6 }}>MOST IMPACT</span>
+                )}
+                <div className="micro-label" style={{ marginBottom: 8 }}>{t.name}</div>
+                <div style={{ fontSize: isMobile ? 30 : 36, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t.price}</div>
+                <div style={{ fontSize: 13, color: 'var(--ash)', marginBottom: 12 }}>{t.per}</div>
+                <p style={{ fontSize: 14, color: 'var(--ash)', lineHeight: 1.6, margin: '0 0 20px 0' }}>{t.blurb}</p>
+                <button onClick={t.act} className={t.featured ? 'btn btn-money' : 'btn btn-outline'} style={{ width: '100%', justifyContent: 'center', padding: 12 }}>{t.cta}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section style={{
         padding: isMobile ? '80px 20px' : '120px 24px',
@@ -1001,7 +1037,7 @@ export default function Landing() {
               cursor: 'pointer',
               boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
               textDecoration: 'none'
-            }}>
+            }} onClick={() => navigate('/register')}>
               Create Free Account
             </button>
             <button style={{
@@ -1015,7 +1051,8 @@ export default function Landing() {
               cursor: 'pointer',
               backdropFilter: 'blur(10px)',
               transition: 'all 0.3s'
-            }} onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.25)'; }}
+            }} onClick={() => { window.location.href = `mailto:${CONTACT_EMAIL}?subject=Sales%20enquiry` }}
+              onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.25)'; }}
               onMouseLeave={(e) => { e.target.style.background = 'rgba(255,255,255,0.15)'; }}>
               Contact Sales
             </button>
@@ -1048,34 +1085,48 @@ export default function Landing() {
             <div>
               <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Product</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['Features', 'USSD Service', 'Pricing', 'API'].map((item) => (
-                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item}</a>
+                {[
+                  { label: 'Features', act: () => scrollToSection('features') },
+                  { label: 'USSD Service', act: () => scrollToSection('ussd') },
+                  { label: 'Pricing', act: () => scrollToSection('pricing') },
+                  { label: 'Find Water', act: () => navigate('/find-water') },
+                ].map((item) => (
+                  <button key={item.label} onClick={item.act} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', color: 'rgba(255,255,255,0.7)', fontSize: '14px', cursor: 'pointer' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item.label}</button>
                 ))}
               </div>
             </div>
             <div>
-              <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Company</h4>
+              <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Get started</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['About', 'Blog', 'Careers', 'Contact'].map((item) => (
-                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item}</a>
+                {[
+                  { label: 'Create account', act: () => navigate('/register') },
+                  { label: 'Sign in', act: () => navigate('/login') },
+                  { label: 'Contact sales', act: () => { window.location.href = `mailto:${CONTACT_EMAIL}?subject=Sales%20enquiry` } },
+                  { label: 'Source code', act: () => window.open('https://github.com/monicahmoh4-svg/MajismartV2', '_blank', 'noopener') },
+                ].map((item) => (
+                  <button key={item.label} onClick={item.act} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', color: 'rgba(255,255,255,0.7)', fontSize: '14px', cursor: 'pointer' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item.label}</button>
                 ))}
               </div>
             </div>
             <div>
-              <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Legal</h4>
+              <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '700' }}>Regulators</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['Privacy', 'Terms', 'Security'].map((item) => (
-                  <a key={item} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item}</a>
+                {[
+                  { label: 'WASREB', href: 'https://wasreb.go.ke' },
+                  { label: 'Data Protection (ODPC)', href: 'https://odpc.go.ke' },
+                ].map((item) => (
+                  <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{item.label}</a>
                 ))}
               </div>
             </div>
           </div>
           <div style={{ paddingTop: '30px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
             <p style={{ margin: 0, fontSize: '14px', opacity: 0.7 }}>© 2026 MajiSmart Kenya. All rights reserved.</p>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              {['Twitter', 'Facebook', 'LinkedIn', 'Instagram'].map((social) => (
-                <a key={social} href="#" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>{social}</a>
-              ))}
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <a href="https://github.com/monicahmoh4-svg/MajismartV2" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px' }} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}>Open source</a>
+              <span style={{ fontSize: '14px', opacity: 0.7 }}>
+                Built for Kenya · 47 counties
+              </span>
             </div>
           </div>
         </div>

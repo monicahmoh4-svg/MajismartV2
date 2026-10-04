@@ -59,6 +59,11 @@ export default function Payments() {
             <CreditCard size={24} color="#0d9e75" /> Payments
           </h1>
           <p style={{ color: '#5f6368', marginTop: 4 }}>M-Pesa water payment transactions</p>
+          {stats?.mpesa_mode === 'simulation' && (
+            <span className="badge badge-warning" style={{ marginTop: 6, display: 'inline-block' }}>
+              Test mode — payments are simulated, no real M-Pesa charge. Add Daraja credentials to go live.
+            </span>
+          )}
         </div>
         {writer && (
         <button className="btn btn-money" onClick={() => setShowForm(!showForm)}>

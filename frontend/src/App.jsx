@@ -29,6 +29,7 @@ const AssetManagement = lazy(() => import('./pages/AssetManagement'))
 const GISDashboard = lazy(() => import('./pages/GISDashboard'))
 const AIAnalyticsDashboard = lazy(() => import('./pages/AIAnalyticsDashboard'))
 const WorkOrderManagement = lazy(() => import('./pages/WorkOrderManagement'))
+const Devices = lazy(() => import('./pages/Devices'))
 
 // UI-role based access: null = any authenticated user.
 // Roles: admin, county_officer, operator, technician, community, viewer
@@ -38,6 +39,7 @@ const ROUTE_ROLES = {
   users: ['admin', 'county_officer'],
   maintenance: ['admin', 'county_officer', 'operator', 'technician'],
   workorders: ['admin', 'county_officer', 'operator'],
+  devices: ['admin', 'operator'],
   'ai-insights': ['admin', 'county_officer', 'operator'],
   'ai-analytics': ['admin', 'county_officer', 'operator'],
   analytics: ['admin', 'county_officer', 'viewer'],
@@ -123,6 +125,7 @@ function AppRoutes() {
           <Route path="users" element={<RoleRoute element={<Users />} roles={ROUTE_ROLES.users} />} />
           <Route path="maintenance" element={<RoleRoute element={<Maintenance />} roles={ROUTE_ROLES.maintenance} />} />
           <Route path="workorders" element={<RoleRoute element={<WorkOrderManagement />} roles={ROUTE_ROLES.workorders} />} />
+          <Route path="devices" element={<RoleRoute element={<Devices />} roles={ROUTE_ROLES.devices} />} />
           <Route path="reports" element={<RoleRoute element={<ReportManagement />} roles={ROUTE_ROLES.reports} />} />
           <Route path="field-reports" element={<RoleRoute element={<CommunityReports />} roles={ROUTE_ROLES['field-reports']} />} />
           <Route path="community-reports" element={<RoleRoute element={<CitizenReports />} roles={ROUTE_ROLES['community-reports']} />} />

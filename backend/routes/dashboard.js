@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
+const { authMiddleware } = require('../middleware/auth');
 router.get('/summary', async (req, res) => {
   try {
     const [nodes, payments, alerts, sensor] = await Promise.all([
@@ -102,7 +103,7 @@ router.get('/maintenance', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.post('/maintenance', async (req, res) => {
+router.post('/maintenance', authMiddleware, async (req, res) => {
   try {
     const { node_id, description, type, cost_ksh, user_id } = req.body;
     const { rows } = await db.query(

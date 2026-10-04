@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 
 function generateReportNumber() {
   const year = new Date().getFullYear();
@@ -120,7 +122,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // ✅ POST /api/reports-enhanced - MAXIMUM LOGGING
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   console.log('📥 POST /api/reports-enhanced - Received request')
   console.log('Request body:', JSON.stringify(req.body, null, 2))
   
@@ -160,7 +162,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/reports-enhanced/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const updates = req.body;
     const setClauses = [];
@@ -194,7 +196,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/reports-enhanced/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const { rows } = await db.query('DELETE FROM reports WHERE id = $1 RETURNING *', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Report not found' });
@@ -206,7 +208,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/reports-enhanced/:id/comments
-router.post('/:id/comments', async (req, res) => {
+router.post('/:id/comments', authMiddleware, async (req, res) => {
   try {
     if (!(await tableExists('report_comments'))) return res.status(503).json({ error: 'Comments system not available' });
     const { author_name, author_role, comment, is_internal } = req.body;
@@ -221,7 +223,7 @@ router.post('/:id/comments', async (req, res) => {
 });
 
 // POST /api/reports-enhanced/:id/upvote
-router.post('/:id/upvote', async (req, res) => {
+router.post('/:id/upvote', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(`UPDATE reports SET upvotes = upvotes + 1 WHERE id = $1 RETURNING upvotes`, [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Report not found' });

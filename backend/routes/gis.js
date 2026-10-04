@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 
 // GET /api/gis/assets - STRICT, TRANSPARENT ERROR REPORTING
 router.get('/assets', async (req, res) => {
@@ -58,7 +60,7 @@ router.get('/assets', async (req, res) => {
 });
 
 // POST /api/gis/assets
-router.post('/assets', async (req, res) => {
+router.post('/assets', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const { name, type, latitude, longitude, county, status, capacity, diameter_mm, material, manufacturer, serial_number } = req.body;
     if (!name || !type || !latitude || !longitude) return res.status(400).json({ error: 'Missing required fields' });
@@ -76,7 +78,7 @@ router.post('/assets', async (req, res) => {
 });
 
 // PUT /api/gis/assets/:id
-router.put('/assets/:id', async (req, res) => {
+router.put('/assets/:id', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -107,7 +109,7 @@ router.put('/assets/:id', async (req, res) => {
 });
 
 // DELETE /api/gis/assets/:id
-router.delete('/assets/:id', async (req, res) => {
+router.delete('/assets/:id', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const { rows } = await db.query('DELETE FROM assets WHERE id = $1 RETURNING *', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Asset not found' });

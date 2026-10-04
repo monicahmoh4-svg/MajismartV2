@@ -35,7 +35,7 @@ export default function CommunityDashboard() {
     e.preventDefault(); setPaying(true); setPayResult(null)
     try {
       const res = await api.post('/payments/initiate', payForm)
-      setPayResult({ ok: true, msg: res.message, id: res.payment_id, token: res.token_formatted || res.token || null })
+      setPayResult({ ok: true, msg: res.message, id: res.payment_id, token: res.token_formatted || res.token || null, mode: res.mode || null })
       let tries = 0
       const poll = setInterval(async () => {
         tries++
@@ -124,6 +124,9 @@ export default function CommunityDashboard() {
                   </div>
                 )}
                 {payResult.ok && <div style={{ fontSize: 11, color: '#5f6368', marginTop: 8 }}>Lost your token? Dial *384*99# or recover it any time from My Water → Token recovery.</div>}
+                {payResult.ok && payResult.mode === 'simulation' && (
+                  <div style={{ fontSize: 11, color: '#a07010', marginTop: 4 }}>Test mode — no real M-Pesa charge was made.</div>
+                )}
               </div>
             )}
             <form onSubmit={pay}>

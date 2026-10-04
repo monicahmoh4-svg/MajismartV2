@@ -130,6 +130,44 @@ async function ensureProductionTables() {
   await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS location VARCHAR(200)`);
   await db.query(`ALTER TABLE water_quality_readings ADD COLUMN IF NOT EXISTS quality_index INTEGER`);
 
+  // IoT device registry: hardware authenticates with per-device API keys
+  // (sha256 of a 256-bit secret shown ONCE at provisioning). Telemetry from
+  // physical devices lands in sensor_readings with source='device';
+  // source='simulator' is reserved for the explicit test simulator so test
+  // data can never be mistaken for live data.
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS devices (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      device_id TEXT UNIQUE NOT NULL,
+      node_id UUID REFERENCES nodes(id) ON DELETE SET NULL,
+      name VARCHAR(150) NOT NULL,
+      kind VARCHAR(40) DEFAULT 'level' CHECK (kind IN ('level','flow','pressure','quality','meter','valve','gateway','simulator','other')),
+      api_key_hash VARCHAR(128) NOT NULL,
+      status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','suspended','retired')),
+      last_seen TIMESTAMPTZ,
+      firmware VARCHAR(40),
+      config JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_devices_node ON devices(node_id);
+    CREATE INDEX IF NOT EXISTS idx_devices_status ON devices(status);
+  `);
+  await db.query(`ALTER TABLE sensor_readings ADD COLUMN IF NOT EXISTS source VARCHAR(20) DEFAULT 'device'`);
+
+  // Operational indexes (only where the table exists — migrations vary).
+  const indexDdls = [
+    ['idx_reports_county_status', 'community_reports', 'CREATE INDEX IF NOT EXISTS idx_reports_county_status ON community_reports(county, status)'],
+    ['idx_wo_status', 'work_orders', 'CREATE INDEX IF NOT EXISTS idx_wo_status ON work_orders(status)'],
+    ['idx_vendors_county', 'vendors', 'CREATE INDEX IF NOT EXISTS idx_vendors_county ON vendors(county)'],
+    ['idx_readings_source_time', 'sensor_readings', 'CREATE INDEX IF NOT EXISTS idx_readings_source_time ON sensor_readings(source, recorded_at DESC)'],
+  ];
+  for (const [name, table, ddl] of indexDdls) {
+    try {
+      const { rows } = await db.query(`SELECT to_regclass('public."${table}"') as t`);
+      if (rows[0] && rows[0].t) await db.query(ddl);
+    } catch (e) { console.warn(`index ${name} skipped:`, e.message); }
+  }
+
   await ensureBootstrapAccounts();
 
   console.log('Production tables ensured');

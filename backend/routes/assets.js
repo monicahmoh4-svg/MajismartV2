@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 
 async function columnExists(columnName) {
   try {
@@ -260,7 +262,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/assets
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const { name, type, latitude, longitude, county, status, capacity, diameter_mm, material, manufacturer, serial_number, installation_date, expected_lifespan_years, warranty_expires, notes } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'Name and type are required' });
@@ -287,7 +289,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/assets/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const updates = req.body;
     const setClauses = [];
@@ -325,7 +327,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/assets/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const { rows } = await db.query('DELETE FROM assets WHERE id = $1 RETURNING *', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Asset not found' });
@@ -337,7 +339,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/assets/:id/maintenance
-router.post('/:id/maintenance', async (req, res) => {
+router.post('/:id/maintenance', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
   try {
     if (!(await tableExists('asset_maintenance'))) return res.status(503).json({ error: 'Maintenance tracking not available' });
     
@@ -361,7 +363,7 @@ router.post('/:id/maintenance', async (req, res) => {
 });
 
 // POST /api/assets/:id/inspection
-router.post('/:id/inspection', async (req, res) => {
+router.post('/:id/inspection', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
   try {
     if (!(await tableExists('asset_inspections'))) return res.status(503).json({ error: 'Inspection tracking not available' });
     
@@ -384,7 +386,7 @@ router.post('/:id/inspection', async (req, res) => {
 });
 
 // POST /api/assets/:id/attachments
-router.post('/:id/attachments', async (req, res) => {
+router.post('/:id/attachments', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
   try {
     if (!(await tableExists('asset_attachments'))) return res.status(503).json({ error: 'Attachment storage not available' });
     

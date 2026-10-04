@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 
 function generateWONumber() {
   const year = new Date().getFullYear();
@@ -143,7 +145,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // POST /api/workorders - Create new work order
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
   try {
     await ensureWorkOrdersTable();
 
@@ -153,14 +155,26 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Title and description are required' });
     }
 
-    const wo_number = generateWONumber();
     const initial_status = assigned_to ? 'assigned' : 'pending';
 
-    const { rows } = await db.query(
-      `INSERT INTO work_orders (wo_number, title, description, source_type, source_id, assigned_to, status, priority, location, created_by, assigned_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [wo_number, title, description, source_type, source_id, assigned_to, initial_status, priority || 'medium', location, created_by, assigned_to ? new Date() : null]
-    );
+    // Retry once with a fresh number on the (rare) UNIQUE collision.
+    let rows = null;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2 && !rows; attempt++) {
+      const wo_number = generateWONumber();
+      try {
+        const r = await db.query(
+          `INSERT INTO work_orders (wo_number, title, description, source_type, source_id, assigned_to, status, priority, location, created_by, assigned_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+          [wo_number, title, description, source_type, source_id, assigned_to, initial_status, priority || 'medium', location, created_by, assigned_to ? new Date() : null]
+        );
+        rows = r.rows;
+      } catch (e) {
+        if (e.code === '23505' && attempt === 0) { lastErr = e; continue; }
+        throw e;
+      }
+    }
+    if (!rows) throw lastErr || new Error('Work order number collision');
 
     res.status(201).json({ message: 'Work order created', work_order: rows[0] });
   } catch (error) {
@@ -170,7 +184,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/workorders/:id - Update work order
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
   try {
     const updates = req.body;
     const setClauses = [];
@@ -212,7 +226,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/workorders/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('admin', 'county_officer'), async (req, res) => {
   try {
     const { rows } = await db.query('DELETE FROM work_orders WHERE id = $1 RETURNING *', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Work order not found' });

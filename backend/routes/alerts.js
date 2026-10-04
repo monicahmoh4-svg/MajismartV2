@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 router.get('/', async (req, res) => {
   try {
     const { resolved, severity, limit = 50 } = req.query;
@@ -19,7 +20,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.patch('/:id/resolve', authMiddleware, async (req, res) => {
+router.patch('/:id/resolve', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
   try {
     const { rows } = await db.query(
       `UPDATE alerts SET resolved=true, resolved_at=NOW() WHERE id=$1 RETURNING *`,
@@ -30,7 +31,7 @@ router.patch('/:id/resolve', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'county_officer', 'operator', 'technician'), async (req, res) => {
   try {
     const { node_id, type, message, severity = 'warning' } = req.body;
     const { rows } = await db.query(

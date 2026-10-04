@@ -217,6 +217,11 @@ router.put('/users/:id/role',
       return res.status(404).json({ error: 'User not found' });
     }
 
+    try {
+      const { logAudit } = require('../services/audit');
+      logAudit(req.user.id, 'user.role.update', 'users', rows[0].id, { role });
+    } catch (_) { /* audit never blocks */ }
+
     res.json({ message: 'Role updated', user: rows[0] });
   } catch (error) {
     console.error('Update role error:', error);

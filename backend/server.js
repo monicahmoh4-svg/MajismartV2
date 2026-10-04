@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const VERSION = '6.0.2';
+const VERSION = '6.1.0';
 
 // Render terminates TLS at its edge proxy: trust it so req.ip is the real
 // client IP. WITHOUT this, express-rate-limit sees every user as one IP and
@@ -146,6 +146,9 @@ const estatesRoutes = safeRequire('./routes/estates');
 const tokensRoutes = safeRequire('./routes/tokens');
 // Maji support assistant (public: help before signup)
 const assistantRoutes = safeRequire('./routes/assistant');
+// IoT fleet: device registry + key-authenticated telemetry ingest
+const devicesRoutes = safeRequire('./routes/devices');
+const ingestRoutes = safeRequire('./routes/ingest');
 
 // ============================================
 // PUBLIC META
@@ -169,6 +172,9 @@ app.get('/', (req, res) => {
       wasrebKpis: '/api/wasreb/kpis',
       estates: '/api/estates',
       prepaidTokens: '/api/tokens',
+      assistant: '/api/assistant/chat',
+      devices: '/api/devices',
+      ingest: '/api/ingest',
     }
   });
 });
@@ -224,6 +230,8 @@ if (wasrebRoutes) app.use('/api/wasreb', wasrebRoutes);
 if (estatesRoutes) app.use('/api/estates', estatesRoutes);
 if (tokensRoutes) app.use('/api/tokens', tokensRoutes);
 if (assistantRoutes) app.use('/api/assistant', assistantRoutes);
+if (devicesRoutes) app.use('/api/devices', devicesRoutes);
+if (ingestRoutes) app.use('/api/ingest', ingestRoutes);
 
 // ============================================
 // ERROR HANDLING (never leak stack in production)

@@ -5,21 +5,17 @@ const db = require('../db');
 // GET /api/datasets/water-quality
 router.get('/water-quality', async (req, res) => {
   try {
-    // Attempt to fetch real data, fallback to safe mock data if table doesn't exist yet
+    // Real readings only. When none exist we return an EMPTY set with
+    // source:'empty' — never invented sample rows presented as measurements.
     const query = `
-      SELECT location, quality_index, ph, turbidity, recorded_at 
-      FROM water_quality_readings 
-      ORDER BY recorded_at DESC 
+      SELECT location, quality_index, ph, turbidity, recorded_at
+      FROM water_quality_readings
+      ORDER BY recorded_at DESC
       LIMIT 50
     `;
     const { rows } = await db.query(query).catch(() => ({ rows: [] }));
-    
-    const responseData = rows.length > 0 ? rows : [
-      { location: 'Nairobi Central Station', quality_index: 85, ph: 7.2, turbidity: 1.2, recorded_at: new Date() },
-      { location: 'Kisumu Lake View', quality_index: 72, ph: 7.4, turbidity: 2.1, recorded_at: new Date() }
-    ];
-    
-    res.json({ data: responseData });
+
+    res.json({ data: rows, source: rows.length > 0 ? 'live' : 'empty' });
   } catch (error) {
     console.error('Error fetching water quality datasets:', error);
     res.status(500).json({ error: 'Failed to fetch water quality datasets' });

@@ -21,6 +21,12 @@ router.get('/:id', authMiddleware, async (req, res) => {
 });
 router.patch('/:id', authMiddleware, async (req, res) => {
   try {
+    // Users may edit their own profile; editing others requires staff role.
+    const { normalizeRole } = require('../middleware/auth');
+    const role = normalizeRole(req.user.role);
+    if (req.user.id !== req.params.id && !['super_admin', 'county_admin'].includes(role)) {
+      return res.status(403).json({ error: 'You can only edit your own profile' });
+    }
     const { name, phone, county } = req.body;
     const { rows } = await db.query(
       `UPDATE users SET name=COALESCE($1,name), phone=COALESCE($2,phone), county=COALESCE($3,county), updated_at=NOW()

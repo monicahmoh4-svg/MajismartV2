@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 router.get('/', async (req, res) => {
   try {
     const { county, status } = req.query;
@@ -46,7 +47,7 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'county_officer', 'operator'), async (req, res) => {
   try {
     const { name, location, county, latitude, longitude, type, capacity_litres } = req.body;
     if (!name || !location || !county) return res.status(400).json({ error: 'Missing required fields' });
@@ -59,7 +60,7 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.patch('/:id', authMiddleware, async (req, res) => {
+router.patch('/:id', authMiddleware, requireRole('admin', 'county_officer', 'operator'), async (req, res) => {
   try {
     const fields = ['name','location','county','latitude','longitude','status','type','capacity_litres'];
     const updates = [], params = [];
@@ -79,7 +80,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('admin', 'county_officer', 'operator'), async (req, res) => {
   try {
     await db.query('DELETE FROM nodes WHERE id=$1', [req.params.id]);
     res.json({ message: 'Node deleted' });

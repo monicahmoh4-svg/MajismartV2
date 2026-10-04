@@ -122,6 +122,10 @@ router.patch('/vendors/:id',
       }
       const { rows } = await db.query(
         `UPDATE vendors SET status=$1 WHERE id=$2 RETURNING *`, [status, req.params.id]);
+      try {
+        const { logAudit } = require('../services/audit');
+        logAudit(req.user.id, 'vendor.permit.decision', 'vendors', rows[0].id, { status, county: rows[0].county });
+      } catch (_) { /* audit never blocks */ }
       res.json(rows[0]);
     } catch (e) { res.status(500).json({ error: 'Failed to update vendor' }); }
   });
